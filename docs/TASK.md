@@ -9,7 +9,6 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 - [ ] Create monorepo layout: `/frontend`, `/backend`, `/docs`
 - [ ] `git init` and initial commit
 - [ ] Root `.gitignore` covering `node_modules/`, `.venv/`, `.env`, `/tmp/`, `*.mp4`, `dist/`, `__pycache__/`
-- [ ] Add `LICENSE` (MIT) if desired
 - [ ] Add backend `.env.example` with: `GEMINI_API_KEY`, `TAVILY_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `HERA_API_KEY`, `CORS_ORIGINS`
 
 ---

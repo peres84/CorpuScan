@@ -83,12 +83,12 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 7. Backend — Hera API render (×4 in parallel)
 
-- [ ] `app/integrations/hera.py` — `submit(spec) -> hera_job_id`, `poll(hera_job_id) -> {status, video_url?}`, `download(url) -> bytes`
-- [ ] Submit all 4 in parallel
-- [ ] Poll loop: every 3s, all 4 in parallel; exit when all 4 are `done`; timeout at 4 min
-- [ ] Download each MP4 to `/tmp/{job_id}/clip_{i}.mp4`
-- [ ] On entry: `update_step("hera_render", progress=75)`
-- [ ] Update `progress` incrementally as each clip finishes (75 → 90)
+- [x] `app/integrations/hera.py` — `submit(spec) -> hera_job_id`, `poll(hera_job_id) -> {status, video_url?}`, `download(url) -> bytes`
+- [x] Submit all 4 in parallel
+- [x] Poll loop: every 3s, all 4 in parallel; exit when all 4 are `done`; timeout at 4 min
+- [x] Download each MP4 to `/tmp/{job_id}/clip_{i}.mp4`
+- [x] On entry: `update_step("hera_render", progress=75)`
+- [x] Update `progress` incrementally as each clip finishes (75 → 90)
 
 ---
 

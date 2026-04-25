@@ -14,6 +14,7 @@ from app.integrations.elevenlabs import (
     map_sentence_timings_to_scenes,
 )
 from app.integrations.gemini import GeminiClient
+from app.integrations.hera import HeraClient
 from app.jobs import JobStore
 from app.schemas import JobStep, SentenceTiming
 
@@ -72,5 +73,38 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
             ]
         )
         job.scene_specs = scene_specs
+
+        job_store.update_step(job_id, step=JobStep.HERA_RENDER, progress=75)
+        hera_client = HeraClient(api_key=settings.hera_api_key, base_url=settings.hera_base_url)
+        hera_job_ids = await asyncio.gather(*[hera_client.submit(spec) for spec in scene_specs])
+
+        completed: dict[int, str] = {}
+        start_time = asyncio.get_running_loop().time()
+        while len(completed) < len(hera_job_ids):
+            if asyncio.get_running_loop().time() - start_time > 240:
+                raise TimeoutError("Timed out waiting for Hera renders.")
+            poll_results = await asyncio.gather(*[hera_client.poll(job_id) for job_id in hera_job_ids])
+            for idx, result in enumerate(poll_results):
+                status = str(result.get("status", "")).lower()
+                video_url = result.get("video_url")
+                if idx in completed:
+                    continue
+                if status in {"done", "completed", "success", "succeeded"} and isinstance(video_url, str):
+                    completed[idx] = video_url
+                    progress = 75 + int((len(completed) / len(hera_job_ids)) * 15)
+                    job_store.update_step(job_id, step=JobStep.HERA_RENDER, progress=min(progress, 90))
+            if len(completed) < len(hera_job_ids):
+                await asyncio.sleep(3)
+
+        download_tasks = [
+            hera_client.download(completed[idx]) for idx in sorted(completed.keys())
+        ]
+        clip_bytes_list = await asyncio.gather(*download_tasks)
+        clip_paths: list[str] = []
+        for index, clip_bytes in enumerate(clip_bytes_list):
+            clip_path = out_dir / f"clip_{index}.mp4"
+            clip_path.write_bytes(clip_bytes)
+            clip_paths.append(str(clip_path))
+        job.clip_paths = clip_paths
     except Exception as exc:
         job_store.set_error(job_id, str(exc))

@@ -19,6 +19,7 @@ class JobRecord:
     audio_path: str | None = None
     sentence_timings: list[dict[str, object]] | None = None
     scene_specs: list[dict[str, object]] | None = None
+    clip_paths: list[str] | None = None
 
     def to_status(self) -> JobStatus:
         return JobStatus(

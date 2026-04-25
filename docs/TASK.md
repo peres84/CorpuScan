@@ -60,13 +60,13 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 5. Backend — ElevenLabs TTS with timestamps
 
-- [ ] `app/integrations/elevenlabs.py` — POST to `/v1/text-to-speech/{voice_id}/with-timestamps`
-- [ ] Concatenate 4 scene narrations into one input, separated by clear sentence boundaries (full stop + space)
-- [ ] Save audio bytes to `/tmp/{job_id}/voice.mp3`
-- [ ] Helper: `compute_sentence_timings(characters, char_start_times, char_end_times) -> list[SentenceTiming]`
-- [ ] Map sentences back to their scene index
-- [ ] On entry: `update_step("tts", progress=50)`
-- [ ] Store `audio_path` and `sentence_timings` in job state
+- [x] `app/integrations/elevenlabs.py` — POST to `/v1/text-to-speech/{voice_id}/with-timestamps`
+- [x] Concatenate 4 scene narrations into one input, separated by clear sentence boundaries (full stop + space)
+- [x] Save audio bytes to `/tmp/{job_id}/voice.mp3`
+- [x] Helper: `compute_sentence_timings(characters, char_start_times, char_end_times) -> list[SentenceTiming]`
+- [x] Map sentences back to their scene index
+- [x] On entry: `update_step("tts", progress=50)`
+- [x] Store `audio_path` and `sentence_timings` in job state
 
 ---
 

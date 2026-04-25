@@ -40,11 +40,11 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 3. Backend — Finance Agent
 
-- [ ] `uv add google-genai`
-- [ ] `app/integrations/gemini.py` — thin client wrapper (`generate(system, user, model="gemini-2.5-pro")`)
-- [ ] `app/agents/finance.py` — load system prompt from `docs/agent-prompts.md`, call Gemini, return Q&A markdown string
-- [ ] On entry: `update_step("finance", progress=20)`
-- [ ] On exit: store `qa_markdown` in job state
+- [x] `uv add google-genai`
+- [x] `app/integrations/gemini.py` — thin client wrapper (`generate(system, user, model="gemini-2.5-pro")`)
+- [x] `app/agents/finance.py` — load system prompt from `docs/agent-prompts.md`, call Gemini, return Q&A markdown string
+- [x] On entry: `update_step("finance", progress=20)`
+- [x] On exit: store `qa_markdown` in job state
 
 ---
 

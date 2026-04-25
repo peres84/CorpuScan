@@ -1,4 +1,4 @@
-# CorpusScan — Build Checklist
+# CorpuScan — Build Checklist
 
 Tick boxes as steps complete. Ordered roughly by dependency, but parallel work is fine.
 

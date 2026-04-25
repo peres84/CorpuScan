@@ -4,7 +4,7 @@
 
 ## Project
 
-**CorpusScan** — turns quarterly reports into 2-minute executive video briefings. See [README.md](README.md) for the product, [PRD.md](PRD.md) for requirements.
+**CorpuScan** — turns quarterly reports into 2-minute executive video briefings. See [README.md](README.md) for the product, [PRD.md](PRD.md) for requirements.
 
 ## Repo layout
 

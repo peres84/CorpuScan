@@ -1,4 +1,4 @@
-# CorpusScan — Branding
+# CorpuScan — Branding
 
 Brand voice and visual tokens. Frontend respects these strictly. Generated motion graphics (Hera Agent output) also use these colors.
 
@@ -97,7 +97,7 @@ export default {
 
 ## Logo
 
-Text-only wordmark: **CorpusScan**, `font-semibold`, primary color. No icon mark for MVP.
+Text-only wordmark: **CorpuScan**, `font-semibold`, primary color. No icon mark for MVP.
 
 ---
 

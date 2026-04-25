@@ -2,7 +2,7 @@
 
 Two assets to produce:
 
-1. **Wordmark** (`CorpusScan`) — typography-only, doesn't really need an image generator. Spec is below.
+1. **Wordmark** (`CorpuScan`) — typography-only, doesn't really need an image generator. Spec is below.
 2. **Icon mark / favicon** — small symbol used as the favicon, app icon, and (optionally) paired with the wordmark in the navbar. Image-generator prompts are below.
 
 Brand context: editorial, restrained, financial. Think Financial Times, Bloomberg Terminal, Stripe. Not consumer SaaS.
@@ -21,7 +21,7 @@ Brand colors (use these exact hex values — do not let the model invent colors)
 The wordmark is just typography — generate it in Figma / Tailwind, not via image AI.
 
 ```
-Text:    CorpusScan
+Text:    CorpuScan
 Font:    Inter
 Weight:  600 (Semibold)
 Color:   #111827
@@ -37,7 +37,7 @@ Optional: the "S" in "Scan" can be `#06B6D4` accent for a subtle two-tone versio
 
 The mark is a stylized **`C`** that doubles as a scanned document edge. Read in two ways at once:
 
-- A bold geometric **C** (for CorpusScan)
+- A bold geometric **C** (for CorpuScan)
 - The **left edge of a document** with a horizontal scan line passing through it
 
 Single mark, single color foreground on transparent background. Works at 16×16 (favicon), 32×32 (browser tab), 512×512 (app icon).
@@ -49,7 +49,7 @@ Single mark, single color foreground on transparent background. Works at 16×16 
 > Use this for Midjourney, DALL-E 3, Ideogram, or Stable Diffusion. Generate 4–8 variations and pick the one that holds up at 16×16.
 
 ```
-A minimalist app icon for a fintech tool called CorpusScan.
+A minimalist app icon for a fintech tool called CorpuScan.
 
 Concept: a bold geometric letter "C" rendered as the left edge of a
 stylized document. A single thin horizontal accent line passes
@@ -139,7 +139,7 @@ Once the icon SVG is finalized:
 
 ## 6. Quality bar
 
-A good CorpusScan favicon should:
+A good CorpuScan favicon should:
 
 - Be recognizable at **16×16** (squint test in the browser tab)
 - Use **at most two colors** (`#111827` + `#06B6D4`)

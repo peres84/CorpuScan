@@ -1,4 +1,4 @@
-# CorpusScan — Product Requirements Document
+# CorpuScan — Product Requirements Document
 
 ## Problem
 

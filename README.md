@@ -1,8 +1,8 @@
-# CorpusScan
+# CorpuScan
 
 > AI analyst-producer that turns quarterly reports into short, clear executive video briefings.
 
-Upload a quarterly report (PDF), an investor update, paste a URL, or just type a query — CorpusScan extracts what actually matters, writes a narrated script, and renders a 2-minute boardroom-ready explainer video.
+Upload a quarterly report (PDF), an investor update, paste a URL, or just type a query — CorpuScan extracts what actually matters, writes a narrated script, and renders a 2-minute boardroom-ready explainer video.
 
 The value is not "making video." The value is **turning dense information into clear communication**.
 

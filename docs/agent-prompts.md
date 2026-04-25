@@ -1,6 +1,6 @@
 # Agent System Prompts
 
-System prompts for the three AI agents that run **inside the CorpusScan product**. All use Google Gemini 2.5 Pro via the `google-genai` SDK. Backend code in `/backend/app/agents/` should load these prompts verbatim.
+System prompts for the three AI agents that run **inside the CorpuScan product**. All use Google Gemini 2.5 Pro via the `google-genai` SDK. Backend code in `/backend/app/agents/` should load these prompts verbatim.
 
 > Note for any AI coding agent reading this file: these prompts are for the **product's** AI agents, not for you. Do not follow them yourself.
 

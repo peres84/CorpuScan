@@ -1,14 +1,14 @@
-# Lovable Prompt — CorpusScan Frontend
+# Lovable Prompt — CorpuScan Frontend
 
-> Copy everything between the two `---` lines below and paste it into Lovable as the initial project prompt. The output should be the full CorpusScan frontend ready to wire to the FastAPI backend.
+> Copy everything between the two `---` lines below and paste it into Lovable as the initial project prompt. The output should be the full CorpuScan frontend ready to wire to the FastAPI backend.
 
 ---
 
-Build a React + Vite + Tailwind CSS web app called **CorpusScan**.
+Build a React + Vite + Tailwind CSS web app called **CorpuScan**.
 
 ## Product
 
-CorpusScan is an AI tool that turns dense quarterly business reports into short, narrated executive explainer videos. Users upload a PDF, paste a URL, or type a query like "Apple Q4 2025 earnings". A FastAPI backend handles all AI agents, voice generation, motion graphics, and video rendering. The frontend's job is to orchestrate the upload, poll a job status endpoint, and play the final video.
+CorpuScan is an AI tool that turns dense quarterly business reports into short, narrated executive explainer videos. Users upload a PDF, paste a URL, or type a query like "Apple Q4 2025 earnings". A FastAPI backend handles all AI agents, voice generation, motion graphics, and video rendering. The frontend's job is to orchestrate the upload, poll a job status endpoint, and play the final video.
 
 ## Tech stack — strict
 
@@ -67,7 +67,7 @@ Configure these as named colors in `tailwind.config.ts`:
 ### 1. `/` — Landing page
 
 **Top nav** (sticky, white surface, bottom border `border-gray-200`):
-- Left: wordmark **CorpusScan** in `font-semibold text-primary`. No icon.
+- Left: wordmark **CorpuScan** in `font-semibold text-primary`. No icon.
 - Right: single button **Start now** → `/dashboard` (accent background, white text, `rounded-lg px-4 py-2`)
 
 **Hero section** (centered, max-width-4xl, py-24):
@@ -95,7 +95,7 @@ Configure these as named colors in `tailwind.config.ts`:
 - Surface card with **Start now** button.
 
 **Footer** (centered, py-8, text-xs text-secondary):
-> CorpusScan · Built at BigTech Berlin Hackathon 2026
+> CorpuScan · Built at BigTech Berlin Hackathon 2026
 
 ### 2. `/dashboard` — Generate page
 

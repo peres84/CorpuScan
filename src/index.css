@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CorpusScan design system. All colors HSL. Editorial, restrained, financial. */
+/* CorpuScan design system. All colors HSL. Editorial, restrained, financial. */
 
 @layer base {
   :root {

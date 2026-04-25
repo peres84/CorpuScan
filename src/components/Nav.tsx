@@ -5,7 +5,7 @@ export const Nav = () => {
     <header className="sticky top-0 z-40 w-full bg-surface border-b border-gray-200">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="font-semibold text-primary text-lg tracking-tight">
-          CorpusScan
+          CorpuScan
         </Link>
         <Link
           to="/dashboard"

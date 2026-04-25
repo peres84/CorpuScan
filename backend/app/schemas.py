@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class JobState(StrEnum):
@@ -30,6 +30,26 @@ class GenerateResponse(BaseModel):
 class Scene(BaseModel):
     title: str = Field(min_length=1)
     narration: str = Field(min_length=1)
+
+    @field_validator("narration")
+    @classmethod
+    def validate_narration_word_count(cls, value: str) -> str:
+        words = value.split()
+        if not 50 <= len(words) <= 100:
+            raise ValueError("Scene narration must be between 50 and 100 words.")
+        return value
+
+
+class Script(BaseModel):
+    title: str = Field(min_length=1)
+    scenes: list[Scene]
+
+    @field_validator("scenes")
+    @classmethod
+    def validate_exactly_four_scenes(cls, value: list[Scene]) -> list[Scene]:
+        if len(value) != 4:
+            raise ValueError("Script must contain exactly 4 scenes.")
+        return value
 
 
 class SentenceTiming(BaseModel):

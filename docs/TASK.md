@@ -50,11 +50,11 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 4. Backend — Scripter Agent
 
-- [ ] `app/agents/scripter.py` — input `qa_markdown`, output validated JSON: `{ title: str, scenes: [{ title, narration }] × 4 }`
-- [ ] Force JSON mode (`response_mime_type="application/json"`)
-- [ ] Validate exactly 4 scenes, narration 50–100 words each
-- [ ] On entry: `update_step("scripter", progress=35)`
-- [ ] Store `script` in job state
+- [x] `app/agents/scripter.py` — input `qa_markdown`, output validated JSON: `{ title: str, scenes: [{ title, narration }] × 4 }`
+- [x] Force JSON mode (`response_mime_type="application/json"`)
+- [x] Validate exactly 4 scenes, narration 50–100 words each
+- [x] On entry: `update_step("scripter", progress=35)`
+- [x] Store `script` in job state
 
 ---
 

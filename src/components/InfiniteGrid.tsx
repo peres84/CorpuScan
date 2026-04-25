@@ -99,7 +99,7 @@ export const InfiniteGrid = ({ className }: InfiniteGridProps) => {
         <GridPattern
           offsetX={baseOffsetX}
           offsetY={baseOffsetY}
-          strokeColor="hsl(220 13% 88%)"
+          strokeColor="hsl(var(--border))"
           strokeWidth={1}
         />
       </div>

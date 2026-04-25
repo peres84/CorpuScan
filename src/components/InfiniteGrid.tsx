@@ -115,7 +115,7 @@ export const InfiniteGrid = ({ className }: InfiniteGridProps) => {
         <GridPattern
           offsetX={accentOffsetX}
           offsetY={accentOffsetY}
-          strokeColor="hsl(188 94% 43%)"
+          strokeColor="hsl(var(--accent))"
           strokeWidth={1.25}
         />
       </motion.div>

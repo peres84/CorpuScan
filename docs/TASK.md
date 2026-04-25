@@ -104,10 +104,10 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 9. Backend — status & download endpoints
 
-- [ ] `GET /jobs/{job_id}` returns `JobStatus` JSON
-- [ ] `GET /jobs/{job_id}/video` streams `/tmp/{job_id}/final.mp4` with `media_type="video/mp4"`
-- [ ] Wrap `run_pipeline` in try/except: on any failure, `set_error(message)`, never crash the worker
-- [ ] Add `Content-Disposition: attachment` header on the video endpoint when `?download=1`
+- [x] `GET /jobs/{job_id}` returns `JobStatus` JSON
+- [x] `GET /jobs/{job_id}/video` streams `/tmp/{job_id}/final.mp4` with `media_type="video/mp4"`
+- [x] Wrap `run_pipeline` in try/except: on any failure, `set_error(message)`, never crash the worker
+- [x] Add `Content-Disposition: attachment` header on the video endpoint when `?download=1`
 
 ---
 

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app.config import get_settings
 from app.integrations.tavily import TavilyClient
@@ -55,6 +57,17 @@ async def get_job(job_id: str) -> JobStatus:
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found.")
     return job.to_status()
+
+
+@app.get("/jobs/{job_id}/video")
+async def get_job_video(job_id: str, download: int = 0) -> FileResponse:
+    video_path = Path("/tmp") / job_id / "final.mp4"
+    if not video_path.exists():
+        raise HTTPException(status_code=404, detail="Video not found.")
+    headers: dict[str, str] = {}
+    if download == 1:
+        headers["Content-Disposition"] = f'attachment; filename="{job_id}.mp4"'
+    return FileResponse(video_path, media_type="video/mp4", headers=headers)
 
 
 async def _resolve_source_text(

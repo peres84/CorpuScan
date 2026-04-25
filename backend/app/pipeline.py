@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 from app.agents.finance import run_finance_agent
+from app.agents.hera import run_hera_agent
 from app.agents.scripter import run_scripter_agent
 from app.config import get_settings
 from app.integrations.elevenlabs import (
@@ -13,7 +15,7 @@ from app.integrations.elevenlabs import (
 )
 from app.integrations.gemini import GeminiClient
 from app.jobs import JobStore
-from app.schemas import JobStep
+from app.schemas import JobStep, SentenceTiming
 
 
 async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> None:
@@ -54,5 +56,21 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
 
         job.audio_path = str(audio_path)
         job.sentence_timings = [timing.model_dump() for timing in sentence_timings]
+
+        job_store.update_step(job_id, step=JobStep.HERA_PLAN, progress=65)
+        timings_by_scene: list[list[SentenceTiming]] = [[] for _ in script.scenes]
+        for timing in sentence_timings:
+            timings_by_scene[timing.scene_index].append(timing)
+        scene_specs = await asyncio.gather(
+            *[
+                run_hera_agent(
+                    scene=scene,
+                    sentence_timings_for_scene=timings,
+                    gemini_client=gemini_client,
+                )
+                for scene, timings in zip(script.scenes, timings_by_scene, strict=True)
+            ]
+        )
+        job.scene_specs = scene_specs
     except Exception as exc:
         job_store.set_error(job_id, str(exc))

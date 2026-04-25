@@ -72,12 +72,12 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 6. Backend — Hera Agent (×4 in parallel)
 
-- [ ] `app/agents/hera.py` — for one scene: input `(scene, sentence_timings_for_scene)`, output Hera JSON dict
-- [ ] System prompt enforces brand colors and animation primitives
-- [ ] Run all 4 in parallel: `await asyncio.gather(*[hera_agent(s, t) for s, t in zip(scenes, timings)])`
-- [ ] Validate each returned JSON has required top-level keys
-- [ ] On entry: `update_step("hera_plan", progress=65)`
-- [ ] Store `scene_specs: list[dict]` in job state
+- [x] `app/agents/hera.py` — for one scene: input `(scene, sentence_timings_for_scene)`, output Hera JSON dict
+- [x] System prompt enforces brand colors and animation primitives
+- [x] Run all 4 in parallel: `await asyncio.gather(*[hera_agent(s, t) for s, t in zip(scenes, timings)])`
+- [x] Validate each returned JSON has required top-level keys
+- [x] On entry: `update_step("hera_plan", progress=65)`
+- [x] Store `scene_specs: list[dict]` in job state
 
 ---
 

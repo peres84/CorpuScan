@@ -112,15 +112,17 @@ const PromoCard = React.forwardRef<HTMLDivElement, PromoCardProps>(
               </h3>
             </div>
 
-            <div className="pt-1 mt-auto">
-              <Button
-                variant={buttonVariant}
-                onClick={onButtonClick}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {buttonText}
-              </Button>
-            </div>
+            {buttonText && onButtonClick && (
+              <div className="pt-1 mt-auto">
+                <Button
+                  variant={buttonVariant}
+                  onClick={onButtonClick}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  {buttonText}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </motion.div>

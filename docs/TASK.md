@@ -122,13 +122,13 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 11. Frontend — Lovable build
 
-- [ ] Open Lovable, paste `docs/lovable-prompt.md` verbatim into a new project
-- [ ] Verify output uses Vite + React + TS + Tailwind only (reject if Lovable picks Next.js)
-- [ ] Pull generated repo locally to `/frontend`
-- [ ] `pnpm install`
-- [ ] Add `.env.local` with `VITE_API_BASE_URL=http://localhost:8000`
-- [ ] Confirm `tailwind.config.ts` has the brand colors as named tokens
-- [ ] Confirm Inter + JetBrains Mono are loaded
+- [x] Open Lovable, paste `docs/lovable-prompt.md` verbatim into a new project
+- [x] Verify output uses Vite + React + TS + Tailwind only (reject if Lovable picks Next.js)
+- [x] Pull generated repo locally to `/frontend`
+- [x] `pnpm install`
+- [x] Add `.env.local` with `VITE_API_BASE_URL=http://localhost:8000`
+- [x] Confirm `tailwind.config.ts` has the brand colors as named tokens
+- [x] Confirm Inter + JetBrains Mono are loaded
 
 ---
 

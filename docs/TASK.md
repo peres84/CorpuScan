@@ -6,10 +6,10 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 0. Project setup
 
-- [ ] Create monorepo layout: `/frontend`, `/backend`, `/docs`
-- [ ] `git init` and initial commit
-- [ ] Root `.gitignore` covering `node_modules/`, `.venv/`, `.env`, `/tmp/`, `*.mp4`, `dist/`, `__pycache__/`
-- [ ] Add backend `.env.example` with: `GEMINI_API_KEY`, `TAVILY_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `HERA_API_KEY`, `CORS_ORIGINS`
+- [x] Create monorepo layout: `/frontend`, `/backend`, `/docs`
+- [x] `git init` and initial commit
+- [x] Root `.gitignore` covering `node_modules/`, `.venv/`, `.env`, `/tmp/`, `*.mp4`, `dist/`, `__pycache__/`
+- [x] Add backend `.env.example` with: `GEMINI_API_KEY`, `TAVILY_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `HERA_API_KEY`, `CORS_ORIGINS`
 
 ---
 

@@ -61,7 +61,7 @@ export const HowItWorks = () => {
         </p>
       </div>
 
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch auto-rows-fr">
         <AnimatePresence mode="popLayout">
           {STEPS.map((step) =>
             visible[step.num] ? (

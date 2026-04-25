@@ -8,9 +8,9 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 interface PromoCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   label: string;
   title: React.ReactNode;
-  buttonText: string;
+  buttonText?: string;
   buttonVariant?: ButtonProps["variant"];
-  onButtonClick: () => void;
+  onButtonClick?: () => void;
   onClose: () => void;
   showLoader?: boolean;
 }

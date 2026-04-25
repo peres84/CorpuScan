@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import shutil
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.responses import FileResponse
 
 from app.config import get_settings
@@ -16,6 +20,9 @@ from app.schemas import GenerateResponse, JobStatus, JobStep
 settings = get_settings()
 job_store = JobStore()
 app = FastAPI(title="CorpuScan API")
+REQUEST_TIMEOUT_SECONDS = 240
+STALE_TMP_AGE_SECONDS = 30 * 60
+TMP_ROOT = Path("/tmp")
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,6 +31,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def request_timeout_middleware(request: Request, call_next):
+    try:
+        return await asyncio.wait_for(call_next(request), timeout=REQUEST_TIMEOUT_SECONDS)
+    except TimeoutError:
+        return JSONResponse(status_code=504, content={"detail": "Request timed out."})
+
+
+@app.on_event("startup")
+async def startup_cleanup() -> None:
+    cleanup_stale_tmp_jobs()
+
+
+@app.on_event("shutdown")
+async def shutdown_cleanup() -> None:
+    cleanup_stale_tmp_jobs()
 
 
 @app.get("/health")
@@ -88,3 +113,18 @@ async def _resolve_source_text(
             raise HTTPException(status_code=404, detail="No search results found for the provided query.")
         return await tavily_client.extract(results[0].url)
     return ""
+
+
+def cleanup_stale_tmp_jobs(now_ts: float | None = None) -> None:
+    now = now_ts if now_ts is not None else time.time()
+    if not TMP_ROOT.exists():
+        return
+    for child in TMP_ROOT.iterdir():
+        if not child.is_dir():
+            continue
+        try:
+            age_seconds = now - child.stat().st_mtime
+            if age_seconds > STALE_TMP_AGE_SECONDS:
+                shutil.rmtree(child, ignore_errors=True)
+        except OSError:
+            continue

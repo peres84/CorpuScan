@@ -113,10 +113,10 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 10. Backend — production polish
 
-- [ ] `Dockerfile`: `python:3.12-slim` base, `apt install ffmpeg`, copy + `uv sync --frozen`
-- [ ] `app/main.py` — startup / shutdown hooks for cleanup of stale `/tmp/{job_id}/` (older than 30 min)
-- [ ] Global request timeout middleware (defensive)
-- [ ] Structured logging (`uvicorn --log-config`)
+- [x] `Dockerfile`: `python:3.12-slim` base, `apt install ffmpeg`, copy + `uv sync --frozen`
+- [x] `app/main.py` — startup / shutdown hooks for cleanup of stale `/tmp/{job_id}/` (older than 30 min)
+- [x] Global request timeout middleware (defensive)
+- [x] Structured logging (`uvicorn --log-config`)
 
 ---
 

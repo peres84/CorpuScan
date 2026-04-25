@@ -16,6 +16,7 @@ from app.integrations.elevenlabs import (
 from app.integrations.gemini import GeminiClient
 from app.integrations.hera import HeraClient
 from app.jobs import JobStore
+from app.render import compose
 from app.schemas import JobStep, SentenceTiming
 
 
@@ -106,5 +107,10 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
             clip_path.write_bytes(clip_bytes)
             clip_paths.append(str(clip_path))
         job.clip_paths = clip_paths
+
+        job_store.update_step(job_id, step=JobStep.COMPOSE, progress=92)
+        final_video_path = out_dir / "final.mp4"
+        compose(clip_paths=clip_paths, audio_path=str(audio_path), out_path=str(final_video_path))
+        job_store.set_done(job_id, video_url=f"/jobs/{job_id}/video")
     except Exception as exc:
         job_store.set_error(job_id, str(exc))

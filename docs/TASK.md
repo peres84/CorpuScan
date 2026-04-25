@@ -94,11 +94,11 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 8. Backend — ffmpeg compose
 
-- [ ] `app/render.py` — `compose(clip_paths, audio_path, out_path)` calls ffmpeg via `subprocess`
-- [ ] Command: concat 4 clips → overlay `voice.mp3` → output H.264 + AAC, `-shortest`, `-pix_fmt yuv420p`
-- [ ] Output to `/tmp/{job_id}/final.mp4`
-- [ ] On entry: `update_step("compose", progress=92)`
-- [ ] On success: `set_done(video_url=f"/jobs/{job_id}/video")`
+- [x] `app/render.py` — `compose(clip_paths, audio_path, out_path)` calls ffmpeg via `subprocess`
+- [x] Command: concat 4 clips → overlay `voice.mp3` → output H.264 + AAC, `-shortest`, `-pix_fmt yuv420p`
+- [x] Output to `/tmp/{job_id}/final.mp4`
+- [x] On entry: `update_step("compose", progress=92)`
+- [x] On success: `set_done(video_url=f"/jobs/{job_id}/video")`
 
 ---
 

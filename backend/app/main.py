@@ -1,0 +1,77 @@
+from __future__ import annotations
+
+import asyncio
+
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.config import get_settings
+from app.integrations.tavily import TavilyClient
+from app.jobs import JobStore
+from app.pipeline import run_pipeline
+from app.schemas import GenerateResponse, JobStatus, JobStep
+
+settings = get_settings()
+job_store = JobStore()
+app = FastAPI(title="CorpuScan API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health")
+async def health() -> dict[str, bool]:
+    return {"ok": True}
+
+
+@app.post("/generate", response_model=GenerateResponse)
+async def generate(
+    file: UploadFile | None = File(default=None),
+    url: str | None = Form(default=None),
+    query: str | None = Form(default=None),
+) -> GenerateResponse:
+    provided_count = sum(1 for value in [file, url, query] if value)
+    if provided_count != 1:
+        raise HTTPException(status_code=400, detail="Provide exactly one input: file, url, or query.")
+
+    source_text = await _resolve_source_text(file=file, url=url, query=query)
+    if not source_text.strip():
+        raise HTTPException(status_code=400, detail="Could not extract text from the provided source.")
+
+    job_id = job_store.create()
+    job_store.update_step(job_id, step=JobStep.INGEST, progress=10)
+    asyncio.create_task(run_pipeline(job_store, job_id, source_text))
+    return GenerateResponse(job_id=job_id)
+
+
+@app.get("/jobs/{job_id}", response_model=JobStatus)
+async def get_job(job_id: str) -> JobStatus:
+    job = job_store.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    return job.to_status()
+
+
+async def _resolve_source_text(
+    *, file: UploadFile | None, url: str | None, query: str | None
+) -> str:
+    if file is not None:
+        from app.ingest import extract_pdf_text
+
+        file_bytes = await file.read()
+        return extract_pdf_text(file_bytes)
+
+    tavily_client = TavilyClient(api_key=settings.tavily_api_key)
+    if url:
+        return await tavily_client.extract(url)
+    if query:
+        results = await tavily_client.search(query)
+        if not results:
+            raise HTTPException(status_code=404, detail="No search results found for the provided query.")
+        return await tavily_client.extract(results[0].url)
+    return ""

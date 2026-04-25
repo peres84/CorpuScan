@@ -1,0 +1,31 @@
+[project]
+name = "corpuscan-backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Rouxxel", email = "106406623+Rouxxel@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.136.1",
+    "httpx>=0.28.1",
+    "pydantic>=2.13.3",
+    "pydantic-settings>=2.14.0",
+    "python-multipart>=0.0.26",
+    "uvicorn[standard]>=0.46.0",
+]
+
+[project.scripts]
+corpuscan-backend = "corpuscan_backend:main"
+
+[build-system]
+requires = ["uv_build>=0.9.11,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.3.0",
+    "ruff>=0.15.12",
+]

@@ -15,14 +15,14 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 1. Backend — FastAPI scaffold
 
-- [ ] `cd backend && uv init && uv add fastapi "uvicorn[standard]" pydantic pydantic-settings python-multipart httpx`
-- [ ] `uv add --dev ruff pytest pytest-asyncio`
-- [ ] `app/main.py` — FastAPI app, CORS for `http://localhost:5173` and Vercel domain
-- [ ] `app/config.py` — `Settings` via `pydantic-settings`, loads from `.env`
-- [ ] `app/jobs.py` — `JobStore` class wrapping a `dict[str, JobState]` with `create()`, `get()`, `update_step()`, `set_error()`, `set_done()`
-- [ ] `app/schemas.py` — pydantic models: `JobStatus`, `JobStep`, `GenerateResponse`, `Scene`, `SentenceTiming`
-- [ ] `GET /health` returns `{ "ok": true }`
-- [ ] Verify dev server: `uv run uvicorn app.main:app --reload --port 8000`
+- [x] `cd backend && uv init && uv add fastapi "uvicorn[standard]" pydantic pydantic-settings python-multipart httpx`
+- [x] `uv add --dev ruff pytest pytest-asyncio`
+- [x] `app/main.py` — FastAPI app, CORS for `http://localhost:5173` and Vercel domain
+- [x] `app/config.py` — `Settings` via `pydantic-settings`, loads from `.env`
+- [x] `app/jobs.py` — `JobStore` class wrapping a `dict[str, JobState]` with `create()`, `get()`, `update_step()`, `set_error()`, `set_done()`
+- [x] `app/schemas.py` — pydantic models: `JobStatus`, `JobStep`, `GenerateResponse`, `Scene`, `SentenceTiming`
+- [x] `GET /health` returns `{ "ok": true }`
+- [x] Verify dev server: `uv run uvicorn app.main:app --reload --port 8000`
 
 ---
 

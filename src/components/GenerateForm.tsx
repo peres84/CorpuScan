@@ -44,7 +44,7 @@ export const GenerateForm = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-surface rounded-2xl shadow-sm p-8 mt-12 border border-gray-200">
+    <div className="max-w-2xl mx-auto bg-surface rounded-2xl shadow-sm p-8 mt-12 border border-border">
       <h1 className="text-2xl font-semibold text-primary">Generate a briefing video</h1>
       <p className="text-secondary mt-1">Choose how you want to provide the report.</p>
 
@@ -70,7 +70,7 @@ export const GenerateForm = () => {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://investor.apple.com/...10-Q.pdf"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-primary placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 transition"
+              className="w-full rounded-lg border border-border px-4 py-3 text-primary placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 transition"
             />
             {url.length > 0 && !/^https:\/\//i.test(url.trim()) && (
               <p className="mt-2 text-xs text-destructive">URL must start with https://</p>
@@ -87,7 +87,7 @@ export const GenerateForm = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Apple Q4 2025 earnings"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-primary placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 transition"
+              className="w-full rounded-lg border border-border px-4 py-3 text-primary placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 transition"
             />
             <p className="mt-2 text-xs text-secondary">
               We&apos;ll find and read the most relevant report.

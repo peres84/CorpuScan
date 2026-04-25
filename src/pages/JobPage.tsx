@@ -19,7 +19,7 @@ const JobPage = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <Nav />
       <main className="flex-1 px-6 pb-16">
-        <div className="max-w-2xl mx-auto bg-surface rounded-2xl shadow-sm p-8 mt-12 border border-gray-200">
+        <div className="max-w-2xl mx-auto bg-surface rounded-2xl shadow-sm p-8 mt-12 border border-border">
           {isWorking && (
             <>
               <h1 className="text-2xl font-semibold text-primary">Generating your briefing</h1>

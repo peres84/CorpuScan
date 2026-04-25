@@ -41,6 +41,40 @@
 
     --radius: 0.5rem;
   }
+
+  .dark {
+    --background: 222 39% 7%;          /* near-black, blue-tinted */
+    --surface: 220 26% 12%;            /* dark surface for cards/nav */
+    --foreground: 220 14% 96%;
+
+    --primary: 220 14% 96%;            /* swap: light becomes primary */
+    --primary-foreground: 220 39% 11%;
+
+    --secondary: 220 9% 70%;
+    --secondary-foreground: 220 39% 11%;
+
+    --accent: 188 94% 48%;             /* slightly brighter cyan in dark */
+    --accent-foreground: 220 39% 11%;
+
+    --accent2: 258 90% 70%;
+    --accent2-foreground: 220 39% 11%;
+
+    --card: 220 26% 12%;
+    --card-foreground: 220 14% 96%;
+
+    --popover: 220 26% 12%;
+    --popover-foreground: 220 14% 96%;
+
+    --muted: 220 20% 16%;
+    --muted-foreground: 220 9% 65%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 220 14% 96%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 188 94% 48%;
+  }
 }
 
 @layer base {

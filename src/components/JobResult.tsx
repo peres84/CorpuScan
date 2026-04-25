@@ -28,7 +28,7 @@ export const JobResult = ({ videoUrl }: JobResultProps) => {
         </a>
         <Link
           to="/dashboard"
-          className="inline-flex items-center justify-center border border-gray-300 text-primary rounded-lg px-5 py-3 font-medium hover:bg-muted transition-colors"
+          className="inline-flex items-center justify-center border border-border text-primary rounded-lg px-5 py-3 font-medium hover:bg-muted transition-colors"
         >
           Generate another
         </Link>

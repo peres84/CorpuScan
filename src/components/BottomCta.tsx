@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 export const BottomCta = () => {
   return (
     <section className="max-w-4xl mx-auto px-6 py-16">
-      <div className="bg-surface border border-gray-200 rounded-2xl p-10 text-center shadow-sm">
+      <div className="bg-surface border border-border rounded-2xl p-10 text-center shadow-sm">
         <h3 className="text-2xl font-semibold text-primary">
           Ready to brief your team in 2 minutes?
         </h3>

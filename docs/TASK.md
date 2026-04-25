@@ -28,13 +28,13 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 2. Backend — input ingestion
 
-- [ ] `uv add pypdf` (or `pdfplumber` if richer extraction needed)
-- [ ] `app/ingest.py` — `extract_pdf_text(file_bytes) -> str`
-- [ ] `app/integrations/tavily.py` — `search(query) -> list[Result]`, `extract(url) -> str`
-- [ ] `POST /generate` accepts `multipart/form-data`: optional `file` (UploadFile), optional `url` (str), optional `query` (str). Validates exactly one is provided.
-- [ ] Branch on input type: PDF → extract directly; URL → tavily.extract; query → tavily.search → top result → tavily.extract
-- [ ] Return `{ job_id }` immediately; kick off `asyncio.create_task(run_pipeline(job_id, source_text))`
-- [ ] Set initial step `ingest` and progress 10%
+- [x] `uv add pypdf` (or `pdfplumber` if richer extraction needed)
+- [x] `app/ingest.py` — `extract_pdf_text(file_bytes) -> str`
+- [x] `app/integrations/tavily.py` — `search(query) -> list[Result]`, `extract(url) -> str`
+- [x] `POST /generate` accepts `multipart/form-data`: optional `file` (UploadFile), optional `url` (str), optional `query` (str). Validates exactly one is provided.
+- [x] Branch on input type: PDF → extract directly; URL → tavily.extract; query → tavily.search → top result → tavily.extract
+- [x] Return `{ job_id }` immediately; kick off `asyncio.create_task(run_pipeline(job_id, source_text))`
+- [x] Set initial step `ingest` and progress 10%
 
 ---
 

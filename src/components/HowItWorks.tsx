@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { PromoCard } from "@/components/ui/card-9";
 
 interface Step {
   num: string;
   label: string;
   title: React.ReactNode;
-  buttonText: string;
 }
 
 const STEPS: Step[] = [
@@ -15,30 +13,25 @@ const STEPS: Step[] = [
     num: "01",
     label: "Step 01 · Upload",
     title: "Drop a quarterly report PDF, paste a URL, or search a query.",
-    buttonText: "Upload now",
   },
   {
     num: "02",
     label: "Step 02 · Extract",
     title: "A finance agent finds the signal in the noise.",
-    buttonText: "See an example",
   },
   {
     num: "03",
     label: "Step 03 · Narrate",
     title: "A scripter agent writes a 4-scene voiceover.",
-    buttonText: "Hear a sample",
   },
   {
     num: "04",
     label: "Step 04 · Render",
     title: "Motion graphics and voice combine into a 2-minute video.",
-    buttonText: "Generate yours",
   },
 ];
 
 export const HowItWorks = () => {
-  const navigate = useNavigate();
   const [visible, setVisible] = useState<Record<string, boolean>>(
     () => Object.fromEntries(STEPS.map((s) => [s.num, true])),
   );
@@ -69,8 +62,6 @@ export const HowItWorks = () => {
                 key={step.num}
                 label={step.label}
                 title={step.title}
-                buttonText={step.buttonText}
-                onButtonClick={() => navigate("/dashboard")}
                 onClose={() => handleClose(step.num)}
               />
             ) : null,

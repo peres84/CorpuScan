@@ -8,9 +8,9 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 interface PromoCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   label: string;
   title: React.ReactNode;
-  buttonText: string;
+  buttonText?: string;
   buttonVariant?: ButtonProps["variant"];
-  onButtonClick: () => void;
+  onButtonClick?: () => void;
   onClose: () => void;
   showLoader?: boolean;
 }
@@ -112,15 +112,17 @@ const PromoCard = React.forwardRef<HTMLDivElement, PromoCardProps>(
               </h3>
             </div>
 
-            <div className="pt-1 mt-auto">
-              <Button
-                variant={buttonVariant}
-                onClick={onButtonClick}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {buttonText}
-              </Button>
-            </div>
+            {buttonText && onButtonClick && (
+              <div className="pt-1 mt-auto">
+                <Button
+                  variant={buttonVariant}
+                  onClick={onButtonClick}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  {buttonText}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </motion.div>

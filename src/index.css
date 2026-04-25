@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CorpusScan design system. All colors HSL. Editorial, restrained, financial. */
+
+@layer base {
+  :root {
+    /* Brand colors as HSL */
+    --background: 220 20% 98%;        /* #F9FAFB */
+    --surface: 0 0% 100%;             /* #FFFFFF */
+    --foreground: 220 39% 11%;        /* #111827 */
+
+    --primary: 220 39% 11%;           /* #111827 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 27%;         /* #374151 */
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 188 94% 43%;            /* #06B6D4 cyan */
+    --accent-foreground: 0 0% 100%;
+
+    --accent2: 258 90% 66%;           /* #8B5CF6 violet — sparingly */
+    --accent2-foreground: 0 0% 100%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 39% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 39% 11%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;            /* gray-200 */
+    --input: 220 13% 91%;
+    --ring: 188 94% 43%;              /* accent for focus rings */
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222 39% 7%;          /* near-black, blue-tinted */
+    --surface: 220 26% 12%;            /* dark surface for cards/nav */
+    --foreground: 220 14% 96%;
+
+    --primary: 220 14% 96%;            /* swap: light becomes primary */
+    --primary-foreground: 220 39% 11%;
+
+    --secondary: 220 9% 70%;
+    --secondary-foreground: 220 39% 11%;
+
+    --accent: 188 94% 48%;             /* slightly brighter cyan in dark */
+    --accent-foreground: 220 39% 11%;
+
+    --accent2: 258 90% 70%;
+    --accent2-foreground: 220 39% 11%;
+
+    --card: 220 26% 12%;
+    --card-foreground: 220 14% 96%;
+
+    --popover: 220 26% 12%;
+    --popover-foreground: 220 14% 96%;
+
+    --muted: 220 20% 16%;
+    --muted-foreground: 220 9% 65%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 220 14% 96%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 188 94% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
+  }
+}

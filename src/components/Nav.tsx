@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 export const Nav = () => {
   return (
-    <header className="sticky top-0 z-40 w-full bg-surface border-b border-gray-200">
+    <header className="sticky top-0 z-40 w-full bg-surface/70 backdrop-blur-md border-b border-gray-200/70 supports-[backdrop-filter]:bg-surface/60">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="font-semibold text-primary text-lg tracking-tight">
           CorpuScan

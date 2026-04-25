@@ -49,7 +49,7 @@ const PromoCard = React.forwardRef<HTMLDivElement, PromoCardProps>(
           ref={ref}
           className={cn(
             "relative overflow-hidden rounded-2xl bg-surface text-primary p-6 shadow-sm",
-            "border border-gray-200 h-full flex flex-col",
+            "border border-border h-full flex flex-col",
             className,
           )}
           {...props}

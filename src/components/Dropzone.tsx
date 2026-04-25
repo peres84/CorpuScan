@@ -42,7 +42,7 @@ export const Dropzone = ({ file, onFileChange }: DropzoneProps) => {
 
   if (file) {
     return (
-      <div className="border border-gray-200 rounded-lg p-4 flex items-center justify-between bg-muted/40">
+      <div className="border border-border rounded-lg p-4 flex items-center justify-between bg-muted/40">
         <div className="flex items-center gap-3 min-w-0">
           <div className="h-10 w-10 rounded-md bg-accent/10 text-accent flex items-center justify-center shrink-0">
             <FileText className="h-5 w-5" aria-hidden />
@@ -82,7 +82,7 @@ export const Dropzone = ({ file, onFileChange }: DropzoneProps) => {
       role="button"
       tabIndex={0}
       className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
-        isDragOver ? "border-accent bg-accent/5" : "border-gray-300 hover:border-accent hover:bg-accent/5"
+        isDragOver ? "border-accent bg-accent/5" : "border-border hover:border-accent hover:bg-accent/5"
       }`}
     >
       <p className="text-primary font-medium">Drop your PDF here</p>

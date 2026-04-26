@@ -1,20 +1,6 @@
 # Context from my IDE setup:
 
 ## Open tabs:
-- SKILL.md: .claude/skills/hera-api/SKILL.md
-- tsconfig.app.json: frontend/tsconfig.app.json
-- changlogs.md: changlogs.md
-- CHANGELOG.md: CHANGELOG.md
-- .env: backend/.env
-
-## My request for Codex:
-ok thanks now  commits all the project, commit each folder properly according their changes.
-
----
-
-# Context from my IDE setup:
-
-## Open tabs:
 - README.md: README.md
 - SKILL.md: .claude/skills/hera-api/SKILL.md
 - tsconfig.app.json: frontend/tsconfig.app.json
@@ -22,4 +8,4 @@ ok thanks now  commits all the project, commit each folder properly according th
 - CHANGELOG.md: CHANGELOG.md
 
 ## My request for Codex:
-improve the readme give a better description, make sure to also mention the problem and what awe are trying to solve, then please add shield flags in the read me, mention at the end the team Javier Peres, Sebastian Russo, and make sure is mention the hackathon "BIg Tech Berlin 2026" also all the tech stack we use,  also mention i use Aikido, and https://entire.io/ aslo, please fix the issue f the frontend it bothers me.
+commit and push

@@ -1,0 +1,91 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "4708680c5f63",
+  "session_id": "019dc94c-c676-7e93-b82e-8a375a3da05f",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-26T10:56:05.872337Z",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "backend/app/agents/finance.py",
+    "backend/app/agents/hera.py",
+    "backend/app/agents/scripter.py",
+    "backend/app/ingest.py",
+    "backend/app/integrations/hera.py",
+    "backend/app/jobs.py",
+    "backend/app/main.py",
+    "backend/app/pipeline.py",
+    "backend/app/prompts/finance.yaml",
+    "backend/app/prompts/hera.yaml",
+    "backend/app/prompts/scripter.yaml",
+    "backend/app/schemas.py",
+    "backend/tests/test_hera_poll.py",
+    "backend/tests/test_pdf_mode.py",
+    "docs/TASK.md",
+    "frontend/src/components/Dropzone.tsx",
+    "frontend/src/components/GenerateForm.tsx",
+    "frontend/src/lib/api.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.4",
+  "turn_id": "6a70353e12c9",
+  "token_usage": {
+    "input_tokens": 226379,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4091648,
+    "output_tokens": 33532,
+    "api_call_count": 55
+  },
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-26T10:56:05.853065Z",
+    "agent_lines": 963,
+    "agent_removed": 137,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 963,
+    "total_lines_changed": 1100,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 842,
+      "agent_lines_removed": 134
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 842,
+      "agent_lines_removed": 134
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 903,
+      "agent_lines_removed": 137
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 963,
+      "agent_lines_removed": 137
+    }
+  ]
+}

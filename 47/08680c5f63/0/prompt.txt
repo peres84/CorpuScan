@@ -1,0 +1,194 @@
+# Context from my IDE setup:
+
+## Open tabs:
+- .env: backend/.env
+- .env.example: backend/.env.example
+- .dockerignore: backend/.dockerignore
+- README.md: backend/README.md
+
+## My request for Codex:
+ok, there are several task to address, first one, one i wnat to have some templates already for example, we have a PDF box in ftonend to upload the pdf, but we need to allow at least 4 of them, simulstaneusly, then we can allow the user select a template, like cpmaring growth, earnings blabla at least two options with good system prompts, and the option should ahve a little description what is the focus, sos user understand, then the analys of the pdf should be base on that, ---> if user doesont use pdf mode, just link or query, the pepiline stay like its right now, this option is just for pdf, when it has more than 2, ---> the other problem to address is the branding, right now, llms are good enought trained that they already know the colors of the company, so my idea is at the moment is analizing the pdf, it should send also to hera the branding pallet of the compamy, so the video can also be a little be more dynamic and change some times the background, also should include in the video, in the corner left for example the anme of the company and in the corner left bellow the period example "Q2 2025". the contract of the text and background should be always properly done. with good contrast, also allow the user the option in the forntend to pick desktop view or mobile view 16:9 or 9:16. please check your hera skills when working working with hera.
+
+---
+
+# Context from my IDE setup:
+
+## Open tabs:
+- .env: backend/.env
+- .env.example: backend/.env.example
+- .dockerignore: backend/.dockerignore
+- README.md: backend/README.md
+
+## My request for Codex:
+PLEASE IMPLEMENT THIS PLAN:
+# PDF Comparison Templates + Dynamic Branding + Output Format
+
+## Summary
+
+Add a PDF-only comparison mode that accepts **1 to 4 PDFs in a single generation job**, lets the user choose a **briefing template** with a short description, and produces **one comparison video** shaped by that template. URL and query modes stay as they are today.
+
+Also add **automatic branding extraction** for PDF mode so the video can use the company’s palette, show the **company name** and **reporting period** on-screen, and render in either **desktop `16:9`** or **mobile `9:16`** based on a frontend selector.
+
+## Key Changes
+
+### Backend flow and API
+- Extend `POST /generate` to support PDF-mode metadata alongside existing URL/query inputs:
+  - `files[]` for 1–4 PDFs
+  - `template_id` for PDF mode only
+  - `output_aspect_ratio` with `16:9` or `9:16`
+- Preserve current URL/query behavior exactly:
+  - still accept a single `url` or `query`
+  - ignore template/branding logic for non-PDF sources
+- Replace the current “exactly one file/url/query” validation with source-aware validation:
+  - PDF mode: 1–4 files, no `url`, no `query`
+  - URL mode: one `url` only
+  - Query mode: one `query` only
+- Remove the runtime behavior that cancels the previous job and clears the job store on every new submission; each generation request should create and keep its own in-memory job record so comparison jobs do not wipe out other active jobs.
+
+### PDF ingest, comparison context, and templates
+- Change ingest so PDF mode extracts text from each uploaded PDF separately, then builds one combined comparison source with per-document boundaries.
+- Add lightweight extracted metadata per PDF:
+  - detected company name
+  - detected reporting period like `Q2 2025`
+  - detected/derived brand palette
+- For multi-PDF comparison, build a normalized combined input that labels each document clearly so downstream prompts can compare periods/reports without losing provenance.
+- Add PDF template definitions as backend-owned prompt variants, not frontend free text.
+- Ship these initial templates:
+  - `growth_comparison`: focus on revenue growth, segment drivers, acceleration/deceleration, and relative momentum
+  - `earnings_comparison`: focus on margins, EPS/profitability, operating leverage, and earnings quality
+- Each template should expose a short frontend description and a backend prompt instruction block.
+- Update the Finance prompt path so PDF mode injects template-specific instructions plus multi-document comparison guidance, while URL/query mode continues using the current generic analysis behavior.
+- Keep the Scripter’s 4-scene contract, but for PDF comparison mode steer scene roles toward comparative storytelling:
+  - headline winner / key change
+  - main driver
+  - divergence or risk
+  - takeaway / outlook
+
+### Branding, Hera, and composition
+- Add a PDF-branding enrichment step before Hera generation:
+  - detect likely brand colors from the PDFs/logos when possible
+  - normalize to a safe palette with contrast checks
+  - fall back to current CorpuScan palette if extraction is weak or unusable
+- Pass branding context into Hera generation:
+  - company name
+  - reporting period
+  - chosen aspect ratio
+  - safe palette tokens for background, text, secondary, accent
+- Update Hera prompting and normalization to support both `16:9` and `9:16` outputs instead of forcing `16:9`.
+- Update the deterministic intro spec builder to also honor aspect ratio and branding.
+- Require all scene prompts to include a small, always-readable overlay:
+  - company name in one corner
+  - reporting period beneath it
+  - present on intro and all 4 scenes
+- Add explicit prompt rules for contrast:
+  - dark text on light background or light text on dark background only
+  - no low-contrast brand combinations
+  - allow occasional background changes between scenes, but keep the palette consistent with the detected brand
+- Keep overlays inside Hera prompts rather than ffmpeg overlay composition for v1, so orientation-specific placement stays scene-aware.
+
+### Frontend UX
+- Replace the single-file upload state with a PDF-mode picker that supports up to 4 PDFs, including remove actions and per-file display.
+- In the PDF tab only, add:
+  - template cards or radio options with title + short focus description
+  - output format selector: `Desktop (16:9)` or `Mobile (9:16)`
+- Keep URL and Search tabs unchanged except for any shared submit plumbing.
+- Update the API client types to send `files[]`, `template_id`, and `output_aspect_ratio` for PDF mode.
+- Validation rules in the form:
+  - PDF tab requires 1–4 PDFs, a selected template, and a selected output format
+  - URL/Search tabs continue with current validation and do not expose template controls
+
+## Public Interface Changes
+- `POST /generate` request contract becomes:
+  - PDF mode: `files[]`, `template_id`, `output_aspect_ratio`
+  - URL mode: `url`
+  - Query mode: `query`
+- Add backend enums/types for:
+  - `template_id`: `growth_comparison | earnings_comparison`
+  - `output_aspect_ratio`: `16:9 | 9:16`
+- Extend internal job record/state to store:
+  - source kind
+  - uploaded PDF metadata list
+  - selected template
+  - chosen aspect ratio
+  - detected branding payload
+
+## Test Plan
+- Backend request validation:
+  - reject 0 PDFs in PDF mode
+  - reject more than 4 PDFs
+  - reject mixed sources like PDFs + URL
+  - reject PDF mode without template or aspect ratio
+  - accept URL/query mode without template fields
+- PDF comparison ingest:
+  - preserves per-document separation
+  - extracts metadata per file
+  - produces combined comparison input in stable order
+- Prompting:
+  - finance prompt differs by template in PDF mode
+  - URL/query flow remains unchanged
+  - Hera specs emit selected aspect ratio, not hard-coded `16:9`
+- Branding:
+  - valid extracted palette passes through
+  - weak palette falls back safely
+  - contrast guard prevents unreadable text/background combinations
+- Frontend:
+  - multiple PDF selection/removal works
+  - template descriptions render only in PDF mode
+  - orientation selector is required only in PDF mode
+- End-to-end scenarios:
+  - 1 PDF + growth template + `16:9`
+  - 2–4 PDFs + earnings template + `9:16`
+  - URL flow unchanged
+  - Query flow unchanged
+
+## Assumptions
+- “4 PDFs simultaneously” means **up to 4 PDFs uploaded into one comparison job**, not four separate jobs started at once.
+- Template mode applies to **all PDF uploads from 1 to 4 files**, with the most value in multi-PDF comparison.
+- Branding metadata is **auto-detected** from uploaded PDFs; no manual company/period entry in v1.
+- Overlay text appears on **all scenes including the intro**.
+- v1 keeps comparison output as **one 4-scene video**, not one video per PDF.
+- If multiple PDFs contain different companies, the system should treat that as unsupported for v1 and return a clear validation error rather than guessing a mixed-brand video.
+
+---
+
+# Context from my IDE setup:
+
+## Active file: backend/app/agents/hera.py
+
+## Open tabs:
+- hera.py: backend/app/agents/hera.py
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- .env: backend/.env
+- .env.example: backend/.env.example
+- .dockerignore: backend/.dockerignore
+
+## My request for Codex:
+what exactly is the command to init the backend?
+
+---
+
+# Context from my IDE setup:
+
+## Open tabs:
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- hera.py: backend/app/agents/hera.py
+- .env: backend/.env
+- .env.example: backend/.env.example
+- .dockerignore: backend/.dockerignore
+
+## My request for Codex:
+there is one issue, is asking to generate the same video several times, it seems is reseting the quoe again, and the loop seems infinitve, never finish even when i can see the videos in hera were created.
+
+---
+
+# Context from my IDE setup:
+
+## Open tabs:
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- hera.py: backend/app/agents/hera.py
+- .env: backend/.env
+- .env.example: backend/.env.example
+- .dockerignore: backend/.dockerignore
+
+## My request for Codex:
+also, i saw the videos generated,still the backgrounds are not changing always is white, it should look a little bit more dynamic.

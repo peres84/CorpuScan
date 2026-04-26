@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "4708680c5f63",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "backend/app/agents/finance.py",
+    "backend/app/agents/hera.py",
+    "backend/app/agents/scripter.py",
+    "backend/app/ingest.py",
+    "backend/app/integrations/hera.py",
+    "backend/app/jobs.py",
+    "backend/app/main.py",
+    "backend/app/pipeline.py",
+    "backend/app/prompts/finance.yaml",
+    "backend/app/prompts/hera.yaml",
+    "backend/app/prompts/scripter.yaml",
+    "backend/app/schemas.py",
+    "backend/tests/test_hera_poll.py",
+    "backend/tests/test_pdf_mode.py",
+    "docs/TASK.md",
+    "frontend/src/components/Dropzone.tsx",
+    "frontend/src/components/GenerateForm.tsx",
+    "frontend/src/lib/api.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/47/08680c5f63/0/metadata.json",
+      "transcript": "/47/08680c5f63/0/full.jsonl",
+      "content_hash": "/47/08680c5f63/0/content_hash.txt",
+      "prompt": "/47/08680c5f63/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 226379,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4091648,
+    "output_tokens": 33532,
+    "api_call_count": 55
+  }
+}

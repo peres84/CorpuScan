@@ -26,6 +26,15 @@ from app.schemas import BrandingPalette, JobStep, PipelineContext, SlideChunk
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
+
+class HeraRenderFailedError(RuntimeError):
+    """Raised when one or more Hera renders return status=failed.
+
+    The outer retry loop catches this and resubmits only the failed indices,
+    so a flaky Hera render doesn't lose the clips that already finished.
+    """
+
+
 INTRO_TYPING_SOUND_PROMPT = (
     "vintage mechanical typewriter typing sound, rhythmic, no music, no voice"
 )
@@ -252,17 +261,45 @@ async def render_hera_assets(
                 max_attempts=retry_attempts,
             )
             break
-        except TimeoutError as exc:
+        except (TimeoutError, HeraRenderFailedError) as exc:
             last_error = exc
+            missing_indices = [idx for idx in range(total_renders) if idx not in completed]
+            reason = "timed out" if isinstance(exc, TimeoutError) else f"reported failures ({exc})"
             logger.warning(
-                "%s [%s] hera poll window %d/%d timed out; keeping existing video ids and continuing",
+                "%s [%s] hera poll window %d/%d %s; %d render(s) need resubmit (indices=%s)",
                 stage_tag("hera"),
                 job_id,
                 attempt,
                 retry_attempts,
+                reason,
+                len(missing_indices),
+                missing_indices,
             )
-            if attempt == retry_attempts:
+            if attempt == retry_attempts or not missing_indices:
                 break
+            # Hera occasionally hangs renders or returns failed; resubmit only the
+            # missing specs so already-completed clips are preserved.
+            new_video_ids = await asyncio.gather(
+                *[
+                    with_retries(
+                        lambda spec=all_specs[idx]: hera_client.submit(spec),
+                        attempts=2,
+                        operation_name="resubmit Hera render",
+                    )
+                    for idx in missing_indices
+                ]
+            )
+            for idx, new_id in zip(missing_indices, new_video_ids, strict=True):
+                old_id = hera_video_ids[idx]
+                hera_video_ids[idx] = new_id
+                logger.info(
+                    "%s [%s] resubmitted render idx=%d (old=%s -> new=%s)",
+                    stage_tag("hera"),
+                    job_id,
+                    idx,
+                    old_id,
+                    new_id,
+                )
         except Exception as exc:
             last_error = exc
             logger.warning(
@@ -324,15 +361,25 @@ async def _poll_existing_hera_assets(
                 for video_id in hera_video_ids
             ]
         )
+        failed_indices: list[int] = []
+        failure_reasons: list[str] = []
         for idx, result in enumerate(poll_results):
             if idx in completed:
                 continue
             status = str(result.get("status", "")).lower()
             file_url = result.get("file_url")
             if status == "failed":
-                raise RuntimeError(
-                    f"Hera render {idx} failed: {result.get('error') or 'unknown error'}"
+                error_msg = str(result.get("error") or "unknown error")
+                failed_indices.append(idx)
+                failure_reasons.append(f"idx={idx}: {error_msg}")
+                logger.warning(
+                    "%s [%s] clip %d reported failed by Hera: %s",
+                    stage_tag("hera"),
+                    job_id,
+                    idx,
+                    error_msg,
                 )
+                continue
             if status == "success" and isinstance(file_url, str):
                 completed[idx] = file_url
                 completed_scene_clips = sum(1 for clip_idx in completed if clip_idx > 0)
@@ -354,6 +401,8 @@ async def _poll_existing_hera_assets(
                     completed_scene_clips,
                     total_scene_clips,
                 )
+        if failed_indices:
+            raise HeraRenderFailedError("; ".join(failure_reasons))
         if len(completed) < total_renders:
             await asyncio.sleep(poll_interval_seconds)
 

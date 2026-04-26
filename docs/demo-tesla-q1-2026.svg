@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Tesla Q1 2026 demo frame</title>
+  <desc id="desc">Preview frame showing the title First Quarter 2026.</desc>
+  <rect width="1600" height="900" fill="#eef2f5" />
+  <text
+    x="300"
+    y="540"
+    fill="#0f172a"
+    font-family="'JetBrains Mono', 'Courier New', monospace"
+    font-size="96"
+    letter-spacing="2"
+  >
+    First Quarter 2026
+  </text>
+  <rect x="1265" y="468" width="8" height="110" fill="#06b6d4" />
+</svg>

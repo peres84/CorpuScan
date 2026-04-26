@@ -159,6 +159,39 @@ pnpm dev
 
 System dependency: **ffmpeg** must be on `PATH`. Install via `brew install ffmpeg` (macOS) or `apt install ffmpeg` (Debian/Ubuntu / Docker base image).
 
+### Environment variables
+
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `GEMINI_API_KEY` | Yes | Google AI Studio key |
+| `TAVILY_API_KEY` | Yes | Tavily search/extract key |
+| `ELEVENLABS_API_KEY` | Yes | ElevenLabs API key |
+| `ELEVENLABS_VOICE_ID` | Yes | ElevenLabs voice ID for narration |
+| `HERA_API_KEY` | Yes | Hera Motion API key |
+| `VITE_API_BASE_URL` | Frontend | Backend base URL (default: `http://localhost:8000`) |
+
+Optional backend tuning vars (`HERA_BASE_URL`, `HERA_RENDER_TIMEOUT_SECONDS`, `CORS_ORIGINS`, etc.) are documented in [backend/README.md](backend/README.md).
+
+### Docker (backend only)
+
+```bash
+docker build -t corpuscan-backend ./backend
+docker run --env-file backend/.env -p 8000:8000 corpuscan-backend
+```
+
+---
+
+## API at a glance
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| `GET` | `/health` | Liveness check — returns `{"ok": true}` |
+| `POST` | `/generate` | Submit a job (PDF file, URL, or query). Returns `{"job_id": "..."}` |
+| `GET` | `/jobs/{job_id}` | Poll status — `pending` → `running` → `done` \| `error` |
+| `GET` | `/jobs/{job_id}/video` | Stream the final MP4. Append `?download=1` to force download |
+
+Frontend polls `/jobs/{id}` every 1.5 s. Full request/response shapes are in [backend/README.md](backend/README.md).
+
 ---
 
 ## Demo flow
@@ -174,6 +207,8 @@ System dependency: **ffmpeg** must be on `PATH`. Install via `brew install ffmpe
 ## Status
 
 Hackathon MVP — see [docs/TASK.md](docs/TASK.md) for the live checklist.
+
+For deeper dives: [frontend/README.md](frontend/README.md) covers routes, design system tokens, and component structure. [backend/README.md](backend/README.md) covers the full pipeline, all env vars, agent prompt editing, and Docker.
 
 ## Team
 

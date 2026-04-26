@@ -84,3 +84,17 @@ Traceback (most recent call last):
   File "/Users/peresjav/PeresJav/hackathons/bigTechBerlin-04-26-v2/backend/.venv/lib/python3.12/site-packages/google/genai/models.py", line 8349, in generate_content
     response = await self._generate_content(
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+---
+
+# Context from my IDE setup:
+
+## Open tabs:
+- README.md: README.md
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- tsconfig.app.json: frontend/tsconfig.app.json
+- changlogs.md: changlogs.md
+- CHANGELOG.md: CHANGELOG.md
+
+## My request for Codex:
+commit changes please

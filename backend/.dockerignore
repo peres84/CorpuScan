@@ -1,0 +1,9 @@
+.env
+.env.*
+.python-version
+.ruff_cache/
+.venv/
+__pycache__/
+*.pyc
+logs/
+tmp/

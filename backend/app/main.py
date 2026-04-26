@@ -20,6 +20,7 @@ from app.integrations.tavily import TavilyClient
 from app.jobs import JobStore
 from app.logging_utils import stage_tag
 from app.pipeline import run_pipeline
+from app.render import ensure_ffmpeg_available
 from app.schemas import GenerateResponse, JobStatus, JobStep
 
 logger = logging.getLogger(__name__)
@@ -94,6 +95,7 @@ async def generate(
     url: str | None = Form(default=None),
     query: str | None = Form(default=None),
 ) -> GenerateResponse:
+    ensure_ffmpeg_available()
     source_kind = _detect_source_kind(file=file, url=url, query=query)
     provided_count = sum(1 for value in [file, url, query] if value)
     if provided_count != 1:

@@ -1,7 +1,19 @@
 from __future__ import annotations
 
 import subprocess
+from shutil import which
 from pathlib import Path
+
+
+FFMPEG_MISSING_MESSAGE = (
+    "ffmpeg is not installed or not on PATH. Install it with `brew install ffmpeg` "
+    "on macOS or `apt install ffmpeg` on Debian/Ubuntu, then restart the backend."
+)
+
+
+def ensure_ffmpeg_available() -> None:
+    if which("ffmpeg") is None:
+        raise RuntimeError(FFMPEG_MISSING_MESSAGE)
 
 
 def compose(
@@ -18,6 +30,7 @@ def compose(
     different codecs / framerates."""
     if not scene_clip_paths:
         raise ValueError("No scene clip paths provided for composition.")
+    ensure_ffmpeg_available()
 
     out_file = Path(out_path)
     out_file.parent.mkdir(parents=True, exist_ok=True)

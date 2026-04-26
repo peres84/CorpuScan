@@ -50,9 +50,9 @@ export async function postGenerate(input: GenerateInput): Promise<{ job_id: stri
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    if (DEV) console.error("[api] POST /generate failed", res.status, text);
-    throw new Error(text || `Request failed (${res.status})`);
+    const message = await readErrorMessage(res);
+    if (DEV) console.error("[api] POST /generate failed", res.status, message);
+    throw new Error(message || `Request failed (${res.status})`);
   }
 
   const data = (await res.json()) as { job_id: string };
@@ -74,4 +74,16 @@ export async function getJob(jobId: string): Promise<JobState> {
 
 export function getVideoUrl(jobId: string): string {
   return `${BASE_URL}/jobs/${encodeURIComponent(jobId)}/video`;
+}
+
+async function readErrorMessage(res: Response): Promise<string> {
+  const contentType = res.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    const payload = (await res.json().catch(() => null)) as { detail?: unknown } | null;
+    if (typeof payload?.detail === "string" && payload.detail.trim()) {
+      return payload.detail;
+    }
+  }
+
+  return (await res.text().catch(() => "")).trim();
 }

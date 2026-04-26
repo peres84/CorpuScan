@@ -1,0 +1,25 @@
+# Context from my IDE setup:
+
+## Open tabs:
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- entire-search.md: .claude/agents/entire-search.md
+- CHANGELOG.md: CHANGELOG.md
+- .env: backend/.env
+- README.md: README.md
+
+## My request for Codex:
+commit changes
+
+---
+
+# Context from my IDE setup:
+
+## Open tabs:
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- entire-search.md: .claude/agents/entire-search.md
+- CHANGELOG.md: CHANGELOG.md
+- .env: backend/.env
+- README.md: README.md
+
+## My request for Codex:
+i want to see also or have visual of the agent that is running colored in the terminal also.

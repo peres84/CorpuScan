@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "c6ef9feada36",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/app/integrations/gemini.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/c6/ef9feada36/0/metadata.json",
+      "transcript": "/c6/ef9feada36/0/full.jsonl",
+      "content_hash": "/c6/ef9feada36/0/content_hash.txt",
+      "prompt": "/c6/ef9feada36/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 75303,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 478848,
+    "output_tokens": 4219,
+    "api_call_count": 13
+  }
+}

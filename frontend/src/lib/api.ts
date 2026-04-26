@@ -63,6 +63,9 @@ export async function postGenerate(input: GenerateInput): Promise<{ job_id: stri
 export async function getJob(jobId: string): Promise<JobState> {
   const res = await fetch(`${BASE_URL}/jobs/${encodeURIComponent(jobId)}`);
   if (!res.ok) {
+    if (res.status === 404) {
+      throw new Error("Job not found. The backend was likely restarted, so this run has been cleared.");
+    }
     if (DEV) console.error("[api] GET /jobs/%s failed", jobId, res.status);
     throw new Error(`Failed to fetch job (${res.status})`);
   }

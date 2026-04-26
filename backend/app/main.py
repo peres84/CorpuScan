@@ -35,7 +35,8 @@ TMP_ROOT = Path("/tmp")
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     configure_application_logging()
-    cleanup_stale_tmp_jobs()
+    logger.info("%s clearing all job temp state on startup", stage_tag("job"))
+    cleanup_all_tmp_jobs()
     yield
     cleanup_stale_tmp_jobs()
 
@@ -155,10 +156,21 @@ def _detect_source_kind(
 
 def configure_application_logging() -> None:
     uvicorn_error_logger = logging.getLogger("uvicorn.error")
+    root_logger = logging.getLogger()
     app_logger = logging.getLogger("app")
-    app_logger.handlers = uvicorn_error_logger.handlers
+
+    if uvicorn_error_logger.handlers:
+        root_logger.handlers = uvicorn_error_logger.handlers
+        root_logger.setLevel(logging.INFO)
+
+    app_logger.handlers = []
     app_logger.setLevel(logging.INFO)
-    app_logger.propagate = False
+    app_logger.propagate = True
+
+    logging.getLogger("app.main").setLevel(logging.INFO)
+    logging.getLogger("app.jobs").setLevel(logging.INFO)
+    logging.getLogger("app.pipeline").setLevel(logging.INFO)
+    logging.getLogger("app.integrations").setLevel(logging.INFO)
     logger.info("%s application logging configured", stage_tag("request"))
 
 

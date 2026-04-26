@@ -52,7 +52,11 @@ export function useJobStatus(jobId: string | undefined): UseJobStatusResult {
         timer = window.setTimeout(tick, POLL_MS);
       } catch (err) {
         if (cancelled.current) return;
-        setError(err instanceof Error ? err.message : "Failed to fetch job");
+        const message = err instanceof Error ? err.message : "Failed to fetch job";
+        setError(message);
+        if (message.includes("Job not found")) {
+          return;
+        }
         timer = window.setTimeout(tick, POLL_MS);
       }
     };

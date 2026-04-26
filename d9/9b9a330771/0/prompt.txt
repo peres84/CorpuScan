@@ -1,27 +1,11 @@
 # Context from my IDE setup:
 
-## Active file: CHANGELOG.md
-
 ## Open tabs:
-- CHANGELOG.md: CHANGELOG.md
-- changlogs.md: changlogs.md
-- .env: backend/.env
 - SKILL.md: .claude/skills/hera-api/SKILL.md
-- tsconfig.app.json: frontend/tsconfig.app.json
-
-## My request for Codex:
-please use proper name is not changlofs and should be uppercase
-
----
-
-# Context from my IDE setup:
-
-## Open tabs:
 - tsconfig.app.json: frontend/tsconfig.app.json
 - changlogs.md: changlogs.md
 - CHANGELOG.md: CHANGELOG.md
 - .env: backend/.env
-- SKILL.md: .claude/skills/hera-api/SKILL.md
 
 ## My request for Codex:
-why i see this file in red? tsconfig.app.json
+ok thanks now  commits all the project, commit each folder properly according their changes.

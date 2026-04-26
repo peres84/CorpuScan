@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "dbe504878c33",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    ".codex/skills/hera-api/SKILL.md",
+    ".cursor/rules/hera-api.mdc",
+    ".opencode/skills/hera-api/SKILL.md",
+    "changlogs.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/db/e504878c33/0/metadata.json",
+      "transcript": "/db/e504878c33/0/full.jsonl",
+      "content_hash": "/db/e504878c33/0/content_hash.txt",
+      "prompt": "/db/e504878c33/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 75472,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 612608,
+    "output_tokens": 19369,
+    "api_call_count": 14
+  }
+}

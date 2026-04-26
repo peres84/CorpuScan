@@ -1,0 +1,79 @@
+# Context from my IDE setup:
+
+## Open tabs:
+- entire-search.md: .claude/agents/entire-search.md
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- pipeline.py: backend/app/pipeline.py
+- render.py: backend/app/render.py
+- schemas.py: backend/app/schemas.py
+
+## My request for Codex:
+pleas ecreate a changlogs.md in the  root document this --> Done. Summary of the rebuild.                                                                                         
+                                                                                                                        
+  1) The Hera skill is now a general guide                                                                              
+                                                                                                                        
+  .claude/skills/hera-api/SKILL.md and the mirror docs/hera-api.md no longer mention CorpuScan. Two halves:             
+                                                                                                                        
+  - API mechanics — endpoints, x-api-key auth, request/response shapes, status enum (in-progress | success | failed),   
+  file URL location (outputs[i].file_url), a minimal Python client, a curl smoke-test, and 8 common pitfalls.         
+  - Prompting playbook —                                                                                                
+    - The [from <START>s to <END>s] <action> syntax (the single highest-leverage rule).                                 
+    - A worked 8-second example.                                                                                        
+    - Why timings must come from a TTS transcript, not the script.                                                      
+    - A reference Python slide_chunks(...) algorithm (~80 chars, break on .!? ≥30 chars or whitespace ≥80 chars).       
+    - Visual-primitive selection table (number → count-up; comparison → bar chart; trend → line chart; etc.).           
+    - The title-intro pattern (Hera typing-effect prompt + ElevenLabs /v1/sound-generation typewriter sound).           
+    - A submission decision checklist.                                                                                  
+                                                                                                                        
+  2) Slicer (no new agent — it's deterministic)                                                                         
+                                                                                                                        
+  I didn't add another LLM agent. Slide-chunking is pure transformation of the ElevenLabs character-level alignment, so 
+  it lives in backend/app/integrations/elevenlabs.py as compute_slide_chunks_for_scene(...):                          
+                                                                                                                        
+  - Walks the per-scene character slice.                                                                              
+  - Breaks on terminal punctuation once ≥30 chars accumulated, else on whitespace once ≥80 chars.
+  - Emits SlideChunk(text, start_seconds, end_seconds, char_count) with scene-relative timings (this fixes a real bug — 
+  previously the Hera Agent was getting absolute audio timings, so scenes 2-4 had timings starting at 30s+ instead of   
+  0s).                                                                                                                  
+                                                                                                                        
+  backend/app/schemas.py gains a SlideChunk model.                                                                      
+  
+  3) Hera Agent rewritten                                                                                               
+                                                                                                                      
+  backend/app/prompts/hera.yaml:                                                                                        
+  - Input is now slide_chunks (not sentence_timings).
+  - Output prompt MUST use [from Xs to Ys] brackets, one per chunk, covering [0s, duration_seconds] contiguously with   
+  0.10–0.30s cross-fades.                                                                                             
+  - Includes a worked example showing brand paragraph + bracketed beats with overlap.                                   
+  - Visual-primitive selection rules baked in (numbers → count-up, comparisons → bar chart, etc.).                    
+  - Seven explicit timing rules (T1–T7).
+
+  backend/app/agents/hera.py:
+  - run_hera_agent(scene, slide_chunks_for_scene, gemini_client) — new signature.
+  - _normalize_hera_spec clamps duration_seconds = ceil(max(slide_chunk.end)).                                          
+  - New build_intro_hera_spec(title, duration_seconds=4) — deterministic Hera spec for the title intro: typewriter
+  typing of the title in JetBrains Mono 96px on #F9FAFB, blinking #06B6D4 cursor, hold + fade.                          
+                                                                                                                        
+  4) Title intro + typing sound                                                                                         
+                                                                                                                        
+  backend/app/integrations/elevenlabs.py gains generate_sound_effect(text, duration_seconds, prompt_influence=0.5) →    
+  POST /v1/sound-generation.                                                                                            
+                                                                                                                        
+  backend/app/pipeline.py:                                                                                            
+  - During TTS, fans out voice TTS and intro typing sound in parallel (asyncio.gather).
+  - After the 4 Hera Agent calls, builds a 5th deterministic intro spec and submits all 5 to Hera in parallel.
+  - Polls all 5 until success; downloads in order (intro = index 0, scenes = 1-4).                            
+                                                                                                                        
+  backend/app/render.py — compose(intro_clip_path, intro_sound_path, scene_clip_paths, voice_path, out_path) — uses     
+  ffmpeg's concat filter (more lenient on codec mismatches than the demuxer):                                           
+                                                                                                                        
+  ffmpeg -y -i intro.mp4 -i clip_0..3.mp4 -i intro_sound.mp3 -i voice.mp3 \                                             
+    -filter_complex "[0:v]..[4:v]concat=n=5:v=1:a=0[v]; [5:a][6:a]concat=n=2:v=0:a=1[a]" \                              
+    -map [v] -map [a] -c:v libx264 -c:a aac -shortest -pix_fmt yuv420p out.mp4                                          
+                                                                                                                        
+  Verified                                                                                                              
+                                                                                                                        
+  - All modules import.                                                                                                 
+  - Slide chunker produces scene-relative timings starting at 0.0s even when fed an absolute-time alignment.
+  - Intro builder produces a valid Hera spec (passes validate_hera_spec).                                               
+  - ffmpeg command shape inspected end-to-end.          --> then please inside .claude there is and skill for hera, copy the same skill but for codex and opencode and cursor, and then please commit changes.

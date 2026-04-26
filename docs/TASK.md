@@ -134,12 +134,12 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 12. Frontend — wiring
 
-- [ ] `src/lib/api.ts` — typed wrappers for `POST /generate`, `GET /jobs/:id`, video URL builder
-- [ ] `src/hooks/useGenerate.ts` — mutation-style hook: `mutate({ file?, url?, query? }) → { jobId }`
-- [ ] `src/hooks/useJobStatus.ts` — polls `GET /jobs/:id` every 1500ms while `status !== "done" && status !== "error"`
-- [ ] `JobProgress.tsx` — maps backend `step` to one of 6 user-facing labels with visual indicators
-- [ ] `JobResult.tsx` — `<video>` + Download + "Generate another" buttons
-- [ ] Error banner component for failure states
+- [x] `src/lib/api.ts` — typed wrappers for `POST /generate`, `GET /jobs/:id`, video URL builder
+- [x] `src/hooks/useGenerate.ts` — mutation-style hook: `mutate({ file?, url?, query? }) → { jobId }`
+- [x] `src/hooks/useJobStatus.ts` — polls `GET /jobs/:id` every 1500ms while `status !== "done" && status !== "error"`
+- [x] `JobProgress.tsx` — maps backend `step` to one of 6 user-facing labels with visual indicators
+- [x] `JobResult.tsx` — `<video>` + Download + "Generate another" buttons
+- [x] Error banner component for failure states
 
 ---
 

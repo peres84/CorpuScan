@@ -12,6 +12,13 @@
 
 Built for **Big Tech Berlin 2026**, CorpuScan helps teams go from quarterly report to boardroom-ready summary without spending hours reading, rewriting, recording, and assembling slides by hand.
 
+## Demo result
+
+[![Tesla Q1 2026 demo result](docs/demo-tesla-q1-2026.svg)](https://vimeo.com/1186651677?share=copy&fl=sv&fe=ci)
+
+- Demo video result: [Watch the generated briefing on Vimeo](https://vimeo.com/1186651677?share=copy&fl=sv&fe=ci)
+- Source report analyzed by the pipeline: [Tesla Q1 2026 Update PDF](https://assets-ir.tesla.com/tesla-contents/IR/TSLA-Q1-2026-Update.pdf)
+
 ## The problem
 
 Quarterly reports, investor updates, and earnings materials are packed with signal, but they are slow to consume and even slower to communicate. Founders, finance teams, investor relations, and internal comms teams often need to:

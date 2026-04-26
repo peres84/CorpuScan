@@ -3,10 +3,11 @@
   "checkpoint_id": "dc5b37b46a95",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "docs/TASK.md",
-    "docs/agent-prompts.md"
+    "docs/agent-prompts.md",
+    "docs/hera-api.md"
   ],
   "sessions": [
     {
@@ -14,13 +15,19 @@
       "transcript": "/dc/5b37b46a95/0/full.jsonl",
       "content_hash": "/dc/5b37b46a95/0/content_hash.txt",
       "prompt": "/dc/5b37b46a95/0/prompt.txt"
+    },
+    {
+      "metadata": "/dc/5b37b46a95/1/metadata.json",
+      "transcript": "/dc/5b37b46a95/1/full.jsonl",
+      "content_hash": "/dc/5b37b46a95/1/content_hash.txt",
+      "prompt": "/dc/5b37b46a95/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 165074,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 1064064,
-    "output_tokens": 22663,
-    "api_call_count": 26
+    "input_tokens": 165166,
+    "cache_creation_tokens": 217183,
+    "cache_read_tokens": 6821076,
+    "output_tokens": 135363,
+    "api_call_count": 78
   }
 }

@@ -5,7 +5,8 @@ export const Nav = () => {
   return (
     <header className="sticky top-0 z-40 w-full bg-surface/70 backdrop-blur-md border-b border-border supports-[backdrop-filter]:bg-surface/60">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="font-semibold text-primary text-lg tracking-tight">
+        <Link to="/" className="flex items-center gap-2 font-semibold text-primary text-lg tracking-tight">
+          <img src="/logo.png" alt="CorpuScan logo" className="h-7 w-7 object-contain" />
           CorpuScan
         </Link>
         <div className="flex items-center gap-3">

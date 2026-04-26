@@ -16,6 +16,10 @@ export interface JobState {
   progress: number;
   error?: string;
   video_url?: string;
+  hera_completed_clips?: number;
+  hera_total_clips?: number;
+  hera_attempt?: number;
+  hera_max_attempts?: number;
 }
 
 export interface GenerateInput {

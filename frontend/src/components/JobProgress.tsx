@@ -4,6 +4,10 @@ import type { BackendStep } from "@/lib/api";
 interface JobProgressProps {
   step: BackendStep | null;
   progress: number;
+  heraCompletedClips?: number;
+  heraTotalClips?: number;
+  heraAttempt?: number;
+  heraMaxAttempts?: number;
 }
 
 interface UiStep {
@@ -33,7 +37,21 @@ function stepState(uiStep: UiStep, current: BackendStep | null): "pending" | "ru
   return "pending";
 }
 
-export const JobProgress = ({ step, progress }: JobProgressProps) => {
+export const JobProgress = ({
+  step,
+  progress,
+  heraCompletedClips = 0,
+  heraTotalClips = 0,
+  heraAttempt = 0,
+  heraMaxAttempts = 0,
+}: JobProgressProps) => {
+  const heraDetail =
+    step === "hera_render" && heraTotalClips > 0
+      ? `${Math.min(heraCompletedClips, heraTotalClips)}/${heraTotalClips}${
+          heraMaxAttempts > 1 && heraAttempt > 0 ? ` • try ${heraAttempt}/${heraMaxAttempts}` : ""
+        }`
+      : null;
+
   return (
     <div>
       <ul className="space-y-3">
@@ -68,6 +86,11 @@ export const JobProgress = ({ step, progress }: JobProgressProps) => {
               >
                 {s.label}
               </span>
+              {s.key === "hera" && heraDetail && (
+                <span className="ml-auto rounded-full border border-border px-2 py-1 font-mono text-[11px] text-secondary">
+                  {heraDetail}
+                </span>
+              )}
             </li>
           );
         })}

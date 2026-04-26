@@ -74,3 +74,7 @@ class JobStatus(BaseModel):
     progress: int = Field(ge=0, le=100)
     error: str | None = None
     video_url: str | None = None
+    hera_completed_clips: int = Field(default=0, ge=0)
+    hera_total_clips: int = Field(default=0, ge=0)
+    hera_attempt: int = Field(default=0, ge=0)
+    hera_max_attempts: int = Field(default=0, ge=0)

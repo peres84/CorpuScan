@@ -9,7 +9,17 @@ import { getVideoUrl } from "@/lib/api";
 
 const JobPage = () => {
   const { jobId } = useParams<{ jobId: string }>();
-  const { status, step, progress, error, videoUrl } = useJobStatus(jobId);
+  const {
+    status,
+    step,
+    progress,
+    error,
+    videoUrl,
+    heraCompletedClips,
+    heraTotalClips,
+    heraAttempt,
+    heraMaxAttempts,
+  } = useJobStatus(jobId);
 
   const isWorking = status === null || status === "pending" || status === "running";
   const isDone = status === "done";
@@ -25,7 +35,14 @@ const JobPage = () => {
               <h1 className="text-2xl font-semibold text-primary">Generating your briefing</h1>
               <p className="text-secondary mt-1">This usually takes 1 to 3 minutes.</p>
               <div className="mt-8">
-                <JobProgress step={step} progress={progress} />
+                <JobProgress
+                  step={step}
+                  progress={progress}
+                  heraCompletedClips={heraCompletedClips}
+                  heraTotalClips={heraTotalClips}
+                  heraAttempt={heraAttempt}
+                  heraMaxAttempts={heraMaxAttempts}
+                />
               </div>
               <div className="mt-8 text-center">
                 <Link

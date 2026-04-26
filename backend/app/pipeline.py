@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
+from typing import Awaitable, Callable, TypeVar
 
 from app.agents.finance import run_finance_agent
 from app.agents.hera import build_intro_hera_spec, run_hera_agent
@@ -22,12 +23,12 @@ from app.render import compose
 from app.schemas import JobStep, SlideChunk
 
 logger = logging.getLogger(__name__)
+T = TypeVar("T")
 
 INTRO_TYPING_SOUND_PROMPT = (
     "vintage mechanical typewriter typing sound, rhythmic, no music, no voice"
 )
 INTRO_DURATION_SECONDS = 4
-HERA_RENDER_TIMEOUT_SECONDS = 240
 
 
 async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> None:
@@ -124,45 +125,16 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
         logger.info("[%s] hera plan done, %d scene specs + 1 intro", job_id, len(scene_specs))
 
         job_store.update_step(job_id, step=JobStep.HERA_RENDER, progress=75)
-        # Submit intro + 4 scene clips in parallel. Index 0 = intro,
-        # indices 1..4 = scenes 0..3.
         all_specs = [intro_spec, *scene_specs]
         hera_client = HeraClient(api_key=settings.hera_api_key, base_url=settings.hera_base_url)
-        hera_video_ids = await asyncio.gather(*[hera_client.submit(spec) for spec in all_specs])
-        logger.info("[%s] hera videos submitted: %s", job_id, hera_video_ids)
-
-        completed: dict[int, str] = {}
-        start_time = asyncio.get_running_loop().time()
-        while len(completed) < len(hera_video_ids):
-            if asyncio.get_running_loop().time() - start_time > HERA_RENDER_TIMEOUT_SECONDS:
-                raise TimeoutError("Timed out waiting for Hera renders.")
-            poll_results = await asyncio.gather(*[hera_client.poll(vid) for vid in hera_video_ids])
-            for idx, result in enumerate(poll_results):
-                if idx in completed:
-                    continue
-                status = str(result.get("status", "")).lower()
-                file_url = result.get("file_url")
-                if status == "failed":
-                    raise RuntimeError(
-                        f"Hera render {idx} failed: {result.get('error') or 'unknown error'}"
-                    )
-                if status == "success" and isinstance(file_url, str):
-                    completed[idx] = file_url
-                    progress = 75 + int((len(completed) / len(hera_video_ids)) * 15)
-                    job_store.update_step(job_id, step=JobStep.HERA_RENDER, progress=min(progress, 90))
-                    logger.info(
-                        "[%s] clip %d ready (%d/%d)",
-                        job_id,
-                        idx,
-                        len(completed),
-                        len(hera_video_ids),
-                    )
-            if len(completed) < len(hera_video_ids):
-                await asyncio.sleep(3)
-
-        # Download all clips. Preserve order: intro first, then scenes 0..3.
-        clip_bytes_list = await asyncio.gather(
-            *[hera_client.download(completed[idx]) for idx in range(len(hera_video_ids))]
+        clip_bytes_list = await render_hera_assets(
+            job_store=job_store,
+            job_id=job_id,
+            hera_client=hera_client,
+            all_specs=all_specs,
+            timeout_seconds=settings.hera_render_timeout_seconds,
+            retry_attempts=settings.hera_render_retry_attempts,
+            poll_interval_seconds=settings.hera_poll_interval_seconds,
         )
         intro_clip_path = out_dir / "intro.mp4"
         intro_clip_path.write_bytes(clip_bytes_list[0])
@@ -189,3 +161,161 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
     except Exception as exc:
         logger.exception("[%s] pipeline failed: %s", job_id, exc)
         job_store.set_error(job_id, str(exc))
+
+
+async def render_hera_assets(
+    *,
+    job_store: JobStore,
+    job_id: str,
+    hera_client: HeraClient,
+    all_specs: list[dict[str, object]],
+    timeout_seconds: int,
+    retry_attempts: int,
+    poll_interval_seconds: float,
+) -> list[bytes]:
+    total_scene_clips = max(0, len(all_specs) - 1)
+    last_error: Exception | None = None
+
+    for attempt in range(1, retry_attempts + 1):
+        try:
+            job_store.update_hera_progress(
+                job_id,
+                completed_clips=0,
+                total_clips=total_scene_clips,
+                attempt=attempt,
+                max_attempts=retry_attempts,
+                progress=75,
+            )
+            logger.info("[%s] hera render attempt %d/%d", job_id, attempt, retry_attempts)
+            return await _render_hera_assets_once(
+                job_store=job_store,
+                job_id=job_id,
+                hera_client=hera_client,
+                all_specs=all_specs,
+                timeout_seconds=timeout_seconds,
+                poll_interval_seconds=poll_interval_seconds,
+                attempt=attempt,
+                max_attempts=retry_attempts,
+            )
+        except Exception as exc:
+            last_error = exc
+            logger.warning(
+                "[%s] hera render attempt %d/%d failed: %s",
+                job_id,
+                attempt,
+                retry_attempts,
+                exc,
+            )
+            if attempt == retry_attempts:
+                break
+
+    assert last_error is not None
+    raise RuntimeError(
+        f"Hera renders failed after {retry_attempts} attempt(s): {last_error}"
+    ) from last_error
+
+
+async def _render_hera_assets_once(
+    *,
+    job_store: JobStore,
+    job_id: str,
+    hera_client: HeraClient,
+    all_specs: list[dict[str, object]],
+    timeout_seconds: int,
+    poll_interval_seconds: float,
+    attempt: int,
+    max_attempts: int,
+) -> list[bytes]:
+    hera_video_ids = await asyncio.gather(
+        *[
+            with_retries(
+                lambda spec=spec: hera_client.submit(spec),
+                attempts=2,
+                operation_name="submit Hera render",
+            )
+            for spec in all_specs
+        ]
+    )
+    logger.info("[%s] hera videos submitted on attempt %d: %s", job_id, attempt, hera_video_ids)
+
+    completed: dict[int, str] = {}
+    start_time = asyncio.get_running_loop().time()
+    total_renders = len(hera_video_ids)
+    total_scene_clips = max(0, total_renders - 1)
+    while len(completed) < total_renders:
+        if asyncio.get_running_loop().time() - start_time > timeout_seconds:
+            raise TimeoutError(
+                f"Timed out waiting for Hera renders after {timeout_seconds} seconds."
+            )
+        poll_results = await asyncio.gather(
+            *[
+                with_retries(
+                    lambda video_id=video_id: hera_client.poll(video_id),
+                    attempts=2,
+                    operation_name="poll Hera render",
+                )
+                for video_id in hera_video_ids
+            ]
+        )
+        for idx, result in enumerate(poll_results):
+            if idx in completed:
+                continue
+            status = str(result.get("status", "")).lower()
+            file_url = result.get("file_url")
+            if status == "failed":
+                raise RuntimeError(
+                    f"Hera render {idx} failed: {result.get('error') or 'unknown error'}"
+                )
+            if status == "success" and isinstance(file_url, str):
+                completed[idx] = file_url
+                completed_scene_clips = sum(1 for clip_idx in completed if clip_idx > 0)
+                progress = 75 + int((len(completed) / total_renders) * 15)
+                job_store.update_hera_progress(
+                    job_id,
+                    completed_clips=completed_scene_clips,
+                    total_clips=total_scene_clips,
+                    attempt=attempt,
+                    max_attempts=max_attempts,
+                    progress=min(progress, 90),
+                )
+                logger.info(
+                    "[%s] clip %d ready on attempt %d (%d/%d scene clips)",
+                    job_id,
+                    idx,
+                    attempt,
+                    completed_scene_clips,
+                    total_scene_clips,
+                )
+        if len(completed) < total_renders:
+            await asyncio.sleep(poll_interval_seconds)
+
+    return await asyncio.gather(
+        *[
+            with_retries(
+                lambda url=completed[idx]: hera_client.download(url),
+                attempts=2,
+                operation_name="download Hera clip",
+            )
+            for idx in range(total_renders)
+        ]
+    )
+
+
+async def with_retries(
+    operation: Callable[[], Awaitable[T]],
+    *,
+    attempts: int,
+    operation_name: str,
+) -> T:
+    last_error: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return await operation()
+        except Exception as exc:
+            last_error = exc
+            if attempt == attempts:
+                break
+            logger.warning("%s failed on try %d/%d: %s", operation_name, attempt, attempts, exc)
+            await asyncio.sleep(1)
+    assert last_error is not None
+    raise last_error

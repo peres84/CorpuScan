@@ -20,6 +20,10 @@ class JobRecord:
     sentence_timings: list[dict[str, object]] | None = None
     scene_specs: list[dict[str, object]] | None = None
     clip_paths: list[str] | None = None
+    hera_completed_clips: int = 0
+    hera_total_clips: int = 0
+    hera_attempt: int = 0
+    hera_max_attempts: int = 0
 
     def to_status(self) -> JobStatus:
         return JobStatus(
@@ -28,6 +32,10 @@ class JobRecord:
             progress=self.progress,
             error=self.error,
             video_url=self.video_url,
+            hera_completed_clips=self.hera_completed_clips,
+            hera_total_clips=self.hera_total_clips,
+            hera_attempt=self.hera_attempt,
+            hera_max_attempts=self.hera_max_attempts,
         )
 
 
@@ -60,6 +68,26 @@ class JobStore:
         job.step = JobStep.DONE
         job.progress = 100
         job.video_url = video_url
+
+    def update_hera_progress(
+        self,
+        job_id: str,
+        *,
+        completed_clips: int,
+        total_clips: int,
+        attempt: int,
+        max_attempts: int,
+        progress: int | None = None,
+    ) -> None:
+        job = self._require_job(job_id)
+        job.step = JobStep.HERA_RENDER
+        job.status = JobState.RUNNING
+        job.hera_completed_clips = completed_clips
+        job.hera_total_clips = total_clips
+        job.hera_attempt = attempt
+        job.hera_max_attempts = max_attempts
+        if progress is not None:
+            job.progress = progress
 
     def _require_job(self, job_id: str) -> JobRecord:
         job = self.get(job_id)

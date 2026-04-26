@@ -86,6 +86,7 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 - [x] `app/integrations/hera.py` — `submit(spec) -> hera_job_id`, `poll(hera_job_id) -> {status, video_url?}`, `download(url) -> bytes`
 - [x] Submit all 4 in parallel
 - [x] Poll loop: every 3s, all 4 in parallel; exit when all 4 are `done`; timeout at 4 min
+- [x] Make Hera timeout / retry behavior configurable via backend env
 - [x] Download each MP4 to `/tmp/{job_id}/clip_{i}.mp4`
 - [x] On entry: `update_step("hera_render", progress=75)`
 - [x] Update `progress` incrementally as each clip finishes (75 → 90)
@@ -138,6 +139,7 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 - [x] `src/hooks/useGenerate.ts` — mutation-style hook: `mutate({ file?, url?, query? }) → { jobId }`
 - [x] `src/hooks/useJobStatus.ts` — polls `GET /jobs/:id` every 1500ms while `status !== "done" && status !== "error"`
 - [x] `JobProgress.tsx` — maps backend `step` to one of 6 user-facing labels with visual indicators
+- [x] Show live Hera render clip count in the frontend progress UI
 - [x] `JobResult.tsx` — `<video>` + Download + "Generate another" buttons
 - [x] Error banner component for failure states
 

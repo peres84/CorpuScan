@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     elevenlabs_voice_id: str = Field(default="")
     hera_api_key: str = Field(default="")
     hera_base_url: str = Field(default="https://api.hera.video/v1")
+    hera_render_timeout_seconds: int = Field(default=240, ge=30)
+    hera_render_retry_attempts: int = Field(default=2, ge=1)
+    hera_poll_interval_seconds: float = Field(default=3.0, gt=0)
     cors_origins: str = Field(
         default="http://localhost:5173,http://localhost:8080,https://corpuscan.vercel.app",
     )

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import logging.config
 import shutil
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 from uuid import UUID
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -22,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 job_store = JobStore()
+active_pipeline_task: asyncio.Task[Any] | None = None
 REQUEST_TIMEOUT_SECONDS = 240
 STALE_TMP_AGE_SECONDS = 30 * 60
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
@@ -30,6 +33,7 @@ TMP_ROOT = Path("/tmp")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    configure_application_logging()
     cleanup_stale_tmp_jobs()
     yield
     cleanup_stale_tmp_jobs()
@@ -84,17 +88,22 @@ async def generate(
     url: str | None = Form(default=None),
     query: str | None = Form(default=None),
 ) -> GenerateResponse:
+    source_kind = _detect_source_kind(file=file, url=url, query=query)
     provided_count = sum(1 for value in [file, url, query] if value)
     if provided_count != 1:
         raise HTTPException(status_code=400, detail="Provide exactly one input: file, url, or query.")
 
+    logger.info("generate request accepted (source=%s)", source_kind)
     source_text = await _resolve_source_text(file=file, url=url, query=query)
     if not source_text.strip():
         raise HTTPException(status_code=400, detail="Could not extract text from the provided source.")
 
+    await _reset_runtime_state_for_new_job()
     job_id = job_store.create()
+    logger.info("[%s] source resolved from %s (%d chars)", job_id, source_kind, len(source_text))
     job_store.update_step(job_id, step=JobStep.INGEST, progress=10)
-    asyncio.create_task(run_pipeline(job_store, job_id, source_text))
+    global active_pipeline_task
+    active_pipeline_task = asyncio.create_task(run_pipeline(job_store, job_id, source_text))
     return GenerateResponse(job_id=job_id)
 
 
@@ -103,6 +112,7 @@ async def get_job(job_id: str) -> JobStatus:
     safe_id = _validate_job_id(job_id)
     job = job_store.get(safe_id)
     if job is None:
+        logger.warning("[%s] status requested but job was not found", safe_id)
         raise HTTPException(status_code=404, detail="Job not found.")
     return job.to_status()
 
@@ -112,7 +122,9 @@ async def get_job_video(job_id: str, download: int = 0) -> FileResponse:
     safe_id = _validate_job_id(job_id)
     video_path = TMP_ROOT / safe_id / "final.mp4"
     if not video_path.exists():
+        logger.warning("[%s] video requested but file was not found", safe_id)
         raise HTTPException(status_code=404, detail="Video not found.")
+    logger.info("[%s] serving final video (download=%s)", safe_id, download)
     headers: dict[str, str] = {}
     if download == 1:
         headers["Content-Disposition"] = f'attachment; filename="{safe_id}.mp4"'
@@ -126,6 +138,41 @@ def _validate_job_id(job_id: str) -> str:
         return str(UUID(job_id))
     except (ValueError, AttributeError) as exc:
         raise HTTPException(status_code=404, detail="Job not found.") from exc
+
+
+def _detect_source_kind(
+    *, file: UploadFile | None, url: str | None, query: str | None
+) -> str:
+    if file is not None:
+        return "file"
+    if url:
+        return "url"
+    if query:
+        return "query"
+    return "unknown"
+
+
+def configure_application_logging() -> None:
+    uvicorn_error_logger = logging.getLogger("uvicorn.error")
+    app_logger = logging.getLogger("app")
+    app_logger.handlers = uvicorn_error_logger.handlers
+    app_logger.setLevel(logging.INFO)
+    app_logger.propagate = False
+    logger.info("application logging configured")
+
+
+async def _reset_runtime_state_for_new_job() -> None:
+    global active_pipeline_task
+    if active_pipeline_task is not None and not active_pipeline_task.done():
+        logger.info("cancelling previous pipeline task before starting a new job")
+        active_pipeline_task.cancel()
+        try:
+            await active_pipeline_task
+        except asyncio.CancelledError:
+            logger.info("previous pipeline task cancelled")
+    active_pipeline_task = None
+    job_store.reset()
+    cleanup_all_tmp_jobs()
 
 
 async def _resolve_source_text(
@@ -170,3 +217,16 @@ def cleanup_stale_tmp_jobs(now_ts: float | None = None) -> None:
                 shutil.rmtree(child, ignore_errors=True)
         except OSError:
             continue
+
+
+def cleanup_all_tmp_jobs() -> None:
+    if not TMP_ROOT.exists():
+        return
+    for child in TMP_ROOT.iterdir():
+        if not child.is_dir():
+            continue
+        try:
+            UUID(child.name)
+        except ValueError:
+            continue
+        shutil.rmtree(child, ignore_errors=True)

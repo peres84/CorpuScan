@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
+
 from google.genai import Client
 from google.genai.errors import ClientError
 from google.genai import types
 
 _PLACEHOLDER_API_KEYS = {"", "key_here", "your_api_key", "api_key_here", "replace_me"}
+logger = logging.getLogger(__name__)
 
 
 def _is_placeholder_api_key(value: str) -> bool:
@@ -29,6 +32,13 @@ class GeminiClient:
         temperature: float = 0.2,
         response_mime_type: str | None = None,
     ) -> str:
+        logger.info(
+            "gemini generate started (model=%s, temperature=%.2f, mime=%s, user_chars=%d)",
+            model,
+            temperature,
+            response_mime_type,
+            len(user),
+        )
         config = types.GenerateContentConfig(
             system_instruction=system,
             temperature=temperature,
@@ -49,4 +59,6 @@ class GeminiClient:
                     "backend/.env with a valid Google AI Studio key, then restart the backend."
                 ) from exc
             raise
-        return (response.text or "").strip()
+        output = (response.text or "").strip()
+        logger.info("gemini generate finished (%d chars)", len(output))
+        return output

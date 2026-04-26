@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import base64
+import logging
 
 import httpx
 
 from app.schemas import Scene, SentenceTiming, SlideChunk
+
+logger = logging.getLogger(__name__)
 
 
 class ElevenLabsClient:
@@ -14,6 +17,7 @@ class ElevenLabsClient:
         self._base_url = "https://api.elevenlabs.io"
 
     async def text_to_speech_with_timestamps(self, text: str) -> tuple[bytes, dict[str, object]]:
+        logger.info("elevenlabs tts started (chars=%d)", len(text))
         payload = {
             "text": text,
             "model_id": "eleven_multilingual_v2",
@@ -26,7 +30,13 @@ class ElevenLabsClient:
         data = response.json()
         audio_base64 = data.get("audio_base64", "")
         alignment = data.get("alignment") or data.get("normalized_alignment") or {}
-        return base64.b64decode(audio_base64), alignment
+        audio_bytes = base64.b64decode(audio_base64)
+        logger.info(
+            "elevenlabs tts finished (audio_bytes=%d, alignment_chars=%d)",
+            len(audio_bytes),
+            len(alignment.get("characters", [])),
+        )
+        return audio_bytes, alignment
 
     async def generate_sound_effect(
         self, *, text: str, duration_seconds: float, prompt_influence: float = 0.5
@@ -34,6 +44,11 @@ class ElevenLabsClient:
         """Generate a sound effect via /v1/sound-generation. Returns raw MP3 bytes.
         duration_seconds must be in [0.5, 30] per the API spec.
         """
+        logger.info(
+            "elevenlabs sound effect started (duration=%.1fs, prompt_chars=%d)",
+            duration_seconds,
+            len(text),
+        )
         payload = {
             "text": text,
             "duration_seconds": max(0.5, min(30.0, duration_seconds)),
@@ -44,6 +59,7 @@ class ElevenLabsClient:
         async with httpx.AsyncClient(timeout=120) as client:
             response = await client.post(url, json=payload, headers=headers)
             response.raise_for_status()
+        logger.info("elevenlabs sound effect finished (audio_bytes=%d)", len(response.content))
         return response.content
 
 

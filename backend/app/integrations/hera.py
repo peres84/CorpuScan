@@ -4,34 +4,72 @@ import httpx
 
 
 class HeraClient:
+    """Thin wrapper around the Hera Motion REST API.
+
+    Spec: https://docs.hera.video/llms.txt
+        POST /videos                   submit a generation job
+        GET  /videos/{video_id}        poll for status + file_url
+        Auth: x-api-key header
+        Status enum: in-progress | success | failed
+    """
+
     def __init__(self, *, api_key: str, base_url: str) -> None:
         self._api_key = api_key
         self._base_url = base_url.rstrip("/")
 
-    async def submit(self, spec: dict[str, object]) -> str:
-        headers = {"Authorization": f"Bearer {self._api_key}"}
-        payload = {"spec": spec}
-        async with httpx.AsyncClient(timeout=60) as client:
-            response = await client.post(f"{self._base_url}/renders", json=payload, headers=headers)
-            response.raise_for_status()
-        data = response.json()
-        job_id = data.get("id") or data.get("job_id")
-        if not isinstance(job_id, str) or not job_id:
-            raise ValueError("Hera submit response missing job id.")
-        return job_id
+    def _headers(self) -> dict[str, str]:
+        return {"x-api-key": self._api_key, "Content-Type": "application/json"}
 
-    async def poll(self, hera_job_id: str) -> dict[str, object]:
-        headers = {"Authorization": f"Bearer {self._api_key}"}
-        async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.get(f"{self._base_url}/renders/{hera_job_id}", headers=headers)
+    async def submit(self, spec: dict[str, object]) -> str:
+        """Create a Hera video job. `spec` is whatever the Hera Agent produced.
+
+        Required fields in spec: `prompt` (str), `outputs` (list).
+        Optional: `duration_seconds`, `reference_image_url(s)`, `style_id`, etc.
+        Returns the video_id of the queued job.
+        """
+        if "prompt" not in spec or "outputs" not in spec:
+            raise ValueError("Hera spec must include 'prompt' and 'outputs'.")
+        async with httpx.AsyncClient(timeout=60) as client:
+            response = await client.post(
+                f"{self._base_url}/videos", json=spec, headers=self._headers()
+            )
             response.raise_for_status()
         data = response.json()
-        status = data.get("status")
-        video_url = data.get("video_url") or data.get("url")
-        return {"status": status, "video_url": video_url}
+        video_id = data.get("video_id")
+        if not isinstance(video_id, str) or not video_id:
+            raise ValueError("Hera submit response missing video_id.")
+        return video_id
+
+    async def poll(self, video_id: str) -> dict[str, object]:
+        """Get current status. Returns a normalized
+        {status, file_url, error} dict regardless of how many outputs were
+        configured. file_url is the first successful output's URL.
+        """
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(
+                f"{self._base_url}/videos/{video_id}", headers=self._headers()
+            )
+            response.raise_for_status()
+        data = response.json()
+        status = str(data.get("status", "")).lower()
+        outputs = data.get("outputs") or []
+        file_url: str | None = None
+        error: str | None = None
+        if isinstance(outputs, list) and outputs:
+            first = outputs[0]
+            if isinstance(first, dict):
+                if isinstance(first.get("file_url"), str):
+                    file_url = first["file_url"]
+                if isinstance(first.get("error"), str):
+                    error = first["error"]
+        return {"status": status, "file_url": file_url, "error": error}
 
     async def download(self, url: str) -> bytes:
-        async with httpx.AsyncClient(timeout=120) as client:
+        # Guard against SSRF: the URL comes from a third-party API response,
+        # so restrict to https:// and reject scheme-less / file:// / http://.
+        if not isinstance(url, str) or not url.lower().startswith("https://"):
+            raise ValueError("Hera download URL must be https://")
+        async with httpx.AsyncClient(timeout=120, follow_redirects=False) as client:
             response = await client.get(url)
             response.raise_for_status()
         return response.content

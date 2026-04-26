@@ -4,7 +4,7 @@ import base64
 
 import httpx
 
-from app.schemas import Scene, SentenceTiming
+from app.schemas import Scene, SentenceTiming, SlideChunk
 
 
 class ElevenLabsClient:
@@ -27,6 +27,24 @@ class ElevenLabsClient:
         audio_base64 = data.get("audio_base64", "")
         alignment = data.get("alignment") or data.get("normalized_alignment") or {}
         return base64.b64decode(audio_base64), alignment
+
+    async def generate_sound_effect(
+        self, *, text: str, duration_seconds: float, prompt_influence: float = 0.5
+    ) -> bytes:
+        """Generate a sound effect via /v1/sound-generation. Returns raw MP3 bytes.
+        duration_seconds must be in [0.5, 30] per the API spec.
+        """
+        payload = {
+            "text": text,
+            "duration_seconds": max(0.5, min(30.0, duration_seconds)),
+            "prompt_influence": prompt_influence,
+        }
+        headers = {"xi-api-key": self._api_key, "Content-Type": "application/json"}
+        url = f"{self._base_url}/v1/sound-generation"
+        async with httpx.AsyncClient(timeout=120) as client:
+            response = await client.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+        return response.content
 
 
 def build_tts_input_and_scene_spans(scenes: list[Scene]) -> tuple[str, list[tuple[int, int, int]]]:
@@ -124,3 +142,68 @@ def map_sentence_timings_to_scenes(
             )
         cursor += len(sentence_text) + 1
     return mapped
+
+
+def compute_slide_chunks_for_scene(
+    *,
+    characters: list[str],
+    char_start_times: list[float],
+    char_end_times: list[float],
+    scene_char_start: int,
+    scene_char_end: int,
+    max_chars: int = 80,
+    min_chars: int = 30,
+) -> list[SlideChunk]:
+    """Group characters in [scene_char_start, scene_char_end) into ~max_chars
+    slide chunks. Returned start/end seconds are RELATIVE to the start of
+    the scene (so scene 2's chunks start at ~0s, not at the absolute audio
+    offset of scene 2)."""
+    if scene_char_start >= scene_char_end:
+        return []
+    seg_chars = characters[scene_char_start:scene_char_end]
+    seg_starts = char_start_times[scene_char_start:scene_char_end]
+    seg_ends = char_end_times[scene_char_start:scene_char_end]
+
+    scene_audio_start: float | None = None
+    for ch, s in zip(seg_chars, seg_starts):
+        if not ch.isspace():
+            scene_audio_start = float(s)
+            break
+    if scene_audio_start is None:
+        return []
+
+    chunks: list[SlideChunk] = []
+    buf_chars: list[str] = []
+    buf_start: float | None = None
+    buf_end: float | None = None
+
+    def _flush() -> None:
+        nonlocal buf_chars, buf_start, buf_end
+        text = "".join(buf_chars).strip()
+        if text and buf_start is not None and buf_end is not None:
+            chunks.append(
+                SlideChunk(
+                    text=text,
+                    start_seconds=round(buf_start - scene_audio_start, 3),
+                    end_seconds=round(buf_end - scene_audio_start, 3),
+                    char_count=len(text),
+                )
+            )
+        buf_chars = []
+        buf_start = None
+        buf_end = None
+
+    for ch, s, e in zip(seg_chars, seg_starts, seg_ends):
+        if buf_start is None and not ch.isspace():
+            buf_start = float(s)
+        buf_chars.append(ch)
+        if not ch.isspace():
+            buf_end = float(e)
+        cur = "".join(buf_chars).strip()
+        if (ch in ".!?" and len(cur) >= min_chars) or (
+            len(cur) >= max_chars and ch.isspace()
+        ):
+            _flush()
+
+    _flush()
+    return chunks

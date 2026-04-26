@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     hera_api_key: str = Field(default="")
     hera_base_url: str = Field(default="https://api.hera.video/v1")
     cors_origins: str = Field(
-        default="http://localhost:5173,https://corpuscan.vercel.app",
+        default="http://localhost:5173,http://localhost:8080,https://corpuscan.vercel.app",
     )
 
     @property

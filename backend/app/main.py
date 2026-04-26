@@ -4,13 +4,13 @@ import asyncio
 import logging
 import shutil
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
+from uuid import UUID
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi import Request
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from app.config import get_settings
 from app.integrations.tavily import TavilyClient
@@ -22,17 +22,30 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 job_store = JobStore()
-app = FastAPI(title="CorpuScan API")
 REQUEST_TIMEOUT_SECONDS = 240
 STALE_TMP_AGE_SECONDS = 30 * 60
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 TMP_ROOT = Path("/tmp")
 
-logger.info("CORS origins: %s", settings.cors_origins_list)
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    cleanup_stale_tmp_jobs()
+    yield
+    cleanup_stale_tmp_jobs()
+
+
+app = FastAPI(title="CorpuScan API", lifespan=lifespan)
+
+_origins = settings.cors_origins_list
+# CORS spec: credentials cannot be combined with wildcard origins.
+_allow_credentials = "*" not in _origins
+logger.info("CORS origins: %s (credentials=%s)", _origins, _allow_credentials)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
+    allow_origins=_origins,
+    allow_credentials=_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -40,24 +53,24 @@ app.add_middleware(
 
 @app.middleware("http")
 async def request_timeout_middleware(request: Request, call_next):
-    logger.info("%s %s from %s", request.method, request.url.path, request.headers.get("origin", "unknown"))
+    is_poll = request.method == "GET" and request.url.path.startswith("/jobs/") and not request.url.path.endswith(
+        "/video"
+    )
+    if not is_poll:
+        logger.info(
+            "%s %s from %s",
+            request.method,
+            request.url.path,
+            request.headers.get("origin", "unknown"),
+        )
     try:
         response = await asyncio.wait_for(call_next(request), timeout=REQUEST_TIMEOUT_SECONDS)
-        logger.info("%s %s → %s", request.method, request.url.path, response.status_code)
-        return response
     except TimeoutError:
         logger.error("Request timed out: %s %s", request.method, request.url.path)
         return JSONResponse(status_code=504, content={"detail": "Request timed out."})
-
-
-@app.on_event("startup")
-async def startup_cleanup() -> None:
-    cleanup_stale_tmp_jobs()
-
-
-@app.on_event("shutdown")
-async def shutdown_cleanup() -> None:
-    cleanup_stale_tmp_jobs()
+    if not is_poll:
+        logger.info("%s %s → %s", request.method, request.url.path, response.status_code)
+    return response
 
 
 @app.get("/health")
@@ -87,7 +100,8 @@ async def generate(
 
 @app.get("/jobs/{job_id}", response_model=JobStatus)
 async def get_job(job_id: str) -> JobStatus:
-    job = job_store.get(job_id)
+    safe_id = _validate_job_id(job_id)
+    job = job_store.get(safe_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found.")
     return job.to_status()
@@ -95,13 +109,23 @@ async def get_job(job_id: str) -> JobStatus:
 
 @app.get("/jobs/{job_id}/video")
 async def get_job_video(job_id: str, download: int = 0) -> FileResponse:
-    video_path = Path("/tmp") / job_id / "final.mp4"
+    safe_id = _validate_job_id(job_id)
+    video_path = TMP_ROOT / safe_id / "final.mp4"
     if not video_path.exists():
         raise HTTPException(status_code=404, detail="Video not found.")
     headers: dict[str, str] = {}
     if download == 1:
-        headers["Content-Disposition"] = f'attachment; filename="{job_id}.mp4"'
+        headers["Content-Disposition"] = f'attachment; filename="{safe_id}.mp4"'
     return FileResponse(video_path, media_type="video/mp4", headers=headers)
+
+
+def _validate_job_id(job_id: str) -> str:
+    # Job IDs are UUID4 strings (see JobStore.create). Reject anything else
+    # to prevent path traversal into /tmp/..
+    try:
+        return str(UUID(job_id))
+    except (ValueError, AttributeError) as exc:
+        raise HTTPException(status_code=404, detail="Job not found.") from exc
 
 
 async def _resolve_source_text(
@@ -111,6 +135,11 @@ async def _resolve_source_text(
         from app.ingest import extract_pdf_text
 
         file_bytes = await file.read()
+        if len(file_bytes) > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large. Max {MAX_UPLOAD_BYTES // (1024 * 1024)} MB.",
+            )
         return extract_pdf_text(file_bytes)
 
     tavily_client = TavilyClient(api_key=settings.tavily_api_key)
@@ -130,6 +159,10 @@ def cleanup_stale_tmp_jobs(now_ts: float | None = None) -> None:
         return
     for child in TMP_ROOT.iterdir():
         if not child.is_dir():
+            continue
+        try:
+            UUID(child.name)
+        except ValueError:
             continue
         try:
             age_seconds = now - child.stat().st_mtime

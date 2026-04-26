@@ -34,9 +34,11 @@ class Scene(BaseModel):
     @field_validator("narration")
     @classmethod
     def validate_narration_word_count(cls, value: str) -> str:
+        # Scripter prompt targets 70–85 words; allow ±10 word slack so a
+        # single off-count scene doesn't abort the entire pipeline.
         words = value.split()
-        if not 50 <= len(words) <= 100:
-            raise ValueError("Scene narration must be between 50 and 100 words.")
+        if not 60 <= len(words) <= 110:
+            raise ValueError("Scene narration must be between 60 and 110 words.")
         return value
 
 
@@ -57,6 +59,13 @@ class SentenceTiming(BaseModel):
     sentence: str = Field(min_length=1)
     start_seconds: float = Field(ge=0)
     end_seconds: float = Field(ge=0)
+
+
+class SlideChunk(BaseModel):
+    text: str = Field(min_length=1)
+    start_seconds: float = Field(ge=0)
+    end_seconds: float = Field(ge=0)
+    char_count: int = Field(ge=1)
 
 
 class JobStatus(BaseModel):

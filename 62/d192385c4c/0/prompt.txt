@@ -1,51 +1,5 @@
 # Context from my IDE setup:
 
-## Open tabs:
-- SKILL.md: .claude/skills/hera-api/SKILL.md
-- hera.py: backend/app/agents/hera.py
-- .env: backend/.env
-- .env.example: backend/.env.example
-- .dockerignore: backend/.dockerignore
-
-## My request for Codex:
-git commit and push
-
----
-
-# Context from my IDE setup:
-
-## Active file: backend/.env.example
-
-## Open tabs:
-- .env.example: backend/.env.example
-- .env: backend/.env
-- SKILL.md: .claude/skills/hera-api/SKILL.md
-- hera.py: backend/app/agents/hera.py
-- .dockerignore: backend/.dockerignore
-
-## My request for Codex:
-push the commits without the .env of course.
-
----
-
-# Context from my IDE setup:
-
-## Active file: backend/.env.example
-
-## Open tabs:
-- .env.example: backend/.env.example
-- .env: backend/.env
-- SKILL.md: .claude/skills/hera-api/SKILL.md
-- hera.py: backend/app/agents/hera.py
-- .dockerignore: backend/.dockerignore
-
-## My request for Codex:
-i dont see in github
-
----
-
-# Context from my IDE setup:
-
 ## Active file: backend/.env
 
 ## Open tabs:
@@ -56,4 +10,4 @@ i dont see in github
 - .dockerignore: backend/.dockerignore
 
 ## My request for Codex:
-please in the readme instead of the video goes to vimeo use this link https://drive.google.com/drive/folders/REDACTED?usp=drive_link
+commit and push

@@ -1,0 +1,446 @@
+please git pull fix issues
+
+---
+
+can you please check the repo and let me know what is missing and possible issues ?
+
+---
+
+git pull again
+
+---
+
+try again
+
+---
+
+ok scan again the code with whta is missing and possible issues
+
+---
+
+fix all the possible issues and vulnerabilitiesn ,make sure the workflow is correct also i just realize the prompts for the agents are inside @docs/agent-prompts.md it should be in backend ina proper yaml file with clear visibility of the prompts, each agent should have its own file, also make sure do a research about the finance agent prompt and also hera prompt should really define the exact time for each part of the animation and detailed animation.
+
+---
+
+you have inccorect parameetrs for hera, here is real info > ## Documentation Index
+> Fetch the complete documentation index at: https://docs.hera.video/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Introduction
+
+> Create and manage AI-generated motion graphics programmatically.
+
+The Hera REST API enables you to generate motion graphics videos using simple HTTP requests. You can submit a video creation job and check its export status from your application or workflow.
+
+## Endpoints
+
+* **POST /videos**: Submit a new motion graphics job for generation (asynchronous).
+* **GET /videos/\{video\_id}**: Retrieve the status for a specific video job.
+
+## Authentication
+
+All API requests must include your API key in the `x-api-key` HTTP header.
+
+Example:
+
+```
+x-api-key: YOUR_API_KEY
+```
+
+API keys can be obtained on request. Keep your API keys secret; do not expose them in client-side code or public repositories.
+
+<Note>
+  Looking for support or have questions? Email us at [support@hera.video](mailto:support@hera.video).
+</Note>
+ --> > ## Documentation Index
+> Fetch the complete documentation index at: https://docs.hera.video/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Create a new motion graphics video generation job
+
+> Creates a new motion graphics generation job. Submit your prompt and desired output formats to queue a video for generation.
+
+
+
+## OpenAPI
+
+````yaml POST /videos
+openapi: 3.1.0
+info:
+  version: 1.0.0
+  title: Hera.Video API
+  description: API for motion graphics video generation
+servers:
+  - url: https://api.hera.video/v1
+security: []
+paths:
+  /videos:
+    post:
+      summary: Create a new motion graphics video generation job
+      description: >-
+        Creates a new motion graphics generation job. Submit your prompt and
+        desired output formats to queue a video for generation.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVideoInput'
+      responses:
+        '200':
+          description: Job successfully queued. Returns a job/video ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateVideoOutput'
+      security:
+        - ApiKeyAuth: []
+components:
+  schemas:
+    CreateVideoInput:
+      type: object
+      properties:
+        prompt:
+          type: string
+          description: >-
+            Text prompt describing the motion graphics/video to generate. Be
+            specific about subject, style, motion, and colors for best results.
+          example: A spinning rainbow wheel.
+        reference_image_url:
+          type: string
+          description: >-
+            URL of a single reference image to guide visual style or content.
+            Use reference_image_urls instead if you have multiple images.
+        reference_image_urls:
+          type: array
+          items:
+            type: string
+          maxItems: 5
+          description: >-
+            Up to 5 reference image URLs to guide visual style or content.
+            Preferred over reference_image_url when providing multiple images.
+        reference_video_url:
+          type: string
+          description: Optional URL of a reference video.
+        duration_seconds:
+          type: number
+          description: >-
+            Duration (in seconds) for the generated video. Optional. Range:
+            1–60. If omitted, default or parent is used.
+          maximum: 60
+          example: 8
+        style_id:
+          type: string
+          description: Optional ID of a style to use for styling the video.
+        brand_kit_id:
+          type: string
+          description: >-
+            [Deprecated] Optional ID of a style to use for styling the video.
+            Use `style_id` instead.
+          deprecated: true
+        parent_video_id:
+          type: string
+          description: >-
+            Video ID or template ID to use as a starting point for this
+            generation. Useful for iterations on a previous result or starting
+            from a template.
+        assets:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum:
+                  - image
+                  - video
+                  - audio
+                  - font
+                  - csv
+                description: 'Asset type: image, video, audio, font, or csv.'
+              url:
+                type: string
+                description: >-
+                  URL of the asset file. Use the POST /files endpoint to upload
+                  local files and get a URL.
+            required:
+              - type
+              - url
+          description: >-
+            Optional array of asset files to include in the video generation.
+            Each asset has a type and a URL.
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExternalExportConfig'
+          maxItems: 10
+          description: >-
+            Array of output configurations (1–10). Each specifies format,
+            aspect_ratio, fps, and resolution. A good default is one entry: {
+            format: "mp4", aspect_ratio: "16:9", fps: "30", resolution: "1080p"
+            }.
+          example:
+            - format: mp4
+              aspect_ratio: '16:9'
+              fps: '30'
+              resolution: 1080p
+      required:
+        - prompt
+        - outputs
+      description: Request body to create a new motion graphics export job.
+    CreateVideoOutput:
+      type: object
+      properties:
+        video_id:
+          type: string
+          description: Unique ID of the job/video that was created.
+        project_url:
+          type: string
+          description: Optional URL to view the project in the user interface.
+      required:
+        - video_id
+      description: Response for a successfully queued video generation job.
+    ExternalExportConfig:
+      type: object
+      properties:
+        format:
+          $ref: '#/components/schemas/ExternalExportFormatEnum'
+        aspect_ratio:
+          $ref: '#/components/schemas/ExternalExportAspectRatioEnum'
+        fps:
+          anyOf:
+            - type: string
+              enum:
+                - '24'
+            - type: string
+              enum:
+                - '25'
+            - type: string
+              enum:
+                - '30'
+            - type: string
+              enum:
+                - '60'
+          description: Frames per second for this export output.
+        resolution:
+          $ref: '#/components/schemas/ExternalExportResolutionEnum'
+      required:
+        - format
+        - aspect_ratio
+        - fps
+        - resolution
+      description: >-
+        Configuration for an export output. Defines the file format, aspect
+        ratio, frame rate, and resolution.
+    ExternalExportFormatEnum:
+      type: string
+      enum:
+        - mp4
+        - prores
+        - webm
+        - gif
+      description: Output format for this export (e.g. mp4, prores, webm, gif).
+    ExternalExportAspectRatioEnum:
+      type: string
+      enum:
+        - '16:9'
+        - '9:16'
+        - '1:1'
+        - '4:5'
+      description: Aspect ratio for this export (e.g. '16:9', '9:16', '1:1', '4:5').
+    ExternalExportResolutionEnum:
+      type: string
+      enum:
+        - 360p
+        - 480p
+        - 720p
+        - 1080p
+        - 4k
+      description: Resolution for this export output (e.g. '1080p', '720p').
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Your API key for authenticating requests.
+
+````  --> > ## Documentation Index
+> Fetch the complete documentation index at: https://docs.hera.video/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Retrieve the status of a motion graphics video
+
+> Retrieve the export status, details, and output URLs for a generated video job using its ID.
+
+
+
+## OpenAPI
+
+````yaml GET /videos/{video_id}
+openapi: 3.1.0
+info:
+  version: 1.0.0
+  title: Hera.Video API
+  description: API for motion graphics video generation
+servers:
+  - url: https://api.hera.video/v1
+security: []
+paths:
+  /videos/{video_id}:
+    get:
+      summary: Get the status of a motion graphics video
+      description: >-
+        Retrieve the export status, details, and output URLs for a generated
+        video job using its ID.
+      parameters:
+        - schema:
+            type: string
+            description: The unique video/job ID returned when creating the job.
+          required: true
+          description: The unique video/job ID returned when creating the job.
+          name: video_id
+          in: path
+      responses:
+        '200':
+          description: Full export status and list of outputs for the specified video/job.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetVideoResponse'
+        '404':
+          description: No video/job found with the specified ID.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Video/job not found
+                required:
+                  - error
+      security:
+        - ApiKeyAuth: []
+components:
+  schemas:
+    GetVideoResponse:
+      type: object
+      properties:
+        video_id:
+          type: string
+          description: Unique ID of this job/video.
+          example: vid_abcde12345
+        project_url:
+          type: string
+          description: Optional user interface URL for this project.
+        status:
+          $ref: '#/components/schemas/ExternalExportStatusEnum'
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExportStatusEntry'
+          description: Detailed export output statuses for each configuration requested.
+      required:
+        - video_id
+        - status
+        - outputs
+      description: Complete status object and output info for a generated video job.
+    ExternalExportStatusEnum:
+      type: string
+      enum:
+        - in-progress
+        - success
+        - failed
+      description: High-level status of the export job (in-progress, success, failed).
+    ExportStatusEntry:
+      type: object
+      properties:
+        status:
+          allOf:
+            - $ref: '#/components/schemas/ExternalExportStatusEnum'
+            - description: Status of this export output (in-progress, success, or failed).
+        file_url:
+          type: string
+          nullable: true
+          description: >-
+            URL to download or view the exported file if succeeded, or null if
+            not applicable.
+        config:
+          allOf:
+            - $ref: '#/components/schemas/ExternalExportConfig'
+            - description: Configuration details for this export output.
+        error:
+          type: string
+          description: Error message (if status is 'failed').
+      required:
+        - status
+        - config
+      description: Status information for an individual export output.
+    ExternalExportConfig:
+      type: object
+      properties:
+        format:
+          $ref: '#/components/schemas/ExternalExportFormatEnum'
+        aspect_ratio:
+          $ref: '#/components/schemas/ExternalExportAspectRatioEnum'
+        fps:
+          anyOf:
+            - type: string
+              enum:
+                - '24'
+            - type: string
+              enum:
+                - '25'
+            - type: string
+              enum:
+                - '30'
+            - type: string
+              enum:
+                - '60'
+          description: Frames per second for this export output.
+        resolution:
+          $ref: '#/components/schemas/ExternalExportResolutionEnum'
+      required:
+        - format
+        - aspect_ratio
+        - fps
+        - resolution
+      description: >-
+        Configuration for an export output. Defines the file format, aspect
+        ratio, frame rate, and resolution.
+    ExternalExportFormatEnum:
+      type: string
+      enum:
+        - mp4
+        - prores
+        - webm
+        - gif
+      description: Output format for this export (e.g. mp4, prores, webm, gif).
+    ExternalExportAspectRatioEnum:
+      type: string
+      enum:
+        - '16:9'
+        - '9:16'
+        - '1:1'
+        - '4:5'
+      description: Aspect ratio for this export (e.g. '16:9', '9:16', '1:1', '4:5').
+    ExternalExportResolutionEnum:
+      type: string
+      enum:
+        - 360p
+        - 480p
+        - 720p
+        - 1080p
+        - 4k
+      description: Resolution for this export output (e.g. '1080p', '720p').
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Your API key for authenticating requests.
+
+````  --> also create and skill for agents on how to use hera
+
+---
+
+ok the skill should be general skill do not mention when working with corpuscan please, for hera we need skills for create video fetch but also how to proper prompting videos for hera, like a guide, because hera in my experience is meant for [Image #1] we i remember the way i was doing that is that in the prompt i was specifying the exact timing like [from 0s to 3s] create a typing aniamtion of "Hello everyone", centered with Montserrat font black, in white background, then [3s to 6s] create a fade in aniamtion of "this is the world offf"] and so on until finish the complete 30s, that's what i mean, the challenge?? well the promblem is that in order to create this properly we first needed to analize the transcripts that were coming from elevenlabs and this si not gonna be exactly like we want for example 2s or 3s, in order to render the words in the screen at at time we needed to anaize the transcripts instead of the script fselt, because the transcript give us the precision on how to prompt the animation, so if we use render 80 characters per slide for example, and in the transcript is from 3s10 to 5s25 we need to prmpt in that way, so please help me to create this skill best practice prompting possible, and then make sure to fix @app/prompts/hera.yaml or help me define if we need another agent before hera, to manage this properly, because i also want that at the begginign of the videos, it start we a typing effect of the title in discussion example "Report tesla 2026.. etc" and it should be with a sound background of typing effect not starting with voice over, elevelbens labs has and api for background effects.

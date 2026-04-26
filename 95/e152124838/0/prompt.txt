@@ -1,0 +1,112 @@
+# Context from my IDE setup:
+
+## Open tabs:
+- README.md: README.md
+- tavily.py: backend/app/integrations/tavily.py
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- entire-search.md: .claude/agents/entire-search.md
+- CHANGELOG.md: CHANGELOG.md
+
+## My request for Codex:
+ok commit changes.
+
+---
+
+# Context from my IDE setup:
+
+## Open tabs:
+- README.md: README.md
+- tavily.py: backend/app/integrations/tavily.py
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- entire-search.md: .claude/agents/entire-search.md
+- CHANGELOG.md: CHANGELOG.md
+
+## My request for Codex:
+also what is going here --> uv run uvicorn app.main:app --reload --port 8000
+INFO:     Will watch for changes in these directories: ['/Users/peresjav/PeresJav/hackathons/bigTechBerlin-04-26-v2/backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [43667] using WatchFiles
+INFO:     Started server process [43669]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+[24a43a4c-db53-48e6-8b7e-9b3a09dff1bd] status requested but job was not found
+INFO:     127.0.0.1:59197 - "GET /jobs/24a43a4c-db53-48e6-8b7e-9b3a09dff1bd HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59202 - "POST /generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'app/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43669]
+INFO:     Started server process [43759]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+[eb152aae-0c98-429e-ad98-e3dc7f905cc9] status requested but job was not found
+INFO:     127.0.0.1:59216 - "GET /jobs/eb152aae-0c98-429e-ad98-e3dc7f905cc9 HTTP/1.1" 404 Not Found
+
+---
+
+# Context from my IDE setup:
+
+## Open tabs:
+- README.md: README.md
+- tavily.py: backend/app/integrations/tavily.py
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- entire-search.md: .claude/agents/entire-search.md
+- CHANGELOG.md: CHANGELOG.md
+
+## My request for Codex:
+still i dont fucking see the logs, at lesat create a logger file or something i need to see the steps --> uv run uvicorn app.main:app --reload --port 8000
+INFO:     Will watch for changes in these directories: ['/Users/peresjav/PeresJav/hackathons/bigTechBerlin-04-26-v2/backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [43973] using WatchFiles
+INFO:     Started server process [43975]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:59244 - "POST /generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59244 - "GET /jobs/6db3eab9-e94c-4e8e-a571-843bfa08a28c HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59244 - "GET /jobs/6db3eab9-e94c-4e8e-a571-843bfa08a28c HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59244 - "GET /jobs/6db3eab9-e94c-4e8e-a571-843bfa08a28c HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59244 - "GET /jobs/6db3eab9-e94c-4e8e-a571-843bfa08a28c HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59244 - "GET /jobs/6db3eab9-e94c-4e8e-a571-843bfa08a28c HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59244 - "GET /jobs/6db3eab9-e94c-4e8e-a571-843bfa08a28c HTTP/1.1" 200 OK
+IN

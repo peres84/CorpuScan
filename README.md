@@ -14,9 +14,9 @@ Built for **Big Tech Berlin 2026**, CorpuScan helps teams go from quarterly repo
 
 ## Demo result
 
-[![Tesla Q1 2026 demo result](docs/demo-tesla-q1-2026.svg)](https://vimeo.com/1186651677?share=copy&fl=sv&fe=ci)
+[![Tesla Q1 2026 demo result](docs/demo-tesla-q1-2026.svg)](https://drive.google.com/drive/folders/1Mm5MeHAiED8sdw7vrtc_3WAbHpBGsSJr?usp=drive_link)
 
-- Demo video result: [Watch the generated briefing on Vimeo](https://vimeo.com/1186651677?share=copy&fl=sv&fe=ci)
+- Demo video result: [Open the generated briefing folder on Google Drive](https://drive.google.com/drive/folders/1Mm5MeHAiED8sdw7vrtc_3WAbHpBGsSJr?usp=drive_link)
 - Source report analyzed by the pipeline: [Tesla Q1 2026 Update PDF](https://assets-ir.tesla.com/tesla-contents/IR/TSLA-Q1-2026-Update.pdf)
 
 ## The problem

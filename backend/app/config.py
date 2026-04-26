@@ -6,6 +6,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
+_DEFAULT_DEV_CORS_ORIGINS = ("http://localhost:5173", "http://localhost:8080")
 
 
 class Settings(BaseSettings):
@@ -23,7 +24,11 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        configured = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        if "*" in configured:
+            return ["*"]
+        merged = list(dict.fromkeys([*configured, *_DEFAULT_DEV_CORS_ORIGINS]))
+        return merged
 
 
 # No lru_cache — settings must be fresh on each process start so .env changes are picked up

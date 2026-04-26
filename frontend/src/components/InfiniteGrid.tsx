@@ -38,8 +38,8 @@ const GridPattern = ({ offsetX, offsetY, strokeColor, strokeWidth }: GridPattern
       <motion.rect
         x={-CELL}
         y={-CELL}
-        width="calc(100% + 80px)"
-        height="calc(100% + 80px)"
+        width="100%"
+        height="100%"
         fill={`url(#grid-${strokeColor.replace(/[^a-z0-9]/gi, "")})`}
         style={{ transform }}
       />

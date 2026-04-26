@@ -1,0 +1,40 @@
+---
+description: Hera Motion API integration and prompting guide for building accurate clients and frame-timed motion prompts.
+alwaysApply: false
+---
+
+# Hera Motion API
+
+Use this rule when working with Hera API integrations or when writing prompts for Hera-rendered motion graphics.
+
+Core guidance:
+
+- Base URL is `https://api.hera.video/v1`.
+- Auth header is `x-api-key`, not `Authorization: Bearer`.
+- Submit with `POST /videos`, poll with `GET /videos/{video_id}`.
+- Status enum is exactly `in-progress | success | failed`.
+- Download URLs live at `outputs[i].file_url`.
+- Always send `outputs[]`, and `fps` must be a string such as `"30"`.
+- Do not treat `failed` as transient without inspecting `outputs[i].error`.
+
+Prompting rules:
+
+- Use explicit bracketed timing tags: `[from <START>s to <END>s] <action>`.
+- Cover the clip contiguously from `0s` to `duration_seconds`, allowing only short `0.10s` to `0.30s` overlaps for transitions.
+- Derive timings from TTS transcript alignment, not from script estimates.
+- Prefer deterministic slide chunking around 80 characters, with punctuation breaks once at least 30 characters have accumulated and whitespace breaks otherwise.
+- Pick the visual primitive that matches the content:
+- number to count-up
+- comparison to bar chart
+- trend to line chart
+- hero phrase to kinetic text
+- qualifier to callout box
+
+Title intro pattern:
+
+- A 4-second title card on `#F9FAFB`.
+- `JetBrains Mono` title text, centered, around `96px`.
+- A blinking `#06B6D4` cursor with typewriter cadence.
+- Optional matching typewriter sound via ElevenLabs `/v1/sound-generation`.
+
+Avoid decorative imagery, gradients, emoji, lens-flare effects, and vague animation language. Specify timings, coordinates, colors, font sizes, easing, and fade durations mechanically.

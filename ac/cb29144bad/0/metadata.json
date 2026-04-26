@@ -1,0 +1,58 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "accb29144bad",
+  "session_id": "019dc94c-c676-7e93-b82e-8a375a3da05f",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-26T11:18:53.192623Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/.env.example",
+    "backend/app/config.py",
+    "backend/app/pipeline.py",
+    "backend/tests/test_pipeline_hera_retry.py"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.4",
+  "turn_id": "0c7c561b82ba",
+  "checkpoint_transcript_start": 415,
+  "transcript_lines_at_start": 415,
+  "token_usage": {
+    "input_tokens": 26184,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1748224,
+    "output_tokens": 6170,
+    "api_call_count": 18
+  },
+  "session_metrics": {
+    "turn_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-26T11:18:53.172649Z",
+    "agent_lines": 133,
+    "agent_removed": 41,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 133,
+    "total_lines_changed": 174,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 133,
+      "agent_lines_removed": 41
+    }
+  ]
+}

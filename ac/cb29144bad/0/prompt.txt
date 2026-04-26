@@ -1,0 +1,53 @@
+# Context from my IDE setup:
+
+## Open tabs:
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- hera.py: backend/app/agents/hera.py
+- .env: backend/.env
+- .env.example: backend/.env.example
+- .dockerignore: backend/.dockerignore
+
+## My request for Codex:
+commit changes and push please.
+
+---
+
+# Context from my IDE setup:
+
+## Open tabs:
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- hera.py: backend/app/agents/hera.py
+- .env: backend/.env
+- .env.example: backend/.env.example
+- .dockerignore: backend/.dockerignore
+
+## My request for Codex:
+did u push ?
+
+---
+
+# Context from my IDE setup:
+
+## Open tabs:
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- hera.py: backend/app/agents/hera.py
+- .env: backend/.env
+- .env.example: backend/.env.example
+- .dockerignore: backend/.dockerignore
+
+## My request for Codex:
+psu hto git please
+
+---
+
+# Context from my IDE setup:
+
+## Open tabs:
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- hera.py: backend/app/agents/hera.py
+- .env: backend/.env
+- .env.example: backend/.env.example
+- .dockerignore: backend/.dockerignore
+
+## My request for Codex:
+there is still an issue tme out, can you fix it. maybe add 3 retries? also, when the retries is max it reset again the poll ans starte regenerating evrything, istead of just pulling the old videos ids that were already generated.

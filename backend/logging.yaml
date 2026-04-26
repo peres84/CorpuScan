@@ -11,21 +11,31 @@ handlers:
     level: INFO
     formatter: structured
     stream: ext://sys.stdout
+  file:
+    class: logging.FileHandler
+    level: INFO
+    formatter: structured
+    filename: logs/backend.log
+    encoding: utf-8
 
 loggers:
+  app:
+    level: INFO
+    handlers: [console, file]
+    propagate: false
   uvicorn:
     level: INFO
-    handlers: [console]
+    handlers: [console, file]
     propagate: false
   uvicorn.error:
     level: INFO
-    handlers: [console]
+    handlers: [console, file]
     propagate: false
   uvicorn.access:
     level: INFO
-    handlers: [console]
+    handlers: [console, file]
     propagate: false
 
 root:
   level: INFO
-  handlers: [console]
+  handlers: [console, file]

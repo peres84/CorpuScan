@@ -13,6 +13,7 @@ from uuid import UUID
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+import yaml
 
 from app.config import get_settings
 from app.integrations.tavily import TavilyClient
@@ -30,6 +31,9 @@ REQUEST_TIMEOUT_SECONDS = 240
 STALE_TMP_AGE_SECONDS = 30 * 60
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 TMP_ROOT = Path("/tmp")
+BACKEND_ROOT = Path(__file__).resolve().parent.parent
+LOGGING_CONFIG_PATH = BACKEND_ROOT / "logging.yaml"
+LOG_DIR = BACKEND_ROOT / "logs"
 
 
 @asynccontextmanager
@@ -155,22 +159,13 @@ def _detect_source_kind(
 
 
 def configure_application_logging() -> None:
-    uvicorn_error_logger = logging.getLogger("uvicorn.error")
-    root_logger = logging.getLogger()
-    app_logger = logging.getLogger("app")
-
-    if uvicorn_error_logger.handlers:
-        root_logger.handlers = uvicorn_error_logger.handlers
-        root_logger.setLevel(logging.INFO)
-
-    app_logger.handlers = []
-    app_logger.setLevel(logging.INFO)
-    app_logger.propagate = True
-
-    logging.getLogger("app.main").setLevel(logging.INFO)
-    logging.getLogger("app.jobs").setLevel(logging.INFO)
-    logging.getLogger("app.pipeline").setLevel(logging.INFO)
-    logging.getLogger("app.integrations").setLevel(logging.INFO)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    if LOGGING_CONFIG_PATH.exists():
+        with LOGGING_CONFIG_PATH.open("r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        logging.config.dictConfig(config)
+    else:
+        logging.basicConfig(level=logging.INFO, force=True)
     logger.info("%s application logging configured", stage_tag("request"))
 
 

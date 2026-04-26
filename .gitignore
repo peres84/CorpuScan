@@ -27,6 +27,7 @@ build/
 # Generated artifacts
 *.mp4
 /tmp/
+backend/logs/
 
 # Editor
 .vscode/

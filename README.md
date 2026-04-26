@@ -1,25 +1,47 @@
 # CorpuScan
 
-> AI analyst-producer that turns quarterly reports into short, clear executive video briefings.
+![Hackathon](https://img.shields.io/badge/Hackathon-Big%20Tech%20Berlin%202026-111827?style=for-the-badge)
+![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20Vite%20%2B%20TypeScript-06B6D4?style=for-the-badge)
+![Backend](https://img.shields.io/badge/Backend-FastAPI%20%2B%20Python%203.12-0F766E?style=for-the-badge)
+![AI](https://img.shields.io/badge/AI-Gemini%202.5%20Pro%20%2B%20Hera%20%2B%20ElevenLabs-7C3AED?style=for-the-badge)
+![Research](https://img.shields.io/badge/Research-Tavily-2563EB?style=for-the-badge)
+![Security](https://img.shields.io/badge/Security-Aikido-E11D48?style=for-the-badge)
+![Dev Workflow](https://img.shields.io/badge/Developer%20Workflow-Entire.io-111827?style=for-the-badge)
 
-Upload a quarterly report (PDF), an investor update, paste a URL, or just type a query — CorpuScan extracts what actually matters, writes a narrated script, and renders a 2-minute boardroom-ready explainer video.
+> CorpuScan turns dense financial documents into short, polished executive video briefings.
 
-The value is not "making video." The value is **turning dense information into clear communication**.
+Built for **Big Tech Berlin 2026**, CorpuScan helps teams go from quarterly report to boardroom-ready summary without spending hours reading, rewriting, recording, and assembling slides by hand.
 
----
+## The problem
 
-## Positioning
+Quarterly reports, investor updates, and earnings materials are packed with signal, but they are slow to consume and even slower to communicate. Founders, finance teams, investor relations, and internal comms teams often need to:
 
-- *Turn quarterly reports into 2-minute executive video briefings.*
-- *AI agent for explaining company reports visually.*
-- *Upload a report, get a boardroom-ready video summary.*
+- read long and repetitive source material
+- extract the few numbers that actually matter
+- rewrite that information into plain English
+- turn it into something visual enough to share internally or externally
 
-## Target users
+That work is usually fragmented across documents, slides, scripting, narration, and video editing tools.
 
-- Investor relations teams
-- Founders & finance teams
-- Internal communications teams
-- Strategy & analyst teams
+## What we are solving
+
+CorpuScan compresses that workflow into one pipeline:
+
+- ingest a PDF, URL, or research query
+- extract the most relevant financial facts
+- turn them into a concise 4-scene script
+- generate voiceover with timing alignment
+- render motion graphics scene by scene
+- deliver a playable MP4 in the browser
+
+The value is not just "making video." The value is **turning dense information into clear communication**.
+
+## Who it is for
+
+- investor relations teams
+- founders and finance teams
+- strategy and analyst teams
+- internal communications teams
 
 ---
 
@@ -45,25 +67,39 @@ flowchart TD
 
 ---
 
+## Why this approach
+
+We intentionally designed CorpuScan as a fast MVP instead of a heavyweight media platform:
+
+- no database
+- no queue
+- no auth
+- no persistent storage
+- one backend process
+
+That keeps the product easy to demo, easy to reason about, and fast enough for a hackathon build while still solving the real communication bottleneck.
+
+---
+
 ## Tech stack
 
-| Layer                | Tool                                              |
-| -------------------- | ------------------------------------------------- |
-| Frontend             | React 18 + Vite + TypeScript + Tailwind CSS       |
-| UI scaffold          | Built with Lovable (see `docs/lovable-prompt.md`) |
-| UI components        | shadcn/ui + lucide-react                          |
-| Backend              | FastAPI (Python 3.12), managed with `uv`          |
-| LLM reasoning        | Google Gemini 2.5 Pro via `google-genai` SDK      |
-| Research agent       | Tavily Search + Extract API                       |
-| Voiceover            | ElevenLabs TTS (`/with-timestamps` endpoint)      |
-| Motion graphics      | Hera Motion API (`docs.hera.video`)               |
-| Video composition    | ffmpeg (system binary, called via subprocess)     |
-| Frontend hosting     | Vercel                                            |
-| Backend hosting      | Railway or Fly.io (single always-on container)    |
-| Database             | **None** — in-memory job state                    |
-| Queue                | **None** — `asyncio.create_task` per request      |
-| File storage         | **None** — `/tmp/{job_id}/` + streamed response   |
-| Auth                 | **None** — public demo, no signup                 |
+| Layer             | Tool |
+| ----------------- | ---- |
+| Frontend          | React 18, Vite, TypeScript, Tailwind CSS |
+| UI scaffold       | Lovable |
+| UI components     | shadcn/ui, Radix UI, lucide-react |
+| Backend           | FastAPI, Python 3.12, `uv` |
+| LLM orchestration | Google Gemini 2.5 Pro via `google-genai` |
+| Research          | Tavily Search + Extract |
+| Voiceover         | ElevenLabs TTS with character timestamps |
+| Motion graphics   | Hera Motion API |
+| Video composition | ffmpeg |
+| Testing           | Vitest, Testing Library |
+| Security tooling  | Aikido |
+| Dev workflow      | Entire.io |
+| Frontend hosting  | Vercel |
+| Backend hosting   | Railway or Fly.io |
+| Storage model     | In-memory jobs + `/tmp/{job_id}/` |
 
 ---
 
@@ -88,7 +124,8 @@ flowchart TD
 │   ├── PRD.md              ← product requirements
 │   ├── TASK.md             ← build checklist
 │   ├── lovable-prompt.md   ← paste this into Lovable to scaffold the frontend
-│   └── branding.md         ← brand voice + color tokens
+│   ├── branding.md         ← brand voice + color tokens
+│   └── hera-api.md         ← Hera API reference and prompting guide
 ├── frontend/            ← React + Vite + Tailwind (Vite dev server on :8080)
 └── backend/
     ├── app/agents/      ← Finance / Scripter / Hera agent runners
@@ -130,3 +167,7 @@ System dependency: **ffmpeg** must be on `PATH`. Install via `brew install ffmpe
 ## Status
 
 Hackathon MVP — see [docs/TASK.md](docs/TASK.md) for the live checklist.
+
+## Team
+
+Built at **Big Tech Berlin 2026** by **Javier Peres** and **Sebastian Russo**.

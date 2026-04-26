@@ -1,0 +1,37 @@
+# Context from my IDE setup:
+
+## Active file: backend/.env
+
+## Open tabs:
+- .env: backend/.env
+- README.md: README.md
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- tsconfig.app.json: frontend/tsconfig.app.json
+- changlogs.md: changlogs.md
+
+## My request for Codex:
+commit changes, also there is time out in hera, how many seconds is has?
+
+---
+
+<image>
+
+---
+
+</image>
+
+---
+
+# Context from my IDE setup:
+
+## Active file: backend/.env
+
+## Open tabs:
+- .env: backend/.env
+- README.md: README.md
+- SKILL.md: .claude/skills/hera-api/SKILL.md
+- tsconfig.app.json: frontend/tsconfig.app.json
+- changlogs.md: changlogs.md
+
+## My request for Codex:
+yes make configurable, and also, it should have tries, and in the frontend should be visible the fetching like 1/4 2/4 etc.

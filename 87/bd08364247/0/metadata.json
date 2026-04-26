@@ -1,0 +1,64 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "87bd08364247",
+  "session_id": "019dc8bd-ee6f-76b3-9152-9f813e31a88e",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-26T08:02:42.636856Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/.env.example",
+    "backend/app/config.py",
+    "backend/app/jobs.py",
+    "backend/app/pipeline.py",
+    "backend/app/schemas.py",
+    "docs/TASK.md",
+    "frontend/src/components/JobProgress.tsx",
+    "frontend/src/hooks/useJobStatus.ts",
+    "frontend/src/lib/api.ts",
+    "frontend/src/pages/JobPage.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.4",
+  "turn_id": "9291c90c1156",
+  "checkpoint_transcript_start": 262,
+  "transcript_lines_at_start": 262,
+  "token_usage": {
+    "input_tokens": 125404,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 814976,
+    "output_tokens": 11963,
+    "api_call_count": 15
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-26T08:02:42.620722Z",
+    "agent_lines": 278,
+    "agent_removed": 42,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 278,
+    "total_lines_changed": 320,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 278,
+      "agent_lines_removed": 42
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "ff9690d916fd",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "backend/app/main.py",
+    "frontend/src/hooks/useJobStatus.ts",
+    "frontend/src/lib/api.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ff/9690d916fd/0/metadata.json",
+      "transcript": "/ff/9690d916fd/0/full.jsonl",
+      "content_hash": "/ff/9690d916fd/0/content_hash.txt",
+      "prompt": "/ff/9690d916fd/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 27459,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1991552,
+    "output_tokens": 4724,
+    "api_call_count": 19
+  }
+}

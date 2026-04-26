@@ -7,23 +7,41 @@ import { ErrorBanner } from "@/components/ErrorBanner";
 import { Loader2 } from "lucide-react";
 
 type TabKey = "upload" | "url" | "search";
+type TemplateId = "growth_comparison" | "earnings_comparison";
+type OutputAspectRatio = "16:9" | "9:16";
 
 const SAMPLE_URL = "https://www.apple.com/newsroom/pdfs/fy2024-q4/FY24_Q4_Consolidated_Financial_Statements.pdf";
+const TEMPLATE_OPTIONS: Array<{ id: TemplateId; title: string; description: string }> = [
+  {
+    id: "growth_comparison",
+    title: "Comparing Growth",
+    description: "Focus on revenue growth, segment drivers, and momentum changes across uploaded periods.",
+  },
+  {
+    id: "earnings_comparison",
+    title: "Comparing Earnings",
+    description: "Focus on margins, EPS, operating leverage, and the quality of profitability changes.",
+  },
+];
 
 export const GenerateForm = () => {
   const [tab, setTab] = useState<TabKey>("upload");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [url, setUrl] = useState<string>("");
   const [query, setQuery] = useState<string>("");
+  const [templateId, setTemplateId] = useState<TemplateId | null>("growth_comparison");
+  const [outputAspectRatio, setOutputAspectRatio] = useState<OutputAspectRatio | null>("16:9");
   const navigate = useNavigate();
   const { mutate, loading, error } = useGenerate();
 
   const isValid = useMemo<boolean>(() => {
-    if (tab === "upload") return file !== null;
+    if (tab === "upload") {
+      return files.length > 0 && files.length <= 4 && templateId !== null && outputAspectRatio !== null;
+    }
     if (tab === "url") return /^https:\/\/.+/i.test(url.trim());
     if (tab === "search") return query.trim().length > 0;
     return false;
-  }, [tab, file, url, query]);
+  }, [tab, files, url, query, templateId, outputAspectRatio]);
 
   const handleSubmit = async (overrideUrl?: string): Promise<void> => {
     try {
@@ -31,7 +49,11 @@ export const GenerateForm = () => {
         overrideUrl !== undefined
           ? { url: overrideUrl }
           : tab === "upload"
-            ? { file: file ?? undefined }
+            ? {
+                files,
+                templateId: templateId ?? undefined,
+                outputAspectRatio: outputAspectRatio ?? undefined,
+              }
             : tab === "url"
               ? { url: url.trim() }
               : { query: query.trim() };
@@ -57,7 +79,57 @@ export const GenerateForm = () => {
           </TabsList>
 
           <TabsContent value="upload" className="mt-6">
-            <Dropzone file={file} onFileChange={setFile} />
+            <Dropzone files={files} onFilesChange={setFiles} />
+            <div className="mt-6">
+              <p className="text-sm font-medium text-primary">Template</p>
+              <p className="mt-1 text-xs text-secondary">Pick the angle for PDF-based analysis.</p>
+              <div className="mt-3 grid gap-3">
+                {TEMPLATE_OPTIONS.map((option) => {
+                  const selected = templateId === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setTemplateId(option.id)}
+                      className={`rounded-xl border p-4 text-left transition-colors ${
+                        selected
+                          ? "border-accent bg-accent/5"
+                          : "border-border bg-surface hover:border-accent/50"
+                      }`}
+                    >
+                      <p className="text-sm font-semibold text-primary">{option.title}</p>
+                      <p className="mt-1 text-sm text-secondary">{option.description}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="mt-6">
+              <p className="text-sm font-medium text-primary">Output format</p>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                {[
+                  { value: "16:9" as const, label: "Desktop 16:9", description: "Landscape briefing for laptops and embeds." },
+                  { value: "9:16" as const, label: "Mobile 9:16", description: "Portrait briefing for phone-first playback." },
+                ].map((option) => {
+                  const selected = outputAspectRatio === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setOutputAspectRatio(option.value)}
+                      className={`rounded-xl border p-4 text-left transition-colors ${
+                        selected
+                          ? "border-accent bg-accent/5"
+                          : "border-border bg-surface hover:border-accent/50"
+                      }`}
+                    >
+                      <p className="text-sm font-semibold text-primary">{option.label}</p>
+                      <p className="mt-1 text-sm text-secondary">{option.description}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="url" className="mt-6">

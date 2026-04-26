@@ -5,6 +5,12 @@ from enum import StrEnum
 from pydantic import BaseModel, Field, field_validator
 
 
+class SourceKind(StrEnum):
+    PDF = "pdf"
+    URL = "url"
+    QUERY = "query"
+
+
 class JobState(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
@@ -23,8 +29,43 @@ class JobStep(StrEnum):
     DONE = "done"
 
 
+class PdfTemplateId(StrEnum):
+    GROWTH_COMPARISON = "growth_comparison"
+    EARNINGS_COMPARISON = "earnings_comparison"
+
+
+class OutputAspectRatio(StrEnum):
+    DESKTOP = "16:9"
+    MOBILE = "9:16"
+
+
 class GenerateResponse(BaseModel):
     job_id: str
+
+
+class BrandingPalette(BaseModel):
+    background: str = Field(min_length=4)
+    text: str = Field(min_length=4)
+    secondary: str = Field(min_length=4)
+    accent: str = Field(min_length=4)
+
+
+class PdfDocumentMetadata(BaseModel):
+    filename: str = Field(min_length=1)
+    company_name: str = Field(min_length=1)
+    period_label: str = Field(min_length=1)
+    page_count: int = Field(ge=1)
+    palette: BrandingPalette
+
+
+class PipelineContext(BaseModel):
+    source_kind: SourceKind
+    output_aspect_ratio: OutputAspectRatio = OutputAspectRatio.DESKTOP
+    template_id: PdfTemplateId | None = None
+    pdf_documents: list[PdfDocumentMetadata] = Field(default_factory=list)
+    branding: BrandingPalette | None = None
+    company_name: str | None = None
+    period_label: str | None = None
 
 
 class Scene(BaseModel):

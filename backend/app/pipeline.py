@@ -21,7 +21,7 @@ from app.integrations.hera import HeraClient
 from app.jobs import JobStore
 from app.logging_utils import stage_tag
 from app.render import compose
-from app.schemas import JobStep, SlideChunk
+from app.schemas import BrandingPalette, JobStep, PipelineContext, SlideChunk
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
@@ -32,7 +32,12 @@ INTRO_TYPING_SOUND_PROMPT = (
 INTRO_DURATION_SECONDS = 4
 
 
-async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> None:
+async def run_pipeline(
+    job_store: JobStore,
+    job_id: str,
+    source_text: str,
+    pipeline_context: PipelineContext,
+) -> None:
     logger.info("%s [%s] pipeline started, source_text length=%d", stage_tag("job"), job_id, len(source_text))
     try:
         settings = get_settings()
@@ -40,18 +45,27 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
         if job is None:
             return
         job.source_text = source_text
+        job.pipeline_context = pipeline_context
         job_store.update_step(job_id, step=JobStep.INGEST, progress=10)
         job_store.update_step(job_id, step=JobStep.FINANCE, progress=20)
         logger.info("%s [%s] running finance agent", stage_tag("finance"), job_id)
 
         gemini_client = GeminiClient(api_key=settings.gemini_api_key)
-        qa_markdown = await run_finance_agent(source_text=source_text, gemini_client=gemini_client)
+        qa_markdown = await run_finance_agent(
+            source_text=source_text,
+            pipeline_context=pipeline_context,
+            gemini_client=gemini_client,
+        )
         job.qa_markdown = qa_markdown
         logger.info("%s [%s] finance done, qa_markdown length=%d", stage_tag("finance"), job_id, len(qa_markdown))
 
         job_store.update_step(job_id, step=JobStep.SCRIPTER, progress=35)
         logger.info("%s [%s] running scripter agent", stage_tag("scripter"), job_id)
-        script = await run_scripter_agent(qa_markdown=qa_markdown, gemini_client=gemini_client)
+        script = await run_scripter_agent(
+            qa_markdown=qa_markdown,
+            pipeline_context=pipeline_context,
+            gemini_client=gemini_client,
+        )
         job.script = script.model_dump()
         logger.info("%s [%s] scripter done, title=%r", stage_tag("scripter"), job_id, script.title)
 
@@ -115,13 +129,25 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
                 run_hera_agent(
                     scene=scene,
                     slide_chunks_for_scene=chunks,
+                    pipeline_context=pipeline_context,
                     gemini_client=gemini_client,
                 )
                 for scene, chunks in zip(script.scenes, slide_chunks_by_scene, strict=True)
             ]
         )
+        branding = pipeline_context.branding or BrandingPalette(
+            background="#F9FAFB",
+            text="#111827",
+            secondary="#374151",
+            accent="#06B6D4",
+        )
         intro_spec = build_intro_hera_spec(
-            title=script.title, duration_seconds=INTRO_DURATION_SECONDS
+            title=script.title,
+            company_name=pipeline_context.company_name or "Unknown Company",
+            period_label=pipeline_context.period_label or "Current Period",
+            branding=branding,
+            output_aspect_ratio=pipeline_context.output_aspect_ratio,
+            duration_seconds=INTRO_DURATION_SECONDS,
         )
         job.scene_specs = scene_specs
         logger.info("%s [%s] hera plan done, %d scene specs + 1 intro", stage_tag("hera"), job_id, len(scene_specs))

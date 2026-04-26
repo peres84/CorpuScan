@@ -7,7 +7,6 @@ import shutil
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
 from uuid import UUID
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -17,20 +16,29 @@ import yaml
 
 from app.config import get_settings
 from app.integrations.tavily import TavilyClient
+from app.ingest import extract_pdf_documents
 from app.jobs import JobStore
 from app.logging_utils import stage_tag
 from app.pipeline import run_pipeline
 from app.render import ensure_ffmpeg_available
-from app.schemas import GenerateResponse, JobStatus, JobStep
+from app.schemas import (
+    GenerateResponse,
+    JobStatus,
+    JobStep,
+    OutputAspectRatio,
+    PdfTemplateId,
+    PipelineContext,
+    SourceKind,
+)
 
 logger = logging.getLogger(__name__)
 
 settings = get_settings()
 job_store = JobStore()
-active_pipeline_task: asyncio.Task[Any] | None = None
 REQUEST_TIMEOUT_SECONDS = 240
 STALE_TMP_AGE_SECONDS = 30 * 60
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+MAX_UPLOAD_FILE_COUNT = 4
 TMP_ROOT = Path("/tmp")
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
 LOGGING_CONFIG_PATH = BACKEND_ROOT / "logging.yaml"
@@ -91,27 +99,42 @@ async def health() -> dict[str, bool]:
 
 @app.post("/generate", response_model=GenerateResponse)
 async def generate(
+    files: list[UploadFile] | None = File(default=None),
     file: UploadFile | None = File(default=None),
     url: str | None = Form(default=None),
     query: str | None = Form(default=None),
+    template_id: PdfTemplateId | None = Form(default=None),
+    output_aspect_ratio: OutputAspectRatio | None = Form(default=None),
 ) -> GenerateResponse:
     ensure_ffmpeg_available()
-    source_kind = _detect_source_kind(file=file, url=url, query=query)
-    provided_count = sum(1 for value in [file, url, query] if value)
-    if provided_count != 1:
-        raise HTTPException(status_code=400, detail="Provide exactly one input: file, url, or query.")
+    pdf_uploads = _normalize_pdf_uploads(files=files, file=file)
+    source_kind = _detect_source_kind(files=pdf_uploads, url=url, query=query)
+    _validate_generate_request(
+        files=pdf_uploads,
+        url=url,
+        query=query,
+        template_id=template_id,
+        output_aspect_ratio=output_aspect_ratio,
+    )
 
     logger.info("generate request accepted (source=%s)", source_kind)
-    source_text = await _resolve_source_text(file=file, url=url, query=query)
+    source_text, pipeline_context = await _resolve_source_payload(
+        files=pdf_uploads,
+        url=url,
+        query=query,
+        template_id=template_id,
+        output_aspect_ratio=output_aspect_ratio,
+    )
     if not source_text.strip():
         raise HTTPException(status_code=400, detail="Could not extract text from the provided source.")
 
-    await _reset_runtime_state_for_new_job()
-    job_id = job_store.create()
+    job_id = job_store.create(source_kind=source_kind)
+    job = job_store.get(job_id)
+    if job is not None:
+        job.pipeline_context = pipeline_context
     logger.info("[%s] source resolved from %s (%d chars)", job_id, source_kind, len(source_text))
     job_store.update_step(job_id, step=JobStep.INGEST, progress=10)
-    global active_pipeline_task
-    active_pipeline_task = asyncio.create_task(run_pipeline(job_store, job_id, source_text))
+    asyncio.create_task(run_pipeline(job_store, job_id, source_text, pipeline_context))
     return GenerateResponse(job_id=job_id)
 
 
@@ -149,15 +172,15 @@ def _validate_job_id(job_id: str) -> str:
 
 
 def _detect_source_kind(
-    *, file: UploadFile | None, url: str | None, query: str | None
-) -> str:
-    if file is not None:
-        return "file"
+    *, files: list[UploadFile], url: str | None, query: str | None
+) -> SourceKind:
+    if files:
+        return SourceKind.PDF
     if url:
-        return "url"
+        return SourceKind.URL
     if query:
-        return "query"
-    return "unknown"
+        return SourceKind.QUERY
+    return SourceKind.PDF
 
 
 def configure_application_logging() -> None:
@@ -171,43 +194,86 @@ def configure_application_logging() -> None:
     logger.info("%s application logging configured", stage_tag("request"))
 
 
-async def _reset_runtime_state_for_new_job() -> None:
-    global active_pipeline_task
-    if active_pipeline_task is not None and not active_pipeline_task.done():
-        logger.info("cancelling previous pipeline task before starting a new job")
-        active_pipeline_task.cancel()
+async def _resolve_source_payload(
+    *,
+    files: list[UploadFile],
+    url: str | None,
+    query: str | None,
+    template_id: PdfTemplateId | None,
+    output_aspect_ratio: OutputAspectRatio | None,
+) -> tuple[str, PipelineContext]:
+    if files:
+        uploads: list[tuple[str, bytes]] = []
+        for upload in files:
+            file_bytes = await upload.read()
+            if len(file_bytes) > MAX_UPLOAD_BYTES:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"File too large. Max {MAX_UPLOAD_BYTES // (1024 * 1024)} MB per PDF.",
+                )
+            uploads.append((upload.filename or "report.pdf", file_bytes))
         try:
-            await active_pipeline_task
-        except asyncio.CancelledError:
-            logger.info("previous pipeline task cancelled")
-    active_pipeline_task = None
-    job_store.reset()
-    cleanup_all_tmp_jobs()
-
-
-async def _resolve_source_text(
-    *, file: UploadFile | None, url: str | None, query: str | None
-) -> str:
-    if file is not None:
-        from app.ingest import extract_pdf_text
-
-        file_bytes = await file.read()
-        if len(file_bytes) > MAX_UPLOAD_BYTES:
-            raise HTTPException(
-                status_code=413,
-                detail=f"File too large. Max {MAX_UPLOAD_BYTES // (1024 * 1024)} MB.",
-            )
-        return extract_pdf_text(file_bytes)
+            documents, source_text, branding, company_name, period_label = extract_pdf_documents(uploads)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return source_text, PipelineContext(
+            source_kind=SourceKind.PDF,
+            output_aspect_ratio=output_aspect_ratio or OutputAspectRatio.DESKTOP,
+            template_id=template_id,
+            pdf_documents=documents,
+            branding=branding,
+            company_name=company_name,
+            period_label=period_label,
+        )
 
     tavily_client = TavilyClient(api_key=settings.tavily_api_key)
     if url:
-        return await tavily_client.extract(url)
+        return await tavily_client.extract(url), PipelineContext(source_kind=SourceKind.URL)
     if query:
         results = await tavily_client.search(query)
         if not results:
             raise HTTPException(status_code=404, detail="No search results found for the provided query.")
-        return await tavily_client.extract(results[0].url)
-    return ""
+        return await tavily_client.extract(results[0].url), PipelineContext(source_kind=SourceKind.QUERY)
+    return "", PipelineContext(source_kind=SourceKind.PDF)
+
+
+def _normalize_pdf_uploads(
+    *, files: list[UploadFile] | None, file: UploadFile | None
+) -> list[UploadFile]:
+    uploads = list(files or [])
+    if file is not None:
+        uploads.append(file)
+    return uploads
+
+
+def _validate_generate_request(
+    *,
+    files: list[UploadFile],
+    url: str | None,
+    query: str | None,
+    template_id: PdfTemplateId | None,
+    output_aspect_ratio: OutputAspectRatio | None,
+) -> None:
+    provided_sources = sum(
+        1 for present in [bool(files), bool(url and url.strip()), bool(query and query.strip())] if present
+    )
+    if provided_sources != 1:
+        raise HTTPException(status_code=400, detail="Provide exactly one source: PDFs, url, or query.")
+
+    if files:
+        if len(files) > MAX_UPLOAD_FILE_COUNT:
+            raise HTTPException(status_code=400, detail="Upload between 1 and 4 PDFs.")
+        if template_id is None:
+            raise HTTPException(status_code=400, detail="PDF mode requires a template_id.")
+        if output_aspect_ratio is None:
+            raise HTTPException(status_code=400, detail="PDF mode requires an output_aspect_ratio.")
+        return
+
+    if template_id is not None or output_aspect_ratio is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="template_id and output_aspect_ratio are supported for PDF mode only.",
+        )
 
 
 def cleanup_stale_tmp_jobs(now_ts: float | None = None) -> None:

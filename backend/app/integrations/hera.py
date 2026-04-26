@@ -64,19 +64,47 @@ class HeraClient:
             )
             response.raise_for_status()
         data = response.json()
-        status = str(data.get("status", "")).lower()
+        normalized = self._normalize_poll_response(data)
+        logger.info(
+            "%s hera poll finished (video_id=%s, status=%s, top_level_status=%s, file_url=%s)",
+            stage_tag("hera"),
+            video_id,
+            normalized["status"],
+            normalized["top_level_status"],
+            bool(normalized["file_url"]),
+        )
+        return {
+            "status": normalized["status"],
+            "file_url": normalized["file_url"],
+            "error": normalized["error"],
+        }
+
+    def _normalize_poll_response(self, data: dict[str, object]) -> dict[str, object]:
+        top_level_status = str(data.get("status", "")).lower()
         outputs = data.get("outputs") or []
+        status = top_level_status
         file_url: str | None = None
         error: str | None = None
         if isinstance(outputs, list) and outputs:
             first = outputs[0]
             if isinstance(first, dict):
+                output_status = str(first.get("status", "")).lower()
                 if isinstance(first.get("file_url"), str):
                     file_url = first["file_url"]
                 if isinstance(first.get("error"), str):
                     error = first["error"]
-        logger.info("%s hera poll finished (video_id=%s, status=%s)", stage_tag("hera"), video_id, status)
-        return {"status": status, "file_url": file_url, "error": error}
+                if output_status == "success" and file_url:
+                    status = "success"
+                elif output_status == "failed":
+                    status = "failed"
+                elif top_level_status not in {"success", "failed"} and output_status == "in-progress":
+                    status = "in-progress"
+        return {
+            "status": status,
+            "top_level_status": top_level_status,
+            "file_url": file_url,
+            "error": error,
+        }
 
     async def download(self, url: str) -> bytes:
         # Guard against SSRF: the URL comes from a third-party API response,

@@ -5,7 +5,7 @@ import math
 
 from app.agents._prompts import load_prompt
 from app.integrations.gemini import GeminiClient
-from app.schemas import Scene, SlideChunk
+from app.schemas import BrandingPalette, OutputAspectRatio, PipelineContext, Scene, SlideChunk
 
 ALLOWED_FORMATS = {"mp4", "prores", "webm", "gif"}
 ALLOWED_ASPECT_RATIOS = {"16:9", "9:16", "1:1", "4:5"}
@@ -20,9 +20,16 @@ async def run_hera_agent(
     *,
     scene: Scene,
     slide_chunks_for_scene: list[SlideChunk],
+    pipeline_context: PipelineContext,
     gemini_client: GeminiClient,
 ) -> dict[str, object]:
     prompt = load_prompt("hera")
+    branding = pipeline_context.branding or BrandingPalette(
+        background="#F9FAFB",
+        text="#111827",
+        secondary="#374151",
+        accent="#06B6D4",
+    )
     chunks_payload = [
         {
             "index": idx,
@@ -37,6 +44,17 @@ async def run_hera_agent(
         scene_title=scene.title,
         scene_narration=scene.narration,
         slide_chunks_json=json.dumps(chunks_payload, indent=2),
+        company_name=pipeline_context.company_name or "Unknown Company",
+        period_label=pipeline_context.period_label or "Current Period",
+        output_aspect_ratio=pipeline_context.output_aspect_ratio.value,
+        frame_size=frame_size_for_aspect_ratio(pipeline_context.output_aspect_ratio),
+        background_hex=branding.background,
+        text_hex=branding.text,
+        secondary_hex=branding.secondary,
+        accent_hex=branding.accent,
+        background_alt_hex=background_alt_hex(branding),
+        background_strong_hex=background_strong_hex(branding),
+        overlay_position=overlay_position_for_aspect_ratio(pipeline_context.output_aspect_ratio),
     )
     response_text = await gemini_client.generate(
         system=prompt.system,
@@ -48,13 +66,20 @@ async def run_hera_agent(
     parsed = json.loads(response_text)
     if not isinstance(parsed, dict):
         raise ValueError("Hera response must be a JSON object.")
-    spec = _normalize_hera_spec(parsed, slide_chunks_for_scene)
+    spec = _normalize_hera_spec(
+        parsed,
+        slide_chunks_for_scene,
+        output_aspect_ratio=pipeline_context.output_aspect_ratio,
+    )
     validate_hera_spec(spec)
     return spec
 
 
 def _normalize_hera_spec(
-    spec: dict[str, object], chunks: list[SlideChunk]
+    spec: dict[str, object],
+    chunks: list[SlideChunk],
+    *,
+    output_aspect_ratio: OutputAspectRatio,
 ) -> dict[str, object]:
     """Backstop the model: clamp duration to scene bounds, force the single
     expected output config. Cheaper than a retry round-trip."""
@@ -62,13 +87,24 @@ def _normalize_hera_spec(
         max_end = max(c.end_seconds for c in chunks)
         spec["duration_seconds"] = max(1, min(60, math.ceil(max_end)))
     spec["outputs"] = [
-        {"format": "mp4", "aspect_ratio": "16:9", "fps": "30", "resolution": "1080p"}
+        {
+            "format": "mp4",
+            "aspect_ratio": output_aspect_ratio.value,
+            "fps": "30",
+            "resolution": "1080p",
+        }
     ]
     return spec
 
 
 def build_intro_hera_spec(
-    *, title: str, duration_seconds: int = INTRO_DURATION_SECONDS
+    *,
+    title: str,
+    company_name: str,
+    period_label: str,
+    branding: BrandingPalette,
+    output_aspect_ratio: OutputAspectRatio,
+    duration_seconds: int = INTRO_DURATION_SECONDS,
 ) -> dict[str, object]:
     """Deterministic Hera spec for the title-card intro. No LLM call needed —
     the prompt template is fixed; only the title text varies."""
@@ -78,25 +114,36 @@ def build_intro_hera_spec(
         type_in_seconds = 1.0
     hold_start = type_in_seconds
     fade_start = round(duration_seconds - 0.3, 2)
+    frame_size = frame_size_for_aspect_ratio(output_aspect_ratio)
+    overlay_position = overlay_position_for_aspect_ratio(output_aspect_ratio)
     prompt_text = (
-        f"A {duration_seconds}-second motion graphic on a solid #F9FAFB background, "
-        f"1920x1080 at 30fps. Palette: #111827 (text), #06B6D4 (accent), "
-        f"#F9FAFB (background). Typography: JetBrains Mono for the title. "
-        f"Editorial restraint — no decorative imagery, no gradients, no shadows.\n\n"
+        f"A {duration_seconds}-second motion graphic on a solid {branding.background} background, "
+        f"{frame_size} at 30fps. Palette: {branding.text} (text), {branding.secondary} (secondary), "
+        f"{branding.accent} (accent), {branding.background} (background). Typography: Inter for overlays, "
+        f"JetBrains Mono for the title. Editorial restraint — no decorative imagery, no gradients, "
+        f"no shadows. Maintain high contrast at all times.\n\n"
+        f"[from 0.0s to {duration_seconds}.0s] place a small persistent overlay at {overlay_position}: "
+        f'"{company_name}" in Inter 600 26px {branding.text}, with "{period_label}" directly below in '
+        f"Inter 500 18px {branding.secondary}. Keep both readable and static for the full clip.\n\n"
         f'[from 0.0s to {type_in_seconds}s] typewriter typing animation of "{safe_title}", '
-        f"centered (x=960 y=540), JetBrains Mono 96px in #111827. Type one character "
+        f"centered in frame, JetBrains Mono 96px in {branding.text}. Type one character "
         f"every {INTRO_TYPE_CADENCE_PER_CHAR}s with a hard cursor cadence. A blinking "
-        f'"|" cursor in #06B6D4 follows the last typed character (0.5s on, 0.5s off).\n\n'
+        f'"|" cursor in {branding.accent} follows the last typed character (0.5s on, 0.5s off).\n\n'
         f"[from {hold_start}s to {fade_start}s] hold the typed text. Cursor continues "
         f"to blink. No other elements on screen.\n\n"
-        f"[from {fade_start}s to {duration_seconds}.0s] fade the entire scene out over 0.30s "
-        f"to a clean #F9FAFB background."
+        f"[from {fade_start}s to {duration_seconds}.0s] fade the title treatment out over 0.30s "
+        f"to a clean {branding.background} background while the overlay remains visible."
     )
     return {
         "prompt": prompt_text,
         "duration_seconds": duration_seconds,
         "outputs": [
-            {"format": "mp4", "aspect_ratio": "16:9", "fps": "30", "resolution": "1080p"}
+            {
+                "format": "mp4",
+                "aspect_ratio": output_aspect_ratio.value,
+                "fps": "30",
+                "resolution": "1080p",
+            }
         ],
     }
 
@@ -128,3 +175,41 @@ def validate_hera_spec(spec: dict[str, object]) -> None:
             )
         if output.get("resolution") not in ALLOWED_RESOLUTIONS:
             raise ValueError(f"Hera output {idx} resolution invalid.")
+
+
+def frame_size_for_aspect_ratio(output_aspect_ratio: OutputAspectRatio) -> str:
+    if output_aspect_ratio is OutputAspectRatio.MOBILE:
+        return "1080x1920"
+    return "1920x1080"
+
+
+def overlay_position_for_aspect_ratio(output_aspect_ratio: OutputAspectRatio) -> str:
+    if output_aspect_ratio is OutputAspectRatio.MOBILE:
+        return "top-left, inset 72px from the left and 120px from the top"
+    return "top-left, inset 64px from the left and 56px from the top"
+
+
+def background_alt_hex(branding: BrandingPalette) -> str:
+    return mix_hex_colors(branding.background, branding.accent, 0.10)
+
+
+def background_strong_hex(branding: BrandingPalette) -> str:
+    return mix_hex_colors(branding.background, branding.accent, 0.22)
+
+
+def mix_hex_colors(base_hex: str, mix_hex: str, mix_ratio: float) -> str:
+    mix_ratio = max(0.0, min(1.0, mix_ratio))
+    base = _hex_to_rgb_ints(base_hex)
+    mix = _hex_to_rgb_ints(mix_hex)
+    blended = tuple(
+        round((1 - mix_ratio) * base_channel + mix_ratio * mix_channel)
+        for base_channel, mix_channel in zip(base, mix, strict=True)
+    )
+    return "#" + "".join(f"{channel:02X}" for channel in blended)
+
+
+def _hex_to_rgb_ints(value: str) -> tuple[int, int, int]:
+    hex_value = value.lstrip("#")
+    if len(hex_value) != 6:
+        raise ValueError(f"Invalid hex color: {value}")
+    return tuple(int(hex_value[index:index + 2], 16) for index in range(0, 6, 2))

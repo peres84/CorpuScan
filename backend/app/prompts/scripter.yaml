@@ -84,6 +84,12 @@ system: |
   Output ONLY the JSON object. No markdown code fences. No prose around it.
 
 user_template: |
+  Storytelling mode instructions:
+
+  {storytelling_instructions}
+
+  ---
+
   Analyst findings:
 
   {qa_markdown}

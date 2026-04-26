@@ -23,9 +23,11 @@ export interface JobState {
 }
 
 export interface GenerateInput {
-  file?: File;
+  files?: File[];
   url?: string;
   query?: string;
+  templateId?: "growth_comparison" | "earnings_comparison";
+  outputAspectRatio?: "16:9" | "9:16";
 }
 
 const BASE_URL: string =
@@ -39,9 +41,13 @@ export function getApiBaseUrl(): string {
 
 export async function postGenerate(input: GenerateInput): Promise<{ job_id: string }> {
   const form = new FormData();
-  if (input.file) form.append("file", input.file);
+  for (const file of input.files ?? []) {
+    form.append("files", file);
+  }
   if (input.url) form.append("url", input.url);
   if (input.query) form.append("query", input.query);
+  if (input.templateId) form.append("template_id", input.templateId);
+  if (input.outputAspectRatio) form.append("output_aspect_ratio", input.outputAspectRatio);
 
   if (DEV) console.log("[api] POST /generate →", BASE_URL);
   const res = await fetch(`${BASE_URL}/generate`, {

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from uuid import uuid4
 
 from app.logging_utils import stage_tag
-from app.schemas import JobState, JobStep, JobStatus
+from app.schemas import JobState, JobStep, JobStatus, PipelineContext, SourceKind
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +15,11 @@ class JobRecord:
     status: JobState
     step: JobStep
     progress: int
+    source_kind: SourceKind = SourceKind.PDF
     error: str | None = None
     video_url: str | None = None
     source_text: str | None = None
+    pipeline_context: PipelineContext | None = None
     qa_markdown: str | None = None
     script: dict[str, object] | None = None
     audio_path: str | None = None
@@ -47,19 +49,19 @@ class JobStore:
     def __init__(self) -> None:
         self._jobs: dict[str, JobRecord] = {}
 
-    def create(self) -> str:
+    def create(self, *, source_kind: SourceKind) -> str:
         job_id = str(uuid4())
-        self._jobs[job_id] = JobRecord(status=JobState.PENDING, step=JobStep.INGEST, progress=0)
+        self._jobs[job_id] = JobRecord(
+            status=JobState.PENDING,
+            step=JobStep.INGEST,
+            progress=0,
+            source_kind=source_kind,
+        )
         logger.info("%s [%s] job created", stage_tag("job"), job_id)
         return job_id
 
     def get(self, job_id: str) -> JobRecord | None:
         return self._jobs.get(job_id)
-
-    def reset(self) -> None:
-        cleared_jobs = len(self._jobs)
-        self._jobs.clear()
-        logger.info("%s job store reset (%d jobs cleared)", stage_tag("job"), cleared_jobs)
 
     def update_step(self, job_id: str, *, step: JobStep, progress: int) -> None:
         job = self._require_job(job_id)

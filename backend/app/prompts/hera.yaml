@@ -58,12 +58,13 @@ system: |
     "prompt": "<one continuous prompt covering [0s, duration_seconds] with bracketed beats>",
     "duration_seconds": <int 1–60, = ceil(max(slide_chunk.end))>,
     "outputs": [
-      { "format": "mp4", "aspect_ratio": "16:9", "fps": "30", "resolution": "1080p" }
+      { "format": "mp4", "aspect_ratio": "<provided aspect ratio>", "fps": "30", "resolution": "1080p" }
     ]
   }
 
-  Always emit exactly ONE output entry with these exact values:
-    format = "mp4", aspect_ratio = "16:9", fps = "30", resolution = "1080p".
+  Always emit exactly ONE output entry with these exact values except for
+  aspect_ratio, which must match the provided output_aspect_ratio:
+    format = "mp4", fps = "30", resolution = "1080p".
 
   Do NOT include reference_image_url, reference_image_urls,
   reference_video_url, style_id, parent_video_id, or assets.
@@ -76,15 +77,28 @@ system: |
   PART A — one short paragraph of brand and setup constraints (always
   include verbatim).
 
-      An <duration>-second motion graphic on a solid #F9FAFB background,
-      1920x1080 at 30fps. Palette: #111827 (text), #374151 (secondary),
-      #06B6D4 (accent), #F9FAFB (background). Typography: Inter for text,
-      JetBrains Mono for raw numerics. Editorial restraint — Financial
-      Times register, no emoji, no decorative imagery, no gradients,
-      no shadows, no parallax. Allowed primitives only: kinetic
+      An <duration>-second motion graphic on a solid <background_hex>
+      background, <frame_size> at 30fps. Palette: <text_hex> (text),
+      <secondary_hex> (secondary), <accent_hex> (accent), <background_hex>
+      (background), <background_alt_hex> (alt background), <background_strong_hex>
+      (strong background). Typography: Inter for text, JetBrains Mono for raw
+      numerics. Editorial restraint — Financial Times register, no emoji,
+      no decorative imagery, no gradients, no shadows, no parallax.
+      Maintain strong contrast at all times. Use at least TWO distinct
+      full-frame background states during the scene, chosen from the provided
+      background colors. At least one later beat after the opener must switch
+      to <background_alt_hex> or <background_strong_hex> for visual variety,
+      then return or transition again as appropriate. Allowed primitives only: kinetic
       typography, number count-up, simple bar chart (max 6 bars), simple
       line chart (single series + end dot), callout box, accent
       underline, thin secondary divider.
+
+  Before the first story beat, include a persistent overlay instruction:
+      - Company name: "<company_name>"
+      - Period label: "<period_label>"
+      - Position: <overlay_position>
+      - Style: high-contrast text using the provided text/secondary colors
+      - Duration: visible for the full clip
 
   PART B — one bracketed beat per slide_chunk, in order, covering
   [0s, duration_seconds] contiguously. For each beat, specify exactly:
@@ -103,6 +117,9 @@ system: |
        easeInOutSine).
     7. Exit — fade duration and the second it begins, OR "hold" if it
        carries into the next beat.
+    8. Background state — explicitly name whether this beat sits on
+       <background_hex>, <background_alt_hex>, or <background_strong_hex>,
+       and whether the background cuts or fades into the next one.
 
   ──────────────────────────────────────────────────────────────────────────
   CHOOSING THE VISUAL PRIMITIVE
@@ -147,6 +164,8 @@ system: |
   T6. Animation entry duration ≤ 0.80s; exit fade ≤ 0.40s; both fit
       inside the beat's window.
   T7. At any moment, at most THREE foreground elements on screen.
+  T8. Do not keep every beat on the same background. The scene must use
+      at least two of the provided background colors.
 
   ──────────────────────────────────────────────────────────────────────────
   WORKED EXAMPLE (do NOT copy verbatim — adapt to actual input)
@@ -163,7 +182,7 @@ system: |
 
   A valid output:
   {
-    "prompt": "An 8-second motion graphic on a solid #F9FAFB background, 1920x1080 at 30fps. Palette: #111827 (text), #374151 (secondary), #06B6D4 (accent), #F9FAFB (background). Typography: Inter for text, JetBrains Mono for raw numerics. Editorial restraint — Financial Times register, no emoji, no decorative imagery, no gradients, no shadows, no parallax. Allowed primitives only: kinetic typography, number count-up, simple bar chart (max 6 bars), simple line chart, callout box, accent underline, thin secondary divider.\n\n[from 0.0s to 0.6s] kinetic-text title \"Headline Quarter\" writes word-by-word at top-center (x=960 y=200), Inter 700 56px #111827, with a 6px #06B6D4 underline drawing in 0.40s after the title lands. Hold under the first beat.\n\n[from 0.0s to 3.5s] over the line \"Revenue grew 12 percent to about 94.9 billion dollars.\" A JetBrains Mono number counts from $0.0B to $94.9B at center (x=960 y=540), 144px #111827. Count duration 2.4s easeOutQuart. A 40px Inter 600 caption \"Revenue, +12% YoY\" in #374151 reveals word-by-word starting at 0.20s (0.06s per word) directly below the number. Both fade out together over 0.30s starting at 3.20s.\n\n[from 3.32s to 5.30s] over the line \"Services drove the gain.\" A 720x180 callout box scale-ins at center (x=960 y=540) over 0.40s easeOutCubic. Border #06B6D4, fill #F9FAFB. Inside, \"Driver\" label in #374151 28px Inter 600 above \"Services\" value in #111827 56px Inter 700, both centered. Fade out 0.30s starting at 5.00s.\n\n[from 5.10s to 7.61s] over the line \"Hardware was flat year over year.\" A two-bar chart (1100x420 centered at x=960 y=600) animates with bars drawing up over 0.80s easeOutQuart with 0.12s stagger. Bars labeled \"FY24\" (#374151) and \"FY25\" (#06B6D4 highlighted), both equal height. Y-axis label \"Hardware revenue (indexed)\" in 22px Inter #374151. Fade out 0.30s at the end. Final frame holds at 7.61s; scene ends at 8.0s.",
+    "prompt": "An 8-second motion graphic on a solid #F9FAFB background, 1920x1080 at 30fps. Palette: #111827 (text), #374151 (secondary), #06B6D4 (accent), #F9FAFB (background), #E6F6FA (alt background), #CDEEF6 (strong background). Typography: Inter for text, JetBrains Mono for raw numerics. Editorial restraint — Financial Times register, no emoji, no decorative imagery, no gradients, no shadows, no parallax. Maintain strong contrast at all times. Use at least TWO distinct full-frame background states during the scene, chosen from the provided background colors. At least one later beat after the opener must switch to #E6F6FA or #CDEEF6 for visual variety, then return or transition again as appropriate. Allowed primitives only: kinetic typography, number count-up, simple bar chart (max 6 bars), simple line chart, callout box, accent underline, thin secondary divider.\n\n[from 0.0s to 8.0s] place a small persistent overlay at top-left, inset 64px from the left and 56px from the top: \"Apple\" in Inter 600 26px #111827, with \"Q2 2025\" directly below in Inter 500 18px #374151. Keep both readable and static for the full clip.\n\n[from 0.0s to 0.6s] kinetic-text title \"Headline Quarter\" writes word-by-word at top-center (x=960 y=200), Inter 700 56px #111827, with a 6px #06B6D4 underline drawing in 0.40s after the title lands. Background state: #F9FAFB, hold under the first beat.\n\n[from 0.0s to 3.5s] over the line \"Revenue grew 12 percent to about 94.9 billion dollars.\" A JetBrains Mono number counts from $0.0B to $94.9B at center (x=960 y=540), 144px #111827. Count duration 2.4s easeOutQuart. A 40px Inter 600 caption \"Revenue, +12% YoY\" in #374151 reveals word-by-word starting at 0.20s (0.06s per word) directly below the number. Background state: #F9FAFB. Both fade out together over 0.30s starting at 3.20s.\n\n[from 3.32s to 5.30s] over the line \"Services drove the gain.\" A 720x180 callout box scale-ins at center (x=960 y=540) over 0.40s easeOutCubic. Border #06B6D4, fill #E6F6FA. Inside, \"Driver\" label in #374151 28px Inter 600 above \"Services\" value in #111827 56px Inter 700, both centered. Background state: fade to full-frame #E6F6FA at beat start, then hold. Fade out 0.30s starting at 5.00s.\n\n[from 5.10s to 7.61s] over the line \"Hardware was flat year over year.\" A two-bar chart (1100x420 centered at x=960 y=600) animates with bars drawing up over 0.80s easeOutQuart with 0.12s stagger. Bars labeled \"FY24\" (#374151) and \"FY25\" (#06B6D4 highlighted), both equal height. Y-axis label \"Hardware revenue (indexed)\" in 22px Inter #374151. Background state: shift to full-frame #CDEEF6 at beat start, then fade back toward #F9FAFB over the final 0.30s. Final frame holds at 7.61s; scene ends at 8.0s.",
     "duration_seconds": 8,
     "outputs": [ { "format": "mp4", "aspect_ratio": "16:9", "fps": "30", "resolution": "1080p" } ]
   }
@@ -171,6 +190,28 @@ system: |
   Output ONLY the JSON object. No markdown code fences. No prose.
 
 user_template: |
+  company_name: {company_name}
+
+  period_label: {period_label}
+
+  output_aspect_ratio: {output_aspect_ratio}
+
+  frame_size: {frame_size}
+
+  background_hex: {background_hex}
+
+  text_hex: {text_hex}
+
+  secondary_hex: {secondary_hex}
+
+  accent_hex: {accent_hex}
+
+  background_alt_hex: {background_alt_hex}
+
+  background_strong_hex: {background_strong_hex}
+
+  overlay_position: {overlay_position}
+
   scene_title: {scene_title}
 
   scene_narration:

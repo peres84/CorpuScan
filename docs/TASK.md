@@ -149,6 +149,7 @@ Tick boxes as steps complete. Ordered roughly by dependency, but parallel work i
 
 ## 13. End-to-end test
 
+- [x] Add PDF comparison mode (1–4 PDFs), PDF-only templates, auto-branding overlays, and `16:9` / `9:16` output selection
 - [ ] Run backend + frontend locally
 - [ ] Upload a real quarterly report PDF (e.g. Apple 10-Q)
 - [ ] Watch all 6 steps tick through

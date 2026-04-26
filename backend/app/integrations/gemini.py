@@ -6,6 +6,8 @@ from google.genai import Client
 from google.genai.errors import ClientError
 from google.genai import types
 
+from app.logging_utils import stage_tag
+
 _PLACEHOLDER_API_KEYS = {"", "key_here", "your_api_key", "api_key_here", "replace_me"}
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,8 @@ class GeminiClient:
         response_mime_type: str | None = None,
     ) -> str:
         logger.info(
-            "gemini generate started (model=%s, temperature=%.2f, mime=%s, user_chars=%d)",
+            "%s gemini generate started (model=%s, temperature=%.2f, mime=%s, user_chars=%d)",
+            stage_tag("gemini"),
             model,
             temperature,
             response_mime_type,
@@ -60,5 +63,5 @@ class GeminiClient:
                 ) from exc
             raise
         output = (response.text or "").strip()
-        logger.info("gemini generate finished (%d chars)", len(output))
+        logger.info("%s gemini generate finished (%d chars)", stage_tag("gemini"), len(output))
         return output

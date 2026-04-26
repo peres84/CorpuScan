@@ -4,6 +4,8 @@ import logging
 
 import httpx
 
+from app.logging_utils import stage_tag
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,7 +36,8 @@ class HeraClient:
         if "prompt" not in spec or "outputs" not in spec:
             raise ValueError("Hera spec must include 'prompt' and 'outputs'.")
         logger.info(
-            "hera submit started (outputs=%d, prompt_chars=%d)",
+            "%s hera submit started (outputs=%d, prompt_chars=%d)",
+            stage_tag("hera"),
             len(spec.get("outputs", [])) if isinstance(spec.get("outputs"), list) else 0,
             len(str(spec.get("prompt", ""))),
         )
@@ -47,7 +50,7 @@ class HeraClient:
         video_id = data.get("video_id")
         if not isinstance(video_id, str) or not video_id:
             raise ValueError("Hera submit response missing video_id.")
-        logger.info("hera submit finished (video_id=%s)", video_id)
+        logger.info("%s hera submit finished (video_id=%s)", stage_tag("hera"), video_id)
         return video_id
 
     async def poll(self, video_id: str) -> dict[str, object]:
@@ -72,7 +75,7 @@ class HeraClient:
                     file_url = first["file_url"]
                 if isinstance(first.get("error"), str):
                     error = first["error"]
-        logger.info("hera poll finished (video_id=%s, status=%s)", video_id, status)
+        logger.info("%s hera poll finished (video_id=%s, status=%s)", stage_tag("hera"), video_id, status)
         return {"status": status, "file_url": file_url, "error": error}
 
     async def download(self, url: str) -> bytes:
@@ -80,9 +83,9 @@ class HeraClient:
         # so restrict to https:// and reject scheme-less / file:// / http://.
         if not isinstance(url, str) or not url.lower().startswith("https://"):
             raise ValueError("Hera download URL must be https://")
-        logger.info("hera download started (url=%s)", url)
+        logger.info("%s hera download started (url=%s)", stage_tag("hera"), url)
         async with httpx.AsyncClient(timeout=120, follow_redirects=False) as client:
             response = await client.get(url)
             response.raise_for_status()
-        logger.info("hera download finished (bytes=%d)", len(response.content))
+        logger.info("%s hera download finished (bytes=%d)", stage_tag("hera"), len(response.content))
         return response.content

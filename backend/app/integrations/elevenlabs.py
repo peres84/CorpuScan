@@ -5,6 +5,7 @@ import logging
 
 import httpx
 
+from app.logging_utils import stage_tag
 from app.schemas import Scene, SentenceTiming, SlideChunk
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ class ElevenLabsClient:
         self._base_url = "https://api.elevenlabs.io"
 
     async def text_to_speech_with_timestamps(self, text: str) -> tuple[bytes, dict[str, object]]:
-        logger.info("elevenlabs tts started (chars=%d)", len(text))
+        logger.info("%s elevenlabs tts started (chars=%d)", stage_tag("elevenlabs"), len(text))
         payload = {
             "text": text,
             "model_id": "eleven_multilingual_v2",
@@ -32,7 +33,8 @@ class ElevenLabsClient:
         alignment = data.get("alignment") or data.get("normalized_alignment") or {}
         audio_bytes = base64.b64decode(audio_base64)
         logger.info(
-            "elevenlabs tts finished (audio_bytes=%d, alignment_chars=%d)",
+            "%s elevenlabs tts finished (audio_bytes=%d, alignment_chars=%d)",
+            stage_tag("elevenlabs"),
             len(audio_bytes),
             len(alignment.get("characters", [])),
         )
@@ -45,7 +47,8 @@ class ElevenLabsClient:
         duration_seconds must be in [0.5, 30] per the API spec.
         """
         logger.info(
-            "elevenlabs sound effect started (duration=%.1fs, prompt_chars=%d)",
+            "%s elevenlabs sound effect started (duration=%.1fs, prompt_chars=%d)",
+            stage_tag("elevenlabs"),
             duration_seconds,
             len(text),
         )
@@ -59,7 +62,7 @@ class ElevenLabsClient:
         async with httpx.AsyncClient(timeout=120) as client:
             response = await client.post(url, json=payload, headers=headers)
             response.raise_for_status()
-        logger.info("elevenlabs sound effect finished (audio_bytes=%d)", len(response.content))
+        logger.info("%s elevenlabs sound effect finished (audio_bytes=%d)", stage_tag("elevenlabs"), len(response.content))
         return response.content
 
 

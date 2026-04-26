@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from app.config import get_settings
 from app.integrations.tavily import TavilyClient
 from app.jobs import JobStore
+from app.logging_utils import stage_tag
 from app.pipeline import run_pipeline
 from app.schemas import GenerateResponse, JobStatus, JobStep
 
@@ -158,7 +159,7 @@ def configure_application_logging() -> None:
     app_logger.handlers = uvicorn_error_logger.handlers
     app_logger.setLevel(logging.INFO)
     app_logger.propagate = False
-    logger.info("application logging configured")
+    logger.info("%s application logging configured", stage_tag("request"))
 
 
 async def _reset_runtime_state_for_new_job() -> None:

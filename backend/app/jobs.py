@@ -4,6 +4,7 @@ import logging
 from dataclasses import dataclass
 from uuid import uuid4
 
+from app.logging_utils import stage_tag
 from app.schemas import JobState, JobStep, JobStatus
 
 logger = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ class JobStore:
     def create(self) -> str:
         job_id = str(uuid4())
         self._jobs[job_id] = JobRecord(status=JobState.PENDING, step=JobStep.INGEST, progress=0)
-        logger.info("[%s] job created", job_id)
+        logger.info("%s [%s] job created", stage_tag("job"), job_id)
         return job_id
 
     def get(self, job_id: str) -> JobRecord | None:
@@ -58,7 +59,7 @@ class JobStore:
     def reset(self) -> None:
         cleared_jobs = len(self._jobs)
         self._jobs.clear()
-        logger.info("job store reset (%d jobs cleared)", cleared_jobs)
+        logger.info("%s job store reset (%d jobs cleared)", stage_tag("job"), cleared_jobs)
 
     def update_step(self, job_id: str, *, step: JobStep, progress: int) -> None:
         job = self._require_job(job_id)
@@ -69,7 +70,8 @@ class JobStore:
         job.status = JobState.RUNNING
         if previous_step != step or previous_progress != progress:
             logger.info(
-                "[%s] job step -> %s (%d%%)",
+                "%s [%s] job step -> %s (%d%%)",
+                stage_tag(step.value),
                 job_id,
                 step.value,
                 progress,
@@ -79,7 +81,7 @@ class JobStore:
         job = self._require_job(job_id)
         job.status = JobState.ERROR
         job.error = message
-        logger.error("[%s] job failed: %s", job_id, message)
+        logger.error("%s [%s] job failed: %s", stage_tag("job"), job_id, message)
 
     def set_done(self, job_id: str, *, video_url: str) -> None:
         job = self._require_job(job_id)
@@ -87,7 +89,7 @@ class JobStore:
         job.step = JobStep.DONE
         job.progress = 100
         job.video_url = video_url
-        logger.info("[%s] job done -> %s", job_id, video_url)
+        logger.info("%s [%s] job done -> %s", stage_tag("job"), job_id, video_url)
 
     def update_hera_progress(
         self,
@@ -112,7 +114,8 @@ class JobStore:
             job.progress = progress
         if previous_completed != completed_clips or previous_attempt != attempt:
             logger.info(
-                "[%s] hera progress -> %d/%d clips (attempt %d/%d, %d%%)",
+                "%s [%s] hera progress -> %d/%d clips (attempt %d/%d, %d%%)",
+                stage_tag("hera"),
                 job_id,
                 completed_clips,
                 total_clips,

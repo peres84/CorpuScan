@@ -19,6 +19,7 @@ from app.integrations.elevenlabs import (
 from app.integrations.gemini import GeminiClient
 from app.integrations.hera import HeraClient
 from app.jobs import JobStore
+from app.logging_utils import stage_tag
 from app.render import compose
 from app.schemas import JobStep, SlideChunk
 
@@ -32,7 +33,7 @@ INTRO_DURATION_SECONDS = 4
 
 
 async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> None:
-    logger.info("[%s] pipeline started, source_text length=%d", job_id, len(source_text))
+    logger.info("%s [%s] pipeline started, source_text length=%d", stage_tag("job"), job_id, len(source_text))
     try:
         settings = get_settings()
         job = job_store.get(job_id)
@@ -41,21 +42,21 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
         job.source_text = source_text
         job_store.update_step(job_id, step=JobStep.INGEST, progress=10)
         job_store.update_step(job_id, step=JobStep.FINANCE, progress=20)
-        logger.info("[%s] running finance agent", job_id)
+        logger.info("%s [%s] running finance agent", stage_tag("finance"), job_id)
 
         gemini_client = GeminiClient(api_key=settings.gemini_api_key)
         qa_markdown = await run_finance_agent(source_text=source_text, gemini_client=gemini_client)
         job.qa_markdown = qa_markdown
-        logger.info("[%s] finance done, qa_markdown length=%d", job_id, len(qa_markdown))
+        logger.info("%s [%s] finance done, qa_markdown length=%d", stage_tag("finance"), job_id, len(qa_markdown))
 
         job_store.update_step(job_id, step=JobStep.SCRIPTER, progress=35)
-        logger.info("[%s] running scripter agent", job_id)
+        logger.info("%s [%s] running scripter agent", stage_tag("scripter"), job_id)
         script = await run_scripter_agent(qa_markdown=qa_markdown, gemini_client=gemini_client)
         job.script = script.model_dump()
-        logger.info("[%s] scripter done, title=%r", job_id, script.title)
+        logger.info("%s [%s] scripter done, title=%r", stage_tag("scripter"), job_id, script.title)
 
         job_store.update_step(job_id, step=JobStep.TTS, progress=50)
-        logger.info("[%s] running TTS + intro typing sound", job_id)
+        logger.info("%s [%s] running TTS + intro typing sound", stage_tag("tts"), job_id)
         tts_text, scene_spans = build_tts_input_and_scene_spans(script.scenes)
         elevenlabs = ElevenLabsClient(
             api_key=settings.elevenlabs_api_key,
@@ -98,7 +99,8 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
         job.audio_path = str(audio_path)
         job.sentence_timings = [t.model_dump() for t in sentence_timings]
         logger.info(
-            "[%s] TTS done, voice=%d bytes, intro_sound=%d bytes, sentences=%d, slides=%s",
+            "%s [%s] TTS done, voice=%d bytes, intro_sound=%d bytes, sentences=%d, slides=%s",
+            stage_tag("tts"),
             job_id,
             len(audio_bytes),
             len(intro_sound_bytes),
@@ -107,7 +109,7 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
         )
 
         job_store.update_step(job_id, step=JobStep.HERA_PLAN, progress=65)
-        logger.info("[%s] running hera agents x4 (slide-chunk-driven)", job_id)
+        logger.info("%s [%s] running hera agents x4 (slide-chunk-driven)", stage_tag("hera"), job_id)
         scene_specs = await asyncio.gather(
             *[
                 run_hera_agent(
@@ -122,7 +124,7 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
             title=script.title, duration_seconds=INTRO_DURATION_SECONDS
         )
         job.scene_specs = scene_specs
-        logger.info("[%s] hera plan done, %d scene specs + 1 intro", job_id, len(scene_specs))
+        logger.info("%s [%s] hera plan done, %d scene specs + 1 intro", stage_tag("hera"), job_id, len(scene_specs))
 
         job_store.update_step(job_id, step=JobStep.HERA_RENDER, progress=75)
         all_specs = [intro_spec, *scene_specs]
@@ -144,10 +146,10 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
             clip_path.write_bytes(clip_bytes)
             scene_clip_paths.append(str(clip_path))
         job.clip_paths = scene_clip_paths
-        logger.info("[%s] all clips downloaded (intro + %d scenes)", job_id, len(scene_clip_paths))
+        logger.info("%s [%s] all clips downloaded (intro + %d scenes)", stage_tag("hera"), job_id, len(scene_clip_paths))
 
         job_store.update_step(job_id, step=JobStep.COMPOSE, progress=92)
-        logger.info("[%s] composing final video", job_id)
+        logger.info("%s [%s] composing final video", stage_tag("compose"), job_id)
         final_video_path = out_dir / "final.mp4"
         compose(
             intro_clip_path=str(intro_clip_path),
@@ -157,9 +159,9 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
             out_path=str(final_video_path),
         )
         job_store.set_done(job_id, video_url=f"/jobs/{job_id}/video")
-        logger.info("[%s] pipeline complete", job_id)
+        logger.info("%s [%s] pipeline complete", stage_tag("compose"), job_id)
     except Exception as exc:
-        logger.exception("[%s] pipeline failed: %s", job_id, exc)
+        logger.exception("%s [%s] pipeline failed: %s", stage_tag("job"), job_id, exc)
         job_store.set_error(job_id, str(exc))
 
 
@@ -186,7 +188,7 @@ async def render_hera_assets(
                 max_attempts=retry_attempts,
                 progress=75,
             )
-            logger.info("[%s] hera render attempt %d/%d", job_id, attempt, retry_attempts)
+            logger.info("%s [%s] hera render attempt %d/%d", stage_tag("hera"), job_id, attempt, retry_attempts)
             return await _render_hera_assets_once(
                 job_store=job_store,
                 job_id=job_id,
@@ -200,7 +202,8 @@ async def render_hera_assets(
         except Exception as exc:
             last_error = exc
             logger.warning(
-                "[%s] hera render attempt %d/%d failed: %s",
+                "%s [%s] hera render attempt %d/%d failed: %s",
+                stage_tag("hera"),
                 job_id,
                 attempt,
                 retry_attempts,
@@ -236,7 +239,7 @@ async def _render_hera_assets_once(
             for spec in all_specs
         ]
     )
-    logger.info("[%s] hera videos submitted on attempt %d: %s", job_id, attempt, hera_video_ids)
+    logger.info("%s [%s] hera videos submitted on attempt %d: %s", stage_tag("hera"), job_id, attempt, hera_video_ids)
 
     completed: dict[int, str] = {}
     start_time = asyncio.get_running_loop().time()
@@ -279,7 +282,8 @@ async def _render_hera_assets_once(
                     progress=min(progress, 90),
                 )
                 logger.info(
-                    "[%s] clip %d ready on attempt %d (%d/%d scene clips)",
+                    "%s [%s] clip %d ready on attempt %d (%d/%d scene clips)",
+                    stage_tag("hera"),
                     job_id,
                     idx,
                     attempt,
@@ -315,7 +319,7 @@ async def with_retries(
             last_error = exc
             if attempt == attempts:
                 break
-            logger.warning("%s failed on try %d/%d: %s", operation_name, attempt, attempts, exc)
+            logger.warning("%s %s failed on try %d/%d: %s", stage_tag("hera"), operation_name, attempt, attempts, exc)
             await asyncio.sleep(1)
     assert last_error is not None
     raise last_error

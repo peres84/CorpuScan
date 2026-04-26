@@ -76,6 +76,10 @@ export function getVideoUrl(jobId: string): string {
   return `${BASE_URL}/jobs/${encodeURIComponent(jobId)}/video`;
 }
 
+export function resolveBackendUrl(pathOrUrl: string): string {
+  return new URL(pathOrUrl, `${BASE_URL}/`).toString();
+}
+
 async function readErrorMessage(res: Response): Promise<string> {
   const contentType = res.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {

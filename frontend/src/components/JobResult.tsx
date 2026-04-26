@@ -6,6 +6,9 @@ interface JobResultProps {
 }
 
 export const JobResult = ({ videoUrl }: JobResultProps) => {
+  const downloadUrl = new URL(videoUrl);
+  downloadUrl.searchParams.set("download", "1");
+
   return (
     <div>
       <video
@@ -19,7 +22,7 @@ export const JobResult = ({ videoUrl }: JobResultProps) => {
 
       <div className="mt-6 flex flex-col sm:flex-row gap-3">
         <a
-          href={videoUrl}
+          href={downloadUrl.toString()}
           download
           className="inline-flex items-center justify-center gap-2 bg-accent text-accent-foreground rounded-lg px-5 py-3 font-medium hover:bg-accent/90 transition-colors"
         >

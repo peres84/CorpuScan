@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getJob, getVideoUrl, type BackendStep, type JobStatus } from "@/lib/api";
+import { getJob, getVideoUrl, resolveBackendUrl, type BackendStep, type JobStatus } from "@/lib/api";
 
 interface UseJobStatusResult {
   status: JobStatus | null;
@@ -45,7 +45,7 @@ export function useJobStatus(jobId: string | undefined): UseJobStatusResult {
         setHeraMaxAttempts(Math.max(0, job.hera_max_attempts ?? 0));
         if (job.error) setError(job.error);
         if (job.status === "done") {
-          setVideoUrl(job.video_url ?? getVideoUrl(jobId));
+          setVideoUrl(job.video_url ? resolveBackendUrl(job.video_url) : getVideoUrl(jobId));
           return;
         }
         if (job.status === "error") return;

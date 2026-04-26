@@ -1,18 +1,6 @@
 # Context from my IDE setup:
 
-## Open tabs:
-- README.md: README.md
-- tavily.py: backend/app/integrations/tavily.py
-- SKILL.md: .claude/skills/hera-api/SKILL.md
-- entire-search.md: .claude/agents/entire-search.md
-- CHANGELOG.md: CHANGELOG.md
-
-## My request for Codex:
-it worked, please commit and push.
-
----
-
-# Context from my IDE setup:
+## Active file: README.md
 
 ## Open tabs:
 - README.md: README.md
@@ -22,32 +10,4 @@ it worked, please commit and push.
 - CHANGELOG.md: CHANGELOG.md
 
 ## My request for Codex:
-i want to add a video in the repo, of 3.4mb of the results is that ok?
-
----
-
-# Context from my IDE setup:
-
-## Open tabs:
-- README.md: README.md
-- tavily.py: backend/app/integrations/tavily.py
-- SKILL.md: .claude/skills/hera-api/SKILL.md
-- entire-search.md: .claude/agents/entire-search.md
-- CHANGELOG.md: CHANGELOG.md
-
-## My request for Codex:
-i just want to add in the readme the result, just one video, what we should do? or should i use vimeo?
-
----
-
-# Context from my IDE setup:
-
-## Open tabs:
-- README.md: README.md
-- tavily.py: backend/app/integrations/tavily.py
-- SKILL.md: .claude/skills/hera-api/SKILL.md
-- entire-search.md: .claude/agents/entire-search.md
-- CHANGELOG.md: CHANGELOG.md
-
-## My request for Codex:
-ok please include in the readme this iamge, and  the link to the video demo results, thats the final results of the pepiline for https://vimeo.com/1186651677?share=copy&fl=sv&fe=ci.  --> here si the pdf analize --> https://assets-ir.tesla.com/tesla-contents/IR/TSLA-Q1-2026-Update.pdf
+commit and push

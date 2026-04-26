@@ -37,6 +37,7 @@ export async function postGenerate(input: GenerateInput): Promise<{ job_id: stri
   if (input.url) form.append("url", input.url);
   if (input.query) form.append("query", input.query);
 
+  console.log("[api] POST /generate →", BASE_URL);
   const res = await fetch(`${BASE_URL}/generate`, {
     method: "POST",
     body: form,
@@ -44,15 +45,19 @@ export async function postGenerate(input: GenerateInput): Promise<{ job_id: stri
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
+    console.error("[api] POST /generate failed", res.status, text);
     throw new Error(text || `Request failed (${res.status})`);
   }
 
-  return (await res.json()) as { job_id: string };
+  const data = (await res.json()) as { job_id: string };
+  console.log("[api] POST /generate ok, job_id=", data.job_id);
+  return data;
 }
 
 export async function getJob(jobId: string): Promise<JobState> {
   const res = await fetch(`${BASE_URL}/jobs/${encodeURIComponent(jobId)}`);
   if (!res.ok) {
+    console.error("[api] GET /jobs/%s failed", jobId, res.status);
     throw new Error(`Failed to fetch job (${res.status})`);
   }
   return (await res.json()) as JobState;

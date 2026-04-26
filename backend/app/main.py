@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import shutil
 import time
 from pathlib import Path
@@ -17,12 +18,16 @@ from app.jobs import JobStore
 from app.pipeline import run_pipeline
 from app.schemas import GenerateResponse, JobStatus, JobStep
 
+logger = logging.getLogger(__name__)
+
 settings = get_settings()
 job_store = JobStore()
 app = FastAPI(title="CorpuScan API")
 REQUEST_TIMEOUT_SECONDS = 240
 STALE_TMP_AGE_SECONDS = 30 * 60
 TMP_ROOT = Path("/tmp")
+
+logger.info("CORS origins: %s", settings.cors_origins_list)
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,9 +40,13 @@ app.add_middleware(
 
 @app.middleware("http")
 async def request_timeout_middleware(request: Request, call_next):
+    logger.info("%s %s from %s", request.method, request.url.path, request.headers.get("origin", "unknown"))
     try:
-        return await asyncio.wait_for(call_next(request), timeout=REQUEST_TIMEOUT_SECONDS)
+        response = await asyncio.wait_for(call_next(request), timeout=REQUEST_TIMEOUT_SECONDS)
+        logger.info("%s %s → %s", request.method, request.url.path, response.status_code)
+        return response
     except TimeoutError:
+        logger.error("Request timed out: %s %s", request.method, request.url.path)
         return JSONResponse(status_code=504, content={"detail": "Request timed out."})
 
 

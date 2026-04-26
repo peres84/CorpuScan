@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from pathlib import Path
 
 from app.agents.finance import run_finance_agent
@@ -19,8 +20,11 @@ from app.jobs import JobStore
 from app.render import compose
 from app.schemas import JobStep, SentenceTiming
 
+logger = logging.getLogger(__name__)
+
 
 async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> None:
+    logger.info("[%s] pipeline started, source_text length=%d", job_id, len(source_text))
     try:
         settings = get_settings()
         job = job_store.get(job_id)
@@ -29,16 +33,21 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
         job.source_text = source_text
         job_store.update_step(job_id, step=JobStep.INGEST, progress=10)
         job_store.update_step(job_id, step=JobStep.FINANCE, progress=20)
+        logger.info("[%s] running finance agent", job_id)
 
         gemini_client = GeminiClient(api_key=settings.gemini_api_key)
         qa_markdown = await run_finance_agent(source_text=source_text, gemini_client=gemini_client)
         job.qa_markdown = qa_markdown
+        logger.info("[%s] finance agent done, qa_markdown length=%d", job_id, len(qa_markdown))
 
         job_store.update_step(job_id, step=JobStep.SCRIPTER, progress=35)
+        logger.info("[%s] running scripter agent", job_id)
         script = await run_scripter_agent(qa_markdown=qa_markdown, gemini_client=gemini_client)
         job.script = script.model_dump()
+        logger.info("[%s] scripter done, title=%r", job_id, script.title)
 
         job_store.update_step(job_id, step=JobStep.TTS, progress=50)
+        logger.info("[%s] running TTS", job_id)
         tts_text, scene_spans = build_tts_input_and_scene_spans(script.scenes)
         elevenlabs = ElevenLabsClient(
             api_key=settings.elevenlabs_api_key,
@@ -50,6 +59,7 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
         char_end_times = [float(v) for v in alignment.get("character_end_times_seconds", [])]
         raw_sentence_timings = compute_sentence_timings(characters, char_start_times, char_end_times)
         sentence_timings = map_sentence_timings_to_scenes(raw_sentence_timings, scene_spans)
+        logger.info("[%s] TTS done, audio=%d bytes, sentences=%d", job_id, len(audio_bytes), len(sentence_timings))
 
         out_dir = Path("/tmp") / job_id
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -60,6 +70,7 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
         job.sentence_timings = [timing.model_dump() for timing in sentence_timings]
 
         job_store.update_step(job_id, step=JobStep.HERA_PLAN, progress=65)
+        logger.info("[%s] running hera agents x4", job_id)
         timings_by_scene: list[list[SentenceTiming]] = [[] for _ in script.scenes]
         for timing in sentence_timings:
             timings_by_scene[timing.scene_index].append(timing)
@@ -74,10 +85,13 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
             ]
         )
         job.scene_specs = scene_specs
+        logger.info("[%s] hera plan done, %d specs", job_id, len(scene_specs))
 
         job_store.update_step(job_id, step=JobStep.HERA_RENDER, progress=75)
+        logger.info("[%s] submitting to hera render API", job_id)
         hera_client = HeraClient(api_key=settings.hera_api_key, base_url=settings.hera_base_url)
         hera_job_ids = await asyncio.gather(*[hera_client.submit(spec) for spec in scene_specs])
+        logger.info("[%s] hera jobs submitted: %s", job_id, hera_job_ids)
 
         completed: dict[int, str] = {}
         start_time = asyncio.get_running_loop().time()
@@ -94,6 +108,7 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
                     completed[idx] = video_url
                     progress = 75 + int((len(completed) / len(hera_job_ids)) * 15)
                     job_store.update_step(job_id, step=JobStep.HERA_RENDER, progress=min(progress, 90))
+                    logger.info("[%s] clip %d ready (%d/%d)", job_id, idx, len(completed), len(hera_job_ids))
             if len(completed) < len(hera_job_ids):
                 await asyncio.sleep(3)
 
@@ -107,10 +122,14 @@ async def run_pipeline(job_store: JobStore, job_id: str, source_text: str) -> No
             clip_path.write_bytes(clip_bytes)
             clip_paths.append(str(clip_path))
         job.clip_paths = clip_paths
+        logger.info("[%s] all clips downloaded", job_id)
 
         job_store.update_step(job_id, step=JobStep.COMPOSE, progress=92)
+        logger.info("[%s] composing final video", job_id)
         final_video_path = out_dir / "final.mp4"
         compose(clip_paths=clip_paths, audio_path=str(audio_path), out_path=str(final_video_path))
         job_store.set_done(job_id, video_url=f"/jobs/{job_id}/video")
+        logger.info("[%s] pipeline complete", job_id)
     except Exception as exc:
+        logger.exception("[%s] pipeline failed: %s", job_id, exc)
         job_store.set_error(job_id, str(exc))

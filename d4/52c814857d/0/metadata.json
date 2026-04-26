@@ -1,0 +1,49 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "d452c814857d",
+  "session_id": "019dc8a8-151b-7cb3-af95-c571bed3dbdf",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-26T07:30:57.469022Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/.env.example",
+    "backend/app/agents/finance.py",
+    "backend/app/agents/hera.py",
+    "backend/app/agents/scripter.py",
+    "backend/app/config.py",
+    "backend/app/integrations/elevenlabs.py",
+    "backend/app/integrations/hera.py",
+    "backend/app/main.py",
+    "backend/app/pipeline.py",
+    "backend/app/render.py",
+    "backend/app/schemas.py",
+    "backend/pyproject.toml",
+    "backend/uv.lock"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.4",
+  "turn_id": "366aef17e0b2",
+  "token_usage": {
+    "input_tokens": 166772,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1229696,
+    "output_tokens": 22963,
+    "api_call_count": 28
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-26T07:30:57.458522Z",
+    "agent_lines": 472,
+    "agent_removed": 186,
+    "human_added": 390,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 862,
+    "total_lines_changed": 1048,
+    "agent_percentage": 62.786259541984734,
+    "metric_version": 2
+  }
+}

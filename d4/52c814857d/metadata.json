@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "d452c814857d",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "backend/.env.example",
+    "backend/app/agents/finance.py",
+    "backend/app/agents/hera.py",
+    "backend/app/agents/scripter.py",
+    "backend/app/config.py",
+    "backend/app/integrations/elevenlabs.py",
+    "backend/app/integrations/hera.py",
+    "backend/app/main.py",
+    "backend/app/pipeline.py",
+    "backend/app/render.py",
+    "backend/app/schemas.py",
+    "backend/pyproject.toml",
+    "backend/uv.lock"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d4/52c814857d/0/metadata.json",
+      "transcript": "/d4/52c814857d/0/full.jsonl",
+      "content_hash": "/d4/52c814857d/0/content_hash.txt",
+      "prompt": "/d4/52c814857d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 166772,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1229696,
+    "output_tokens": 22963,
+    "api_call_count": 28
+  }
+}

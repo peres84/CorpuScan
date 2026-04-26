@@ -1,0 +1,127 @@
+there is something weird in the pipeline, example, always at the end failed the alst minute --> d2 "HTTP/1.1 200 OK"
+2026-04-26 14:36:01,792 INFO app.integrations.hera [HERA] hera poll finished (video_id=3301eef1-00bf-4679-be3a-484e0cde0dd2, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:01,821 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/1c90e9e0-cd7b-45f8-afac-db6d9fdb1096 "HTTP/1.1 200 OK"
+2026-04-26 14:36:01,822 INFO app.integrations.hera [HERA] hera poll finished (video_id=1c90e9e0-cd7b-45f8-afac-db6d9fdb1096, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:01,840 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/64015880-7940-429d-9dd8-660931a75766 "HTTP/1.1 200 OK"
+2026-04-26 14:36:01,841 INFO app.integrations.hera [HERA] hera poll finished (video_id=64015880-7940-429d-9dd8-660931a75766, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:01,949 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/61e66e9d-cfe7-49c5-a435-7c041ab9e7de "HTTP/1.1 200 OK"
+2026-04-26 14:36:01,951 INFO app.integrations.hera [HERA] hera poll finished (video_id=61e66e9d-cfe7-49c5-a435-7c041ab9e7de, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:02,828 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:04,829 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:05,671 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/3301eef1-00bf-4679-be3a-484e0cde0dd2 "HTTP/1.1 200 OK"
+2026-04-26 14:36:05,673 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/1c90e9e0-cd7b-45f8-afac-db6d9fdb1096 "HTTP/1.1 200 OK"
+2026-04-26 14:36:05,674 INFO app.integrations.hera [HERA] hera poll finished (video_id=3301eef1-00bf-4679-be3a-484e0cde0dd2, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:05,675 INFO app.integrations.hera [HERA] hera poll finished (video_id=1c90e9e0-cd7b-45f8-afac-db6d9fdb1096, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:05,722 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/61e66e9d-cfe7-49c5-a435-7c041ab9e7de "HTTP/1.1 200 OK"
+2026-04-26 14:36:05,723 INFO app.integrations.hera [HERA] hera poll finished (video_id=61e66e9d-cfe7-49c5-a435-7c041ab9e7de, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:05,731 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/ce8f1b51-9908-4d4b-af63-4c852cf7a4bf "HTTP/1.1 200 OK"
+2026-04-26 14:36:05,733 INFO app.integrations.hera [HERA] hera poll finished (video_id=ce8f1b51-9908-4d4b-af63-4c852cf7a4bf, status=in-progress, top_level_status=in-progress, file_url=False)
+2026-04-26 14:36:05,742 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/64015880-7940-429d-9dd8-660931a75766 "HTTP/1.1 200 OK"
+2026-04-26 14:36:05,743 INFO app.integrations.hera [HERA] hera poll finished (video_id=64015880-7940-429d-9dd8-660931a75766, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:06,829 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:08,828 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:09,548 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/ce8f1b51-9908-4d4b-af63-4c852cf7a4bf "HTTP/1.1 200 OK"
+2026-04-26 14:36:09,549 INFO app.integrations.hera [HERA] hera poll finished (video_id=ce8f1b51-9908-4d4b-af63-4c852cf7a4bf, status=in-progress, top_level_status=in-progress, file_url=False)
+2026-04-26 14:36:09,585 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/64015880-7940-429d-9dd8-660931a75766 "HTTP/1.1 200 OK"
+2026-04-26 14:36:09,586 INFO app.integrations.hera [HERA] hera poll finished (video_id=64015880-7940-429d-9dd8-660931a75766, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:09,593 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/3301eef1-00bf-4679-be3a-484e0cde0dd2 "HTTP/1.1 200 OK"
+2026-04-26 14:36:09,594 INFO app.integrations.hera [HERA] hera poll finished (video_id=3301eef1-00bf-4679-be3a-484e0cde0dd2, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:09,664 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/61e66e9d-cfe7-49c5-a435-7c041ab9e7de "HTTP/1.1 200 OK"
+2026-04-26 14:36:09,666 INFO app.integrations.hera [HERA] hera poll finished (video_id=61e66e9d-cfe7-49c5-a435-7c041ab9e7de, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:09,675 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/1c90e9e0-cd7b-45f8-afac-db6d9fdb1096 "HTTP/1.1 200 OK"
+2026-04-26 14:36:09,677 INFO app.integrations.hera [HERA] hera poll finished (video_id=1c90e9e0-cd7b-45f8-afac-db6d9fdb1096, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:10,828 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:12,828 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:13,411 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/61e66e9d-cfe7-49c5-a435-7c041ab9e7de "HTTP/1.1 200 OK"
+2026-04-26 14:36:13,413 INFO app.integrations.hera [HERA] hera poll finished (video_id=61e66e9d-cfe7-49c5-a435-7c041ab9e7de, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:13,420 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/1c90e9e0-cd7b-45f8-afac-db6d9fdb1096 "HTTP/1.1 200 OK"
+2026-04-26 14:36:13,421 INFO app.integrations.hera [HERA] hera poll finished (video_id=1c90e9e0-cd7b-45f8-afac-db6d9fdb1096, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:13,474 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/3301eef1-00bf-4679-be3a-484e0cde0dd2 "HTTP/1.1 200 OK"
+2026-04-26 14:36:13,476 INFO app.integrations.hera [HERA] hera poll finished (video_id=3301eef1-00bf-4679-be3a-484e0cde0dd2, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:13,504 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/ce8f1b51-9908-4d4b-af63-4c852cf7a4bf "HTTP/1.1 200 OK"
+2026-04-26 14:36:13,505 INFO app.integrations.hera [HERA] hera poll finished (video_id=ce8f1b51-9908-4d4b-af63-4c852cf7a4bf, status=in-progress, top_level_status=in-progress, file_url=False)
+2026-04-26 14:36:13,520 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/64015880-7940-429d-9dd8-660931a75766 "HTTP/1.1 200 OK"
+2026-04-26 14:36:13,521 INFO app.integrations.hera [HERA] hera poll finished (video_id=64015880-7940-429d-9dd8-660931a75766, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:14,829 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:16,828 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:17,309 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/64015880-7940-429d-9dd8-660931a75766 "HTTP/1.1 200 OK"
+2026-04-26 14:36:17,311 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/61e66e9d-cfe7-49c5-a435-7c041ab9e7de "HTTP/1.1 200 OK"
+2026-04-26 14:36:17,312 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/3301eef1-00bf-4679-be3a-484e0cde0dd2 "HTTP/1.1 200 OK"
+2026-04-26 14:36:17,312 INFO app.integrations.hera [HERA] hera poll finished (video_id=64015880-7940-429d-9dd8-660931a75766, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:17,313 INFO app.integrations.hera [HERA] hera poll finished (video_id=61e66e9d-cfe7-49c5-a435-7c041ab9e7de, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:17,313 INFO app.integrations.hera [HERA] hera poll finished (video_id=3301eef1-00bf-4679-be3a-484e0cde0dd2, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:17,334 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/1c90e9e0-cd7b-45f8-afac-db6d9fdb1096 "HTTP/1.1 200 OK"
+2026-04-26 14:36:17,335 INFO app.integrations.hera [HERA] hera poll finished (video_id=1c90e9e0-cd7b-45f8-afac-db6d9fdb1096, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:17,357 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/ce8f1b51-9908-4d4b-af63-4c852cf7a4bf "HTTP/1.1 200 OK"
+2026-04-26 14:36:17,358 INFO app.integrations.hera [HERA] hera poll finished (video_id=ce8f1b51-9908-4d4b-af63-4c852cf7a4bf, status=in-progress, top_level_status=in-progress, file_url=False)
+2026-04-26 14:36:18,829 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:20,829 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:21,062 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/1c90e9e0-cd7b-45f8-afac-db6d9fdb1096 "HTTP/1.1 200 OK"
+2026-04-26 14:36:21,063 INFO app.integrations.hera [HERA] hera poll finished (video_id=1c90e9e0-cd7b-45f8-afac-db6d9fdb1096, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:21,100 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/61e66e9d-cfe7-49c5-a435-7c041ab9e7de "HTTP/1.1 200 OK"
+2026-04-26 14:36:21,102 INFO app.integrations.hera [HERA] hera poll finished (video_id=61e66e9d-cfe7-49c5-a435-7c041ab9e7de, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:21,111 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/ce8f1b51-9908-4d4b-af63-4c852cf7a4bf "HTTP/1.1 200 OK"
+2026-04-26 14:36:21,112 INFO app.integrations.hera [HERA] hera poll finished (video_id=ce8f1b51-9908-4d4b-af63-4c852cf7a4bf, status=in-progress, top_level_status=in-progress, file_url=False)
+2026-04-26 14:36:21,129 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/3301eef1-00bf-4679-be3a-484e0cde0dd2 "HTTP/1.1 200 OK"
+2026-04-26 14:36:21,131 INFO app.integrations.hera [HERA] hera poll finished (video_id=3301eef1-00bf-4679-be3a-484e0cde0dd2, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:21,165 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/64015880-7940-429d-9dd8-660931a75766 "HTTP/1.1 200 OK"
+2026-04-26 14:36:21,167 INFO app.integrations.hera [HERA] hera poll finished (video_id=64015880-7940-429d-9dd8-660931a75766, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:22,828 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:24,828 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:24,893 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/3301eef1-00bf-4679-be3a-484e0cde0dd2 "HTTP/1.1 200 OK"
+2026-04-26 14:36:24,895 INFO app.integrations.hera [HERA] hera poll finished (video_id=3301eef1-00bf-4679-be3a-484e0cde0dd2, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:24,920 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/1c90e9e0-cd7b-45f8-afac-db6d9fdb1096 "HTTP/1.1 200 OK"
+2026-04-26 14:36:24,922 INFO app.integrations.hera [HERA] hera poll finished (video_id=1c90e9e0-cd7b-45f8-afac-db6d9fdb1096, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:24,962 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/ce8f1b51-9908-4d4b-af63-4c852cf7a4bf "HTTP/1.1 200 OK"
+2026-04-26 14:36:24,963 INFO app.integrations.hera [HERA] hera poll finished (video_id=ce8f1b51-9908-4d4b-af63-4c852cf7a4bf, status=in-progress, top_level_status=in-progress, file_url=False)
+2026-04-26 14:36:25,036 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/61e66e9d-cfe7-49c5-a435-7c041ab9e7de "HTTP/1.1 200 OK"
+2026-04-26 14:36:25,038 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/64015880-7940-429d-9dd8-660931a75766 "HTTP/1.1 200 OK"
+2026-04-26 14:36:25,039 INFO app.integrations.hera [HERA] hera poll finished (video_id=61e66e9d-cfe7-49c5-a435-7c041ab9e7de, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:25,039 INFO app.integrations.hera [HERA] hera poll finished (video_id=64015880-7940-429d-9dd8-660931a75766, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:26,829 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:28,781 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/ce8f1b51-9908-4d4b-af63-4c852cf7a4bf "HTTP/1.1 200 OK"
+2026-04-26 14:36:28,783 INFO app.integrations.hera [HERA] hera poll finished (video_id=ce8f1b51-9908-4d4b-af63-4c852cf7a4bf, status=in-progress, top_level_status=in-progress, file_url=False)
+2026-04-26 14:36:28,825 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/61e66e9d-cfe7-49c5-a435-7c041ab9e7de "HTTP/1.1 200 OK"
+2026-04-26 14:36:28,827 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/1c90e9e0-cd7b-45f8-afac-db6d9fdb1096 "HTTP/1.1 200 OK"
+2026-04-26 14:36:28,828 INFO app.integrations.hera [HERA] hera poll finished (video_id=61e66e9d-cfe7-49c5-a435-7c041ab9e7de, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:28,829 INFO app.integrations.hera [HERA] hera poll finished (video_id=1c90e9e0-cd7b-45f8-afac-db6d9fdb1096, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:28,829 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:28,830 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/3301eef1-00bf-4679-be3a-484e0cde0dd2 "HTTP/1.1 200 OK"
+2026-04-26 14:36:28,831 INFO app.integrations.hera [HERA] hera poll finished (video_id=3301eef1-00bf-4679-be3a-484e0cde0dd2, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:29,159 INFO httpx HTTP Request: GET https://api.hera.video/v1/videos/64015880-7940-429d-9dd8-660931a75766 "HTTP/1.1 200 OK"
+2026-04-26 14:36:29,161 INFO app.integrations.hera [HERA] hera poll finished (video_id=64015880-7940-429d-9dd8-660931a75766, status=success, top_level_status=success, file_url=True)
+2026-04-26 14:36:30,828 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+2026-04-26 14:36:32,163 WARNING app.pipeline [HERA] [c1be34d9-fbe4-40e6-ab99-548c5ba35241] hera poll window 3/3 timed out; keeping existing video ids and continuing
+2026-04-26 14:36:32,163 ERROR app.pipeline [JOB] [c1be34d9-fbe4-40e6-ab99-548c5ba35241] pipeline failed: Hera renders failed after 3 polling window(s): Timed out waiting for Hera renders after 240 seconds.
+Traceback (most recent call last):
+  File "/Users/peresjav/PeresJav/hackathons/bigTechBerlin-04-26-v2/backend/app/pipeline.py", line 242, in render_hera_assets
+    await _poll_existing_hera_assets(
+  File "/Users/peresjav/PeresJav/hackathons/bigTechBerlin-04-26-v2/backend/app/pipeline.py", line 314, in _poll_existing_hera_assets
+    raise TimeoutError(
+TimeoutError: Timed out waiting for Hera renders after 240 seconds.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/peresjav/PeresJav/hackathons/bigTechBerlin-04-26-v2/backend/app/pipeline.py", line 158, in run_pipeline
+    clip_bytes_list = await render_hera_assets(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/peresjav/PeresJav/hackathons/bigTechBerlin-04-26-v2/backend/app/pipeline.py", line 281, in render_hera_assets
+    raise RuntimeError(
+RuntimeError: Hera renders failed after 3 polling window(s): Timed out waiting for Hera renders after 240 seconds.
+2026-04-26 14:36:32,168 ERROR app.jobs [JOB] [c1be34d9-fbe4-40e6-ab99-548c5ba35241] job failed: Hera renders failed after 3 polling window(s): Timed out waiting for Hera renders after 240 seconds.
+2026-04-26 14:36:32,829 INFO uvicorn.access 127.0.0.1:55210 - "GET /jobs/c1be34d9-fbe4-40e6-ab99-548c5ba35241 HTTP/1.1" 200
+  --> i dont know if is problem of hera, or in hte pipeline. can you check and fix it is yes please.
+
+---
+
+sill there is an issue, i think know understand what is going on, sometimes it failed to generted the video in hera servers, and i think the log never coma back or something, so after the retry is finished, for that specifct job id, i think it should check what is the current part of the video missing, and try to generate agian just that specifct part, and then example if part-3 failed, then genrate just part-3, and then finally merge normally i think that's the rpoble, when hera failed it generated again but it seems it lose the memory. of the last generations.
+
+---
+
+do you have any idea why --> My Videos    Created at    Finished at    Download
+Untitled    04/26/2026 3:09 PM    04/26/2026 3:09 PM    
+Untitled    04/26/2026 3:08 PM    04/26/2026 3:09 PM    
+Untitled    04/26/2026 3:08 PM    04/26/2026 3:08 PM    
+Untitled    04/26/2026 3:08 PM    04/26/2026 3:08 PM    
+Untitled    04/26/2026 2:56 PM    04/26/2026 2:57 PM  --> i see the 4 videos are completed, but not fetching it said 3/4. what si wrong?

@@ -12,12 +12,17 @@
 
 Built for **Big Tech Berlin 2026**, CorpuScan helps teams go from quarterly report to boardroom-ready summary without spending hours reading, rewriting, recording, and assembling slides by hand.
 
-## Demo result
+## Team
 
-[![Tesla Q1 2026 demo result](docs/demo-tesla-q1-2026.svg)](https://drive.google.com/drive/folders/1Mm5MeHAiED8sdw7vrtc_3WAbHpBGsSJr?usp=drive_link)
+Built at **Big Tech Berlin 2026** by **Javier Peres** and **Sebastian Russo**.
 
-- Demo video result: [Open the generated briefing folder on Google Drive](https://drive.google.com/drive/folders/1Mm5MeHAiED8sdw7vrtc_3WAbHpBGsSJr?usp=drive_link)
-- Source report analyzed by the pipeline: [Tesla Q1 2026 Update PDF](https://assets-ir.tesla.com/tesla-contents/IR/TSLA-Q1-2026-Update.pdf)
+## Demo and results
+
+Click on the logo to see the demo
+[![Watch here](https://raw.githubusercontent.com/peres84/CorpuScan/main/frontend/public/logo.png)](https://youtu.be/U5_TvHi1b0w)
+
+- Output video results: [Briefing video results](https://drive.google.com/drive/folders/1a4klVgh3VlUttX9CAWF3r7kcYkuUEPBN?usp=drive_link)
+- Report examples: [Quarterly report pdf files](https://drive.google.com/drive/folders/1IEyToMzFP6JdemquRUPNWEr83oZafCKT?usp=drive_link)
 
 ## The problem
 
@@ -210,6 +215,3 @@ Hackathon MVP — see [docs/TASK.md](docs/TASK.md) for the live checklist.
 
 For deeper dives: [frontend/README.md](frontend/README.md) covers routes, design system tokens, and component structure. [backend/README.md](backend/README.md) covers the full pipeline, all env vars, agent prompt editing, and Docker.
 
-## Team
-
-Built at **Big Tech Berlin 2026** by **Javier Peres** and **Sebastian Russo**.

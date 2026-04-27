@@ -14,7 +14,7 @@ Built for **Big Tech Berlin 2026**, CorpuScan helps teams go from quarterly repo
 
 ## Team
 
-Built at **Big Tech Berlin 2026** by **Javier Peres** and **Sebastian Russo**.
+Built at **Big Tech Berlin 2026** by [**Javier Peres**](https://github.com/peres84) and [**Sebastian Russo**](https://github.com/rouxxel).
 
 ## Demo and results
 

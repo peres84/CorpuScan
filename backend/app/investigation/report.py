@@ -49,6 +49,8 @@ class InvestigationReport(BaseModel):
     entity_relationships: list[EntityRelationship] = Field(default_factory=list)
     fraud_assessment: FraudAssessment = Field(default_factory=lambda: FraudAssessment(overall_likelihood=0.0))
     remaining_questions: list[str] = Field(default_factory=list)
+    relationship_chains: list[str] = Field(default_factory=list)
+    knowledge_graph_summary: str = Field(default="")
 
 
 def _load_report_prompt() -> dict[str, str]:
@@ -68,8 +70,13 @@ class ReportGenerator:
         self,
         state: InvestigationState,
         evidence_store: EvidenceStore,
+        cognee_graph: object | None = None,
     ) -> InvestigationReport:
-        """Generate a full report from investigation state and evidence store."""
+        """Generate a full report from investigation state and evidence store.
+
+        If cognee_graph (a CogneeGraphResponse) is provided, relationship chains
+        and a knowledge graph summary are included in the report.
+        """
         # Build context for the LLM
         buffer_text = state.format_buffer_for_llm()
         findings_text = self._format_findings(evidence_store.list_findings())
@@ -89,10 +96,44 @@ class ReportGenerator:
                 temperature=0.2,
                 response_mime_type="application/json",
             )
-            return self._parse_report_response(response, state)
+            report = self._parse_report_response(response, state)
         except Exception:
             logger.exception("Report generation failed, producing fallback report")
-            return self._build_fallback_report(state, evidence_store)
+            report = self._build_fallback_report(state, evidence_store)
+
+        # Enrich with Cognee data if available
+        if cognee_graph is not None:
+            report = self._enrich_with_cognee(report, cognee_graph, evidence_store)
+
+        return report
+
+    def _enrich_with_cognee(
+        self,
+        report: InvestigationReport,
+        cognee_graph: object,
+        evidence_store: EvidenceStore,
+    ) -> InvestigationReport:
+        """Add Cognee relationship chains and knowledge graph summary to report."""
+        try:
+            from app.cognee.schemas import CogneeGraphResponse
+
+            if not isinstance(cognee_graph, CogneeGraphResponse):
+                return report
+
+            # Build relationship chains (e.g., "MV-U05 → created → Vendor 209101 → invoiced → €248,000")
+            chains = build_relationship_chains(cognee_graph)
+            if chains:
+                report.relationship_chains = chains
+
+            # Build knowledge graph summary
+            summary = build_knowledge_graph_summary(cognee_graph)
+            if summary:
+                report.knowledge_graph_summary = summary
+
+        except Exception:
+            logger.debug("Failed to enrich report with Cognee data")
+
+        return report
 
     def _format_findings(self, findings: list[Finding]) -> str:
         if not findings:
@@ -284,4 +325,91 @@ def aggregate_fraud_assessment(state: InvestigationState) -> FraudAssessment:
         overall_likelihood=min(1.0, overall),
         estimated_financial_impact="Requires detailed analysis",
         schemes_identified=[],
+    )
+
+
+def build_relationship_chains(cognee_graph: object) -> list[str]:
+    """Build human-readable relationship chains from Cognee graph data.
+
+    Example: "MV-U05 → created → Vendor 209101 → invoiced → €248,000"
+    """
+    from app.cognee.schemas import CogneeGraphResponse
+
+    if not isinstance(cognee_graph, CogneeGraphResponse):
+        return []
+
+    if not cognee_graph.relationships:
+        return []
+
+    # Build adjacency list from relationships
+    adjacency: dict[str, list[tuple[str, str]]] = {}
+    for rel in cognee_graph.relationships:
+        adjacency.setdefault(rel.source_entity, []).append(
+            (rel.relationship_type, rel.target_entity)
+        )
+
+    # Build chains (max depth 4, starting from each entity)
+    chains: list[str] = []
+    seen_chains: set[str] = set()
+
+    for start_entity in list(adjacency.keys())[:20]:
+        chain = _build_chain(start_entity, adjacency, max_depth=4)
+        if chain and chain not in seen_chains:
+            seen_chains.add(chain)
+            chains.append(chain)
+
+    return chains[:15]  # Cap at 15 chains
+
+
+def _build_chain(start: str, adjacency: dict[str, list[tuple[str, str]]], max_depth: int) -> str:
+    """Build a single chain string from a starting entity."""
+    parts = [start]
+    current = start
+    visited: set[str] = {start}
+
+    for _ in range(max_depth):
+        neighbors = adjacency.get(current, [])
+        if not neighbors:
+            break
+        # Pick first unvisited neighbor
+        next_hop = None
+        for rel_type, target in neighbors:
+            if target not in visited:
+                parts.append(rel_type)
+                parts.append(target)
+                visited.add(target)
+                next_hop = target
+                break
+        if next_hop is None:
+            break
+        current = next_hop
+
+    if len(parts) < 3:
+        return ""
+    return " → ".join(parts)
+
+
+def build_knowledge_graph_summary(cognee_graph: object) -> str:
+    """Build a text summary of the Cognee knowledge graph."""
+    from app.cognee.schemas import CogneeGraphResponse
+
+    if not isinstance(cognee_graph, CogneeGraphResponse):
+        return ""
+
+    entity_count = len(cognee_graph.entities)
+    rel_count = len(cognee_graph.relationships)
+
+    if entity_count == 0:
+        return ""
+
+    # Count by type
+    type_counts: dict[str, int] = {}
+    for entity in cognee_graph.entities:
+        type_counts[entity.entity_type] = type_counts.get(entity.entity_type, 0) + 1
+
+    type_summary = ", ".join(f"{count} {etype}(s)" for etype, count in sorted(type_counts.items()))
+
+    return (
+        f"Knowledge graph contains {entity_count} entities and {rel_count} relationships. "
+        f"Entity breakdown: {type_summary}."
     )

@@ -14,6 +14,13 @@ from app.investigation.graph import DocumentGraph
 from app.investigation.models import ParsedDocument
 from app.mcp.registry import get_tool
 
+try:
+    from app.cognee.client import CogneeClient
+    from app.cognee.retrieval import search_context as cognee_search_context
+except ImportError:
+    CogneeClient = None  # type: ignore[assignment, misc]
+    cognee_search_context = None  # type: ignore[assignment]
+
 logger = logging.getLogger(__name__)
 
 _PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
@@ -36,12 +43,14 @@ class InvestigationAgent:
         evidence_store: EvidenceStore,
         graph: DocumentGraph,
         tavily_client: TavilyClient | None = None,
+        cognee_client: object | None = None,
         max_iterations: int = 50,
     ) -> None:
         self._llm = llm_router
         self._store = evidence_store
         self._graph = graph
         self._tavily = tavily_client
+        self._cognee = cognee_client
         self._prompt_config = _load_investigator_prompt()
         self._state = InvestigationState(max_iterations=max_iterations)
 
@@ -90,6 +99,9 @@ class InvestigationAgent:
         related_docs = self._get_related_docs_summary(doc.doc_id)
         buffer_text = self._state.format_buffer_for_llm()
 
+        # Query Cognee for additional context if available
+        cognee_context = await self._get_cognee_context(doc)
+
         system_prompt = self._prompt_config["system"]
         user_template = self._prompt_config["user_template"]
         user_prompt = user_template.format(
@@ -100,6 +112,10 @@ class InvestigationAgent:
             content=content,
             related_documents=related_docs,
         )
+
+        # Inject Cognee context if available
+        if cognee_context:
+            user_prompt += f"\n\n## Cognee Knowledge Context\n{cognee_context}"
 
         try:
             response = await self._llm.generate(
@@ -227,6 +243,26 @@ class InvestigationAgent:
             if doc.filename == name or name in doc.filename:
                 return doc
         return None
+
+    async def _get_cognee_context(self, doc: ParsedDocument) -> str:
+        """Query Cognee for context related to the current document.
+
+        Returns formatted context string, or empty string if Cognee is unavailable.
+        """
+        if self._cognee is None or cognee_search_context is None:
+            return ""
+
+        if not hasattr(self._cognee, "is_available") or not self._cognee.is_available():
+            return ""
+
+        try:
+            # Build a query from the document's key content
+            query = f"Relationships and entities in {doc.filename}"
+            context = await cognee_search_context(self._cognee, query)
+            return context if context else ""
+        except Exception:
+            logger.debug("Cognee context retrieval failed for %s", doc.filename)
+            return ""
 
     async def research_via_mcp(self, query: str) -> str | None:
         """Use the MCP web.search tool for external research, falling back to direct HTTP.

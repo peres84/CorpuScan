@@ -59,7 +59,7 @@ async def run_pipeline(
         job_store.update_step(job_id, step=JobStep.FINANCE, progress=20)
         logger.info("%s [%s] running finance agent", stage_tag("finance"), job_id)
 
-        gemini_client = GeminiClient(api_key=settings.gemini_api_key)
+        gemini_client = GeminiClient(api_key=settings.gemini_api_key, model=settings.gemini_model)
         qa_markdown = await run_finance_agent(
             source_text=source_text,
             pipeline_context=pipeline_context,

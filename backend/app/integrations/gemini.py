@@ -17,27 +17,29 @@ def _is_placeholder_api_key(value: str) -> bool:
 
 
 class GeminiClient:
-    def __init__(self, api_key: str) -> None:
+    def __init__(self, api_key: str, model: str = "gemini-2.5-pro") -> None:
         if _is_placeholder_api_key(api_key):
             raise RuntimeError(
                 "Gemini API key is missing or still set to a placeholder in backend/.env. "
                 "Set GEMINI_API_KEY to a real Google AI Studio key and restart the backend."
             )
         self._client = Client(api_key=api_key)
+        self._default_model = model
 
     async def generate(
         self,
         *,
         system: str,
         user: str,
-        model: str = "gemini-2.5-pro",
+        model: str | None = None,
         temperature: float = 0.2,
         response_mime_type: str | None = None,
     ) -> str:
+        resolved_model = model or self._default_model
         logger.info(
             "%s gemini generate started (model=%s, temperature=%.2f, mime=%s, user_chars=%d)",
             stage_tag("gemini"),
-            model,
+            resolved_model,
             temperature,
             response_mime_type,
             len(user),
@@ -49,7 +51,7 @@ class GeminiClient:
         )
         try:
             response = await self._client.aio.models.generate_content(
-                model=model,
+                model=resolved_model,
                 contents=user,
                 config=config,
             )

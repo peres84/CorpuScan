@@ -30,21 +30,36 @@ class CogneeClient:
             self._available = False
             return False
 
+        if not settings.openai_api_key or settings.openai_api_key.strip().lower() in (
+            "", "key_here", "your_api_key", "api_key_here", "replace_me",
+        ):
+            logger.warning("Cognee enabled but no OPENAI_API_KEY set — disabling Cognee")
+            self._available = False
+            return False
+
         try:
-            import cognee  # noqa: F401 — verifies SDK is installed
+            import cognee
 
             # Configure Cognee storage path
             storage_path = Path(settings.cognee_storage_path)
             storage_path.mkdir(parents=True, exist_ok=True)
-            os.environ.setdefault("COGNEE_DATA_DIRECTORY", str(storage_path))
 
-            # Configure the LLM model Cognee should use
-            if settings.openai_key:
-                os.environ.setdefault("OPENAI_API_KEY", settings.openai_key)
+            # Set env vars as belt-and-suspenders
+            os.environ["OPENAI_API_KEY"] = settings.openai_api_key
+            os.environ["LLM_API_KEY"] = settings.openai_api_key
+            os.environ["COGNEE_DATA_DIRECTORY"] = str(storage_path)
+
+            # Use Cognee's config API directly
+            cognee.config.set_llm_api_key(settings.openai_api_key)
+            cognee.config.set_llm_provider("openai")
+            cognee.config.set_llm_model(settings.cognee_model)
 
             self._initialized = True
             self._available = True
-            logger.info("Cognee initialized (storage=%s, model=%s)", storage_path, settings.cognee_model)
+            logger.info(
+                "Cognee initialized (storage=%s, model=%s)",
+                storage_path, settings.cognee_model,
+            )
             return True
 
         except ImportError:

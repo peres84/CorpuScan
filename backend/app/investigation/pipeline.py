@@ -99,12 +99,12 @@ def _build_llm_router() -> LLMRouter:
     openai_client: OpenAIClient | None = None
     gemini_client: GeminiClient | None = None
 
-    if settings.openai_key and settings.openai_key.strip().lower() not in (
+    if settings.openai_api_key and settings.openai_api_key.strip().lower() not in (
         "", "key_here", "your_api_key", "api_key_here", "replace_me",
     ):
         try:
             openai_client = OpenAIClient(
-                api_key=settings.openai_key,
+                api_key=settings.openai_api_key,
                 model=settings.openai_model,
             )
         except RuntimeError:
@@ -114,7 +114,7 @@ def _build_llm_router() -> LLMRouter:
         "", "key_here", "your_api_key", "api_key_here", "replace_me",
     ):
         try:
-            gemini_client = GeminiClient(api_key=settings.gemini_api_key)
+            gemini_client = GeminiClient(api_key=settings.gemini_api_key, model=settings.gemini_model)
         except RuntimeError:
             pass
 

@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=str(_ENV_FILE), env_file_encoding="utf-8", extra="ignore")
 
     gemini_api_key: str = Field(default="")
+    gemini_model: str = Field(default="gemini-2.5-pro")
     tavily_api_key: str = Field(default="")
     elevenlabs_api_key: str = Field(default="")
     elevenlabs_voice_id: str = Field(default="")
@@ -21,8 +22,8 @@ class Settings(BaseSettings):
     hera_render_timeout_seconds: int = Field(default=240, ge=30)
     hera_render_retry_attempts: int = Field(default=3, ge=1)
     hera_poll_interval_seconds: float = Field(default=3.0, gt=0)
-    openai_key: str = Field(default="")
-    openai_model: str = Field(default="gpt-4o")
+    openai_api_key: str = Field(default="")
+    openai_model: str = Field(default="gpt-4o-mini")
     cognee_enabled: bool = Field(default=False)
     cognee_storage_path: str = Field(default="/tmp/cognee")
     cognee_model: str = Field(default="gpt-4o")

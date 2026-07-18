@@ -134,18 +134,41 @@ class InvestigationAgent:
                 fraud_likelihood=0.0,
             )
 
+        # Run Tavily queries if the agent requested any
+        tavily_results = await self._run_tavily_queries(row)
+        if tavily_results:
+            row.tavily_results = tavily_results
+
         self._state.buffer.append(row)
         self._update_stack_from_row(row)
         self._state.update_overall_likelihood()
 
         logger.info(
-            "Investigated %s: likelihood=%.2f, next=%s, alts=%d",
+            "Investigated %s: likelihood=%.2f, next=%s, alts=%d, flagged=%d, tavily=%d",
             doc.filename,
             row.fraud_likelihood,
             row.primary_next_doc,
             len(row.alt_doc_leads),
+            len(row.flagged_entries),
+            len(row.tavily_results),
         )
         return row
+
+    async def _run_tavily_queries(self, row: InvestigationBufferRow) -> list[dict[str, str]]:
+        """Execute Tavily web searches requested by the agent."""
+        # Check if the agent's response included tavily_queries (stored temporarily)
+        queries = getattr(row, "_pending_tavily_queries", [])
+        if not queries:
+            return []
+
+        results: list[dict[str, str]] = []
+        for query in queries[:3]:  # Max 3 queries per document
+            research = await self.research_via_mcp(query)
+            if research:
+                results.append({"query": query, "result": research})
+                logger.info("Tavily research for %s: %s", row.filename, query)
+
+        return results
 
     def _build_document_content(self, doc: ParsedDocument) -> str:
         """Build content string from document chunks, limited for LLM context."""
@@ -192,7 +215,17 @@ class InvestigationAgent:
 
             data = json.loads(cleaned)
 
-            return InvestigationBufferRow(
+            # Parse flagged entries
+            flagged_entries: list[dict[str, str]] = []
+            for entry in (data.get("flagged_entries") or []):
+                if isinstance(entry, dict):
+                    flagged_entries.append({
+                        "row_ref": str(entry.get("row_ref", "")),
+                        "data": str(entry.get("data", "")),
+                        "reason": str(entry.get("reason", "")),
+                    })
+
+            row = InvestigationBufferRow(
                 doc_id=doc.doc_id,
                 filename=doc.filename,
                 notes_summary=str(data.get("notes_summary", ""))[:2000],
@@ -200,7 +233,14 @@ class InvestigationAgent:
                 primary_next_doc=data.get("primary_next_doc") or None,
                 alt_doc_leads=[str(d) for d in (data.get("alt_doc_leads") or []) if d],
                 open_questions=[str(q) for q in (data.get("open_questions") or []) if q],
+                flagged_entries=flagged_entries,
             )
+
+            # Stash tavily queries for execution after parsing
+            tavily_queries = [str(q) for q in (data.get("tavily_queries") or []) if q]
+            row._pending_tavily_queries = tavily_queries  # type: ignore[attr-defined]
+
+            return row
         except (json.JSONDecodeError, ValueError, TypeError):
             logger.warning("Failed to parse agent response for %s", doc.filename)
             return InvestigationBufferRow(

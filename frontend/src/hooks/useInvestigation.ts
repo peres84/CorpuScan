@@ -31,6 +31,8 @@ export interface BufferRow {
   primary_next_doc: string | null;
   alt_doc_leads: string[];
   open_questions: string[];
+  flagged_entries: { row_ref: string; data: string; reason: string }[];
+  tavily_results: { query: string; result: string }[];
 }
 
 export interface InvestigationReport {

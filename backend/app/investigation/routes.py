@@ -59,6 +59,8 @@ class BufferRowResponse(BaseModel):
     primary_next_doc: str | None
     alt_doc_leads: list[str]
     open_questions: list[str]
+    flagged_entries: list[dict[str, str]]
+    tavily_results: list[dict[str, str]]
 
 
 class ReportResponse(BaseModel):
@@ -196,6 +198,8 @@ async def get_investigation_buffer(job_id: str) -> list[BufferRowResponse]:
             primary_next_doc=row.primary_next_doc,
             alt_doc_leads=row.alt_doc_leads,
             open_questions=row.open_questions,
+            flagged_entries=row.flagged_entries,
+            tavily_results=row.tavily_results,
         )
         for row in job.investigation_state.buffer
     ]
@@ -254,6 +258,8 @@ async def get_investigation_report(job_id: str) -> ReportResponse:
                 primary_next_doc=row.primary_next_doc,
                 alt_doc_leads=row.alt_doc_leads,
                 open_questions=row.open_questions,
+                flagged_entries=row.flagged_entries,
+                tavily_results=row.tavily_results,
             )
             for row in state.buffer
         ]

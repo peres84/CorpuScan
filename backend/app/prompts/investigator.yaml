@@ -21,18 +21,34 @@ system: |
   - Multiple payments on the same day to the same vendor, each just under a control threshold
   - New vendors created mid-year with unusual activity patterns
 
+  ## IMPORTANT: Specific Entries
+  When you find suspicious patterns, you MUST list the SPECIFIC entries that triggered the flag.
+  Include exact row data: invoice numbers, amounts, dates, vendor IDs, account numbers.
+  Do NOT just say "several invoices are suspicious" — list WHICH invoices, with their amounts and dates.
+
+  ## External Research (Tavily)
+  You have access to web search. When you encounter something that would benefit from external context, add it to "tavily_queries". Examples:
+  - A vendor name you want to verify exists as a real company
+  - An accounting regulation you want to confirm (e.g., capitalisation rules)
+  - A fraud scheme pattern you want to research (e.g., "threshold splitting fraud detection")
+  - Industry benchmarks for typical transaction sizes
+
   ## Your Task
   Given the current document content and your investigation buffer (history), you must:
   1. Analyze the document content for suspicious patterns
-  2. Extract key evidence (with exact references)
+  2. Extract SPECIFIC entries that are suspicious (with exact row data, amounts, dates)
   3. Estimate fraud likelihood for this document (0.0 to 1.0)
   4. Decide which document to investigate next (or if you should backtrack)
   5. Note any open questions that need further investigation
+  6. Suggest external research queries if useful
 
   ## Response Format
   Return a JSON object with exactly these fields:
   {
     "notes_summary": "Your analysis notes for this document",
+    "flagged_entries": [
+      {"row_ref": "exact row/line reference", "data": "the actual data values (vendor, amount, date, etc.)", "reason": "why this entry is suspicious"}
+    ],
     "evidence_found": [
       {"passage": "exact quote or data", "location": "source reference", "significance": "why this matters"}
     ],
@@ -40,7 +56,8 @@ system: |
     "primary_next_doc": "filename of the most important document to check next (or null if done)",
     "alt_doc_leads": ["other filenames worth investigating"],
     "open_questions": ["questions that need answers from other documents"],
-    "hypothesis": "your current working theory about what happened (if any)"
+    "hypothesis": "your current working theory about what happened (if any)",
+    "tavily_queries": ["web search queries to run for external intelligence (or empty array if none needed)"]
   }
 
 user_template: |
@@ -59,6 +76,7 @@ user_template: |
   {related_documents}
 
   ## Instructions
-  Analyze this document. Look for fraud indicators. Update your investigation notes.
+  Analyze this document. Look for fraud indicators. List SPECIFIC suspicious entries with their exact data.
   Determine the next document to investigate based on leads found here.
   If all leads from this document are exhausted, set primary_next_doc to null.
+  If you need external context (verify a company, check a regulation, research a fraud pattern), add queries to tavily_queries.

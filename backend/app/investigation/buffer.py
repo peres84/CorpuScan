@@ -11,6 +11,8 @@ class InvestigationBufferRow(BaseModel):
     primary_next_doc: str | None = None
     alt_doc_leads: list[str] = Field(default_factory=list)
     open_questions: list[str] = Field(default_factory=list)
+    flagged_entries: list[dict[str, str]] = Field(default_factory=list)
+    tavily_results: list[dict[str, str]] = Field(default_factory=list)
 
 
 class InvestigationState(BaseModel):

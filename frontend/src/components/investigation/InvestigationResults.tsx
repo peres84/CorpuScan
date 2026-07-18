@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle, FileSearch, Clock, RotateCcw } from "lucide-react";
+import { AlertTriangle, CheckCircle, FileSearch, Clock, RotateCcw, ChevronDown, ChevronRight, FileX } from "lucide-react";
 import {
   useInvestigationFindings,
   useInvestigationBuffer,
@@ -17,13 +17,18 @@ const InvestigationResults = ({ jobId, onReset }: InvestigationResultsProps) => 
   const { findings, fetchFindings } = useInvestigationFindings(jobId);
   const { buffer, fetchBuffer } = useInvestigationBuffer(jobId);
   const { report, fetchReport } = useInvestigationReport(jobId);
-  const [activeTab, setActiveTab] = useState<"findings" | "graph" | "timeline" | "buffer">("findings");
+  const [activeTab, setActiveTab] = useState<"findings" | "graph" | "steps">("findings");
 
   useEffect(() => {
     fetchFindings();
     fetchBuffer();
     fetchReport();
   }, [fetchFindings, fetchBuffer, fetchReport]);
+
+  // Compute files not analyzed
+  const analyzedFiles = new Set(buffer.map((row) => row.filename));
+  const totalFiles = report?.total_documents || 0;
+  const notAnalyzedCount = Math.max(0, totalFiles - analyzedFiles.size);
 
   return (
     <div className="space-y-6">
@@ -71,19 +76,15 @@ const InvestigationResults = ({ jobId, onReset }: InvestigationResultsProps) => 
         <TabButton active={activeTab === "graph"} onClick={() => setActiveTab("graph")}>
           Knowledge Graph
         </TabButton>
-        <TabButton active={activeTab === "timeline"} onClick={() => setActiveTab("timeline")}>
-          Timeline
-        </TabButton>
-        <TabButton active={activeTab === "buffer"} onClick={() => setActiveTab("buffer")}>
+        <TabButton active={activeTab === "steps"} onClick={() => setActiveTab("steps")}>
           Investigation Steps ({buffer.length})
         </TabButton>
       </div>
 
       {/* Tab content */}
-      {activeTab === "findings" && <FindingsList findings={findings} />}
+      {activeTab === "findings" && <FindingsTimeline findings={findings} buffer={buffer} notAnalyzedCount={notAnalyzedCount} />}
       {activeTab === "graph" && <KnowledgeGraph jobId={jobId} />}
-      {activeTab === "timeline" && <TimelineView buffer={buffer} />}
-      {activeTab === "buffer" && <BufferView buffer={buffer} />}
+      {activeTab === "steps" && <StepsView buffer={buffer} />}
     </div>
   );
 };
@@ -103,7 +104,18 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
   );
 }
 
-function FindingsList({ findings }: { findings: Finding[] }) {
+function FindingsTimeline({ findings, buffer, notAnalyzedCount }: { findings: Finding[]; buffer: BufferRow[]; notAnalyzedCount: number }) {
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+
+  const toggleExpand = (idx: number) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
   if (findings.length === 0) {
     return (
       <div className="flex items-center gap-2 p-6 text-muted-foreground">
@@ -114,63 +126,132 @@ function FindingsList({ findings }: { findings: Finding[] }) {
   }
 
   return (
-    <div className="space-y-3">
-      {findings.map((finding) => (
-        <div key={finding.finding_id} className="rounded-lg border p-4 space-y-2">
-          <div className="flex items-start gap-3">
-            <SeverityIcon likelihood={finding.fraud_likelihood} />
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">
-                  {finding.finding_id}
-                </span>
-                <LikelihoodBadge value={finding.fraud_likelihood} />
+    <div className="space-y-6">
+      {/* Findings with timeline dots */}
+      <div className="space-y-1">
+        {findings.map((finding, idx) => {
+          const findingNumber = idx + 1;
+          const relatedFile = buffer[idx]?.filename || "Unknown";
+          const isExpanded = expanded.has(idx);
+
+          return (
+            <div key={finding.finding_id} className="flex gap-3">
+              {/* Timeline line */}
+              <div className="flex flex-col items-center pt-1">
+                <SeverityDot likelihood={finding.fraud_likelihood} />
+                {idx < findings.length - 1 && <div className="w-px flex-1 bg-border mt-1" />}
               </div>
-              <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                {finding.finding_text}
-              </p>
-            </div>
-          </div>
 
-          {finding.evidence.length > 0 && (
-            <div className="ml-8 space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Evidence:</p>
-              {finding.evidence.map((ev, idx) => (
-                <div key={idx} className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                  <span className="font-mono">{ev.location}</span> — {ev.passage}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
+              {/* Content */}
+              <div className="flex-1 pb-4">
+                <button
+                  onClick={() => toggleExpand(idx)}
+                  className="w-full text-left flex items-start gap-2"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      {isExpanded ? (
+                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      )}
+                      <span className="text-sm font-semibold text-foreground">
+                        Finding {findingNumber}
+                      </span>
+                      <LikelihoodBadge value={finding.fraud_likelihood} />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 ml-5">
+                      → {relatedFile}
+                    </p>
+                  </div>
+                </button>
 
-function TimelineView({ buffer }: { buffer: BufferRow[] }) {
-  return (
-    <div className="space-y-2">
-      {buffer.map((row, idx) => (
-        <div key={row.doc_id} className="flex gap-3">
-          <div className="flex flex-col items-center">
-            <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-            {idx < buffer.length - 1 && <div className="w-px flex-1 bg-border" />}
-          </div>
-          <div className="pb-4">
-            <p className="text-sm font-medium text-foreground">{row.filename}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {row.notes_summary.slice(0, 150)}
-              {row.notes_summary.length > 150 ? "..." : ""}
+                {isExpanded && (
+                  <div className="ml-5 mt-2 space-y-3">
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {finding.finding_text}
+                    </p>
+
+                    {/* Flagged entries table */}
+                    {buffer[idx]?.flagged_entries && buffer[idx].flagged_entries.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-foreground mb-1">Flagged Entries:</p>
+                        <div className="border rounded-md overflow-hidden">
+                          <table className="w-full text-xs">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="px-2 py-1 text-left font-medium text-muted-foreground">Ref</th>
+                                <th className="px-2 py-1 text-left font-medium text-muted-foreground">Data</th>
+                                <th className="px-2 py-1 text-left font-medium text-muted-foreground">Reason</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {buffer[idx].flagged_entries.map((entry, eIdx) => (
+                                <tr key={eIdx} className="border-t">
+                                  <td className="px-2 py-1 font-mono text-muted-foreground">{entry.row_ref}</td>
+                                  <td className="px-2 py-1 text-muted-foreground">{entry.data}</td>
+                                  <td className="px-2 py-1 text-muted-foreground">{entry.reason}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tavily research results */}
+                    {buffer[idx]?.tavily_results && buffer[idx].tavily_results.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-foreground mb-1">External Research (Tavily):</p>
+                        <div className="space-y-1">
+                          {buffer[idx].tavily_results.map((tr, tIdx) => (
+                            <div key={tIdx} className="text-xs bg-blue-500/5 border border-blue-500/20 rounded px-2 py-1">
+                              <span className="font-medium text-blue-600">Query:</span>{" "}
+                              <span className="text-muted-foreground">{tr.query}</span>
+                              <p className="text-muted-foreground mt-0.5">{tr.result.slice(0, 200)}{tr.result.length > 200 ? "..." : ""}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {finding.evidence.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Evidence:</p>
+                        {finding.evidence.map((ev, evIdx) => (
+                          <div key={evIdx} className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
+                            <span className="font-mono">{ev.location}</span> — {ev.passage}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Files not analyzed */}
+      {notAnalyzedCount > 0 && (
+        <div className="rounded-lg border border-dashed p-4 flex items-center gap-3">
+          <FileX className="h-5 w-5 text-muted-foreground" />
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">
+              {notAnalyzedCount} file{notAnalyzedCount !== 1 ? "s" : ""} not analyzed
+            </p>
+            <p className="text-xs text-muted-foreground">
+              These files were uploaded but not visited during the DFS investigation.
             </p>
           </div>
         </div>
-      ))}
+      )}
     </div>
   );
 }
 
-function BufferView({ buffer }: { buffer: BufferRow[] }) {
+function StepsView({ buffer }: { buffer: BufferRow[] }) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   const toggleExpand = (idx: number) => {
@@ -190,11 +271,19 @@ function BufferView({ buffer }: { buffer: BufferRow[] }) {
             onClick={() => toggleExpand(idx)}
             className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50"
           >
+            <span className="text-xs font-mono text-muted-foreground w-6 flex-shrink-0">
+              {idx + 1})
+            </span>
             <FileSearch className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <span className="text-sm font-medium text-foreground flex-1 truncate">
               {row.filename}
             </span>
             <LikelihoodBadge value={row.fraud_likelihood} />
+            {expanded.has(idx) ? (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            )}
           </button>
 
           {expanded.has(idx) && (
@@ -225,14 +314,14 @@ function BufferView({ buffer }: { buffer: BufferRow[] }) {
   );
 }
 
-function SeverityIcon({ likelihood }: { likelihood: number }) {
-  if (likelihood >= 0.7) {
-    return <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />;
-  }
-  if (likelihood >= 0.4) {
-    return <AlertTriangle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />;
-  }
-  return <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />;
+function SeverityDot({ likelihood }: { likelihood: number }) {
+  const color =
+    likelihood >= 0.7
+      ? "bg-destructive"
+      : likelihood >= 0.4
+      ? "bg-yellow-500"
+      : "bg-muted-foreground";
+  return <div className={`w-3 h-3 rounded-full ${color} flex-shrink-0`} />;
 }
 
 function LikelihoodBadge({ value }: { value: number }) {

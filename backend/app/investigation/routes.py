@@ -27,7 +27,7 @@ investigation_store = InvestigationJobStore()
 
 MAX_UPLOAD_FILE_COUNT = 50
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024
-SUPPORTED_EXTENSIONS = {".txt", ".pdf", ".xlsx", ".csv", ".docx", ".xml"}
+SUPPORTED_EXTENSIONS = {".txt", ".pdf", ".xlsx", ".csv", ".docx", ".xml", ".md"}
 
 
 # ── Response Models ──────────────────────────────────────────────────────────

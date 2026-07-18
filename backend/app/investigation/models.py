@@ -12,6 +12,7 @@ class DocumentType(StrEnum):
     CSV = "csv"
     DOCX = "docx"
     XML = "xml"
+    MD = "md"
     UNKNOWN = "unknown"
 
 

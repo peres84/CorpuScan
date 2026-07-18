@@ -9,7 +9,7 @@ from app.investigation.parsers import detect_document_type, parse_document
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_EXTENSIONS = {".txt", ".pdf", ".xlsx", ".csv", ".docx", ".xml"}
+SUPPORTED_EXTENSIONS = {".txt", ".pdf", ".xlsx", ".csv", ".docx", ".xml", ".md"}
 SKIP_FILES = {"gdpdu-01-08-2002.dtd"}
 
 

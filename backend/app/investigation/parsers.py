@@ -20,6 +20,7 @@ def detect_document_type(path: Path) -> DocumentType:
         ".csv": DocumentType.CSV,
         ".docx": DocumentType.DOCX,
         ".xml": DocumentType.XML,
+        ".md": DocumentType.MD,
     }
     return mapping.get(suffix, DocumentType.UNKNOWN)
 
@@ -283,6 +284,39 @@ def parse_docx(path: Path) -> ParsedDocument:
 PARSER_DISPATCH: dict[DocumentType, type[None] | None] = {}
 
 
+def parse_md(path: Path) -> ParsedDocument:
+    """Parse Markdown files as plain text, preserving line structure."""
+    raw = path.read_bytes()
+    for encoding in ("utf-8", "cp1252", "iso-8859-1"):
+        try:
+            text = raw.decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    else:
+        text = raw.decode("utf-8", errors="replace")
+
+    chunks: list[ContentChunk] = []
+    for line_num, line in enumerate(text.strip().splitlines(), start=1):
+        stripped = line.strip()
+        if not stripped:
+            continue
+        chunks.append(ContentChunk(
+            text=stripped,
+            source_ref=f"{path.name}:line:{line_num}",
+            chunk_index=line_num - 1,
+        ))
+
+    return ParsedDocument(
+        doc_id=generate_doc_id(path),
+        filename=path.name,
+        doc_type=DocumentType.MD,
+        content_chunks=chunks,
+        metadata={"line_count": str(len(chunks))},
+        page_count=0,
+    )
+
+
 def parse_document(path: Path) -> ParsedDocument:
     """Dispatch to the correct parser based on file extension."""
     doc_type = detect_document_type(path)
@@ -298,6 +332,7 @@ def parse_document(path: Path) -> ParsedDocument:
         DocumentType.CSV: parse_csv,
         DocumentType.DOCX: parse_docx,
         DocumentType.XML: parse_gdpdu_index,
+        DocumentType.MD: parse_md,
     }
 
     parser = parsers.get(doc_type)

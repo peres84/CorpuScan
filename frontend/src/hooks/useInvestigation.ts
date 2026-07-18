@@ -42,6 +42,7 @@ export interface InvestigationReport {
   total_documents: number;
   findings: Finding[];
   buffer: BufferRow[];
+  not_analyzed_files: string[];
 }
 
 export function useCreateInvestigation() {

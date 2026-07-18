@@ -70,6 +70,7 @@ class ReportResponse(BaseModel):
     total_documents: int
     findings: list[FindingResponse]
     buffer: list[BufferRowResponse]
+    not_analyzed_files: list[str] = Field(default_factory=list)
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
@@ -267,12 +268,18 @@ async def get_investigation_report(job_id: str) -> ReportResponse:
             for row in state.buffer
         ]
 
+    # Compute files not analyzed
+    analyzed_filenames = {row.filename for row in (state.buffer if state else [])}
+    all_filenames = [doc.filename for doc in job.evidence_store.list_documents()]
+    not_analyzed = [f for f in all_filenames if f not in analyzed_filenames]
+
     return ReportResponse(
         overall_fraud_likelihood=state.overall_fraud_likelihood if state else 0.0,
         documents_investigated=len(state.visited) if state else 0,
         total_documents=job.evidence_store.document_count,
         findings=findings_resp,
         buffer=buffer_resp,
+        not_analyzed_files=not_analyzed,
     )
 
 

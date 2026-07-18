@@ -25,10 +25,8 @@ const InvestigationResults = ({ jobId, onReset }: InvestigationResultsProps) => 
     fetchReport();
   }, [fetchFindings, fetchBuffer, fetchReport]);
 
-  // Compute files not analyzed
-  const analyzedFiles = new Set(buffer.map((row) => row.filename));
-  const totalFiles = report?.total_documents || 0;
-  const notAnalyzedCount = Math.max(0, totalFiles - analyzedFiles.size);
+  // Get files not analyzed from report
+  const notAnalyzedFiles = report?.not_analyzed_files || [];
 
   return (
     <div className="space-y-6">
@@ -82,7 +80,7 @@ const InvestigationResults = ({ jobId, onReset }: InvestigationResultsProps) => 
       </div>
 
       {/* Tab content */}
-      {activeTab === "findings" && <FindingsTimeline findings={findings} buffer={buffer} notAnalyzedCount={notAnalyzedCount} />}
+      {activeTab === "findings" && <FindingsTimeline findings={findings} buffer={buffer} notAnalyzedFiles={notAnalyzedFiles} />}
       {activeTab === "graph" && <KnowledgeGraph jobId={jobId} />}
       {activeTab === "steps" && <StepsView buffer={buffer} />}
     </div>
@@ -104,7 +102,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
   );
 }
 
-function FindingsTimeline({ findings, buffer, notAnalyzedCount }: { findings: Finding[]; buffer: BufferRow[]; notAnalyzedCount: number }) {
+function FindingsTimeline({ findings, buffer, notAnalyzedFiles }: { findings: Finding[]; buffer: BufferRow[]; notAnalyzedFiles: string[] }) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   const toggleExpand = (idx: number) => {
@@ -257,17 +255,27 @@ function FindingsTimeline({ findings, buffer, notAnalyzedCount }: { findings: Fi
       </div>
 
       {/* Files not analyzed */}
-      {notAnalyzedCount > 0 && (
-        <div className="rounded-lg border border-dashed p-4 flex items-center gap-3">
-          <FileX className="h-5 w-5 text-muted-foreground" />
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">
-              {notAnalyzedCount} file{notAnalyzedCount !== 1 ? "s" : ""} not analyzed
-            </p>
-            <p className="text-xs text-muted-foreground">
-              These files were uploaded but not visited during the DFS investigation.
-            </p>
+      {notAnalyzedFiles.length > 0 && (
+        <div className="rounded-lg border border-dashed p-4 space-y-2">
+          <div className="flex items-center gap-3">
+            <FileX className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                {notAnalyzedFiles.length} file{notAnalyzedFiles.length !== 1 ? "s" : ""} not analyzed
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Uploaded but not visited during the DFS investigation.
+              </p>
+            </div>
           </div>
+          <ul className="ml-8 space-y-0.5">
+            {notAnalyzedFiles.map((filename) => (
+              <li key={filename} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
+                {filename}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

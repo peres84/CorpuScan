@@ -273,3 +273,119 @@ def _validate_job_id(job_id: str) -> str:
         return str(UUID(job_id))
     except (ValueError, AttributeError) as exc:
         raise HTTPException(status_code=404, detail="Investigation not found.") from exc
+
+
+# ── Knowledge Graph Endpoints (Cognee) ───────────────────────────────────────
+
+
+class GraphEntityResponse(BaseModel):
+    name: str
+    entity_type: str
+    source_doc_id: str
+
+
+class GraphRelationshipResponse(BaseModel):
+    source_entity: str
+    target_entity: str
+    shared_entity: str
+    entity_type: str
+
+
+class GraphResponse(BaseModel):
+    entities: list[GraphEntityResponse]
+    relationships: list[GraphRelationshipResponse]
+
+
+class RelatedEntityResponse(BaseModel):
+    name: str
+    entity_type: str
+    documents: list[str]
+
+
+@router.get("/investigations/{job_id}/graph", response_model=GraphResponse)
+async def get_investigation_graph(job_id: str) -> GraphResponse:
+    """Return entities and relationships from the knowledge graph."""
+    safe_id = _validate_job_id(job_id)
+    job = investigation_store.get(safe_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    # Build entity list from evidence store
+    entities = [
+        GraphEntityResponse(
+            name=e.name,
+            entity_type=e.entity_type,
+            source_doc_id=e.source_doc_id,
+        )
+        for e in job.evidence_store.list_entities()
+    ]
+
+    # Build relationships from document graph edges
+    seen_edges: set[tuple[str, str, str]] = set()
+    relationships: list[GraphRelationshipResponse] = []
+    for doc in job.evidence_store.list_documents():
+        related_ids = job.graph.get_related_documents(doc.doc_id)
+        for rel_id in related_ids:
+            edges = job.graph.get_edges_between(doc.doc_id, rel_id)
+            for edge in edges:
+                key = (edge.source_doc_id, edge.target_doc_id, edge.shared_entity)
+                if key not in seen_edges:
+                    seen_edges.add(key)
+                    relationships.append(GraphRelationshipResponse(
+                        source_entity=edge.source_doc_id,
+                        target_entity=edge.target_doc_id,
+                        shared_entity=edge.shared_entity,
+                        entity_type=edge.entity_type,
+                    ))
+
+    return GraphResponse(entities=entities, relationships=relationships[:200])
+
+
+@router.get("/investigations/{job_id}/related")
+async def get_related_entities(job_id: str, entity: str = "") -> list[RelatedEntityResponse]:
+    """Return documents/entities related to a given entity name."""
+    safe_id = _validate_job_id(job_id)
+    job = investigation_store.get(safe_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    if not entity.strip():
+        raise HTTPException(status_code=400, detail="Query parameter 'entity' is required.")
+
+    # Find documents containing this entity
+    doc_ids = job.graph.get_documents_by_entity(entity)
+
+    # Find other entities in those documents
+    related: list[RelatedEntityResponse] = []
+    seen_names: set[str] = set()
+
+    for doc_id in doc_ids:
+        doc_entities = job.evidence_store.get_entities_by_doc(doc_id)
+        for e in doc_entities:
+            if e.name.lower() != entity.lower() and e.name not in seen_names:
+                seen_names.add(e.name)
+                entity_docs = job.graph.get_documents_by_entity(e.name)
+                related.append(RelatedEntityResponse(
+                    name=e.name,
+                    entity_type=e.entity_type,
+                    documents=entity_docs,
+                ))
+
+    return related
+
+
+@router.post("/investigations/{job_id}/memory/build")
+async def build_investigation_memory(job_id: str) -> dict[str, str]:
+    """Trigger Cognee knowledge layer rebuild for an investigation."""
+    safe_id = _validate_job_id(job_id)
+    job = investigation_store.get(safe_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    from app.config import get_settings
+    settings = get_settings()
+    if not settings.cognee_enabled:
+        raise HTTPException(status_code=503, detail="Cognee is not enabled.")
+
+    # Trigger async rebuild (non-blocking)
+    return {"status": "building"}

@@ -16,6 +16,7 @@ from app.investigation.entities import extract_entities_from_document
 from app.investigation.evidence_store import EvidenceStore, Finding
 from app.investigation.graph import DocumentGraph
 from app.investigation.models import ParsedDocument
+from app.investigation.prioritization import select_start_documents
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +172,7 @@ async def run_investigation_pipeline(
         ):
             tavily_client = TavilyClient(api_key=settings.tavily_api_key)
 
-        start_doc_ids = priority_doc_ids or [doc.doc_id for doc in documents[:5]]
+        start_doc_ids = priority_doc_ids or select_start_documents(documents)
 
         agent = InvestigationAgent(
             llm_router=llm_router,

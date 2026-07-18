@@ -211,22 +211,73 @@ class InvestigationAgent:
             )
 
     def _update_stack_from_row(self, row: InvestigationBufferRow) -> None:
-        """Push new document leads onto the DFS stack."""
-        # Alt leads go first (deeper in stack = explored later)
+        """Push new document leads onto the DFS stack.
+
+        Combines LLM-suggested leads with Cognee relationship graph suggestions.
+        Cognee leads that have strong entity connections are prioritized.
+        Leads with no entity overlap to the current doc are deprioritized.
+        """
+        all_leads = self._get_investigation_leads(row)
+
+        # Push deprioritized leads first (bottom of stack)
+        for lead_id in reversed(all_leads["deprioritized"]):
+            if lead_id not in self._state.visited and lead_id not in self._state.stack:
+                self._state.stack.append(lead_id)
+
+        # Alt leads next
         for alt in reversed(row.alt_doc_leads):
             resolved_id = self._resolve_filename_to_id(alt)
             if resolved_id and resolved_id not in self._state.visited:
                 if resolved_id not in self._state.stack:
                     self._state.stack.append(resolved_id)
 
+        # Cognee-suggested leads (strong entity connections)
+        for lead_id in reversed(all_leads["cognee_suggested"]):
+            if lead_id not in self._state.visited and lead_id not in self._state.stack:
+                self._state.stack.append(lead_id)
+
         # Primary lead goes last (top of stack = explored next)
         if row.primary_next_doc:
             resolved_id = self._resolve_filename_to_id(row.primary_next_doc)
             if resolved_id and resolved_id not in self._state.visited:
-                # Move to top of stack
                 if resolved_id in self._state.stack:
                     self._state.stack.remove(resolved_id)
                 self._state.stack.append(resolved_id)
+
+    def _get_investigation_leads(self, row: InvestigationBufferRow) -> dict[str, list[str]]:
+        """Combine LLM-suggested next docs with Cognee relationship graph suggestions.
+
+        Returns dict with:
+        - 'cognee_suggested': doc_ids with strong entity connections (from graph)
+        - 'deprioritized': doc_ids with no entity overlap (less likely relevant)
+        """
+        result: dict[str, list[str]] = {"cognee_suggested": [], "deprioritized": []}
+
+        # Get graph-related documents for the current doc
+        related_ids = self._graph.get_related_documents(row.doc_id)
+
+        # Get the current document's entities for overlap checking
+        current_node = self._graph.get_node(row.doc_id)
+        current_entities = current_node.entity_names if current_node else set()
+
+        for rel_id in related_ids:
+            if rel_id in self._state.visited:
+                continue
+
+            rel_node = self._graph.get_node(rel_id)
+            if rel_node is None:
+                continue
+
+            # Check entity overlap
+            overlap = current_entities & rel_node.entity_names
+            if len(overlap) >= 2:
+                # Strong connection — suggest via Cognee path
+                result["cognee_suggested"].append(rel_id)
+            elif len(overlap) == 0:
+                # No overlap — deprioritize
+                result["deprioritized"].append(rel_id)
+
+        return result
 
     def _resolve_filename_to_id(self, filename: str) -> str | None:
         """Resolve a filename reference to a doc_id."""

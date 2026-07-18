@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     hera_render_timeout_seconds: int = Field(default=240, ge=30)
     hera_render_retry_attempts: int = Field(default=3, ge=1)
     hera_poll_interval_seconds: float = Field(default=3.0, gt=0)
+    openai_key: str = Field(default="")
+    openai_model: str = Field(default="gpt-4o")
     cors_origins: str = Field(
         default="http://localhost:5173,http://localhost:8080,https://corpuscan.vercel.app",
     )

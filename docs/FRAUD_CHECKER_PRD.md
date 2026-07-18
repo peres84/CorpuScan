@@ -162,6 +162,72 @@ In a production environment, this would be replaced by user uploads or integrati
 
 ---
 
+# Ground Truth & Evaluation Reference
+
+The challenge sponsor provides a ground-truth file at `fraud_train_dataset/truth_revealed.md`. This file describes the **known fraud schemes** seeded into the synthetic dataset and serves as the scoring rubric for evaluating investigation accuracy.
+
+## Known Fraud Schemes
+
+### F1 — Fake Vendor (Cash Misappropriation)
+
+A shell vendor **"Ratio Consulting GmbH" (209101)** was created mid-year and received 5 round "Beratung" invoices totalling **€248,000**. No goods receipt exists for any invoice. The vendor was set up, invoiced, and paid by the **same user MV-U05** (broken segregation of duties).
+
+**Detection path:**
+- `Kreditoren/Lieferantenbuchungen.txt` → 5 invoices + 5 payments, all round amounts
+- `Begleitdokumente/Wareneingangsliste_2025.csv` → no goods receipt for vendor 209101
+- `Begleitdokumente/Stammdatenaenderungen_2025.csv` → creator = approver (MV-U05)
+- `Begleitdokumente/Berechtigungsauswertung_2025.xlsx` → MV-U05 holds Buchen + Zahlungslauf + Kreditor anlegen
+
+### F2 — Repairs Capitalised as Fixed Assets (Profit Overstatement)
+
+Six repair/maintenance bills (**€150,800 net**) booked as asset additions (accounts 040000/060000) instead of expense 670000. Asset names include "Reparatur", "Instandsetzung", "Austausch", "Generalüberholung". Profit and assets overstated.
+
+**Detection path:**
+- `AV/Anlagen.txt` → asset records with repair-type names
+- `AV/Anlagenbuchungen.txt` / `Sachkontobuchungen.txt` → acquisitions post to asset accounts, not expense 670000
+- Cross-check vendor invoices: invoice describes repair but debit is asset
+
+### F3 — December Costs Parked in January (Cut-off Manipulation)
+
+Eight supplier invoices for December 2025 deliveries (**€192,000 net**) booked in January 2026 and **not accrued** at year-end. Goods received in December with no corresponding 2025 posting. Profit overstated.
+
+**Detection path:**
+- `Begleitdokumente/Fakturajournal_Januar_2026_Kreditoren.csv` → invoices with Jan 2026 date but Dec 2025 service date
+- `Begleitdokumente/Wareneingangsliste_2025.csv` → matching December goods receipts marked "Rechnung offen"
+- `Sachkonten/Sachkontobuchungen.txt` → no 2025 accrual for these items
+
+### F4 — Split Payments Under Approval Limit (Control Breach)
+
+Four payments on **14.10.2025** to vendor **200007 (Castor Papier GmbH)**, each just under €10,000 (9,780 / 9,820 / 9,750 / 9,690 = **€39,040**), to dodge the €10,000 two-signature rule.
+
+**Detection path:**
+- `Sachkonten/Sachkontobuchungen.txt` → filter payments by vendor + date, find 4 near-threshold payments same day
+- `Begleitdokumente/Pruefungsplanung_JET_2025.docx` → states the €10,000 threshold
+
+## Financial Impact
+
+- F2 + F3 overstate profit by **~€342,800** (reported €2.60m → true ~€2.26m)
+- F1 is €248,000 of cash stolen
+- F4 is a control breach (no financial misstatement)
+
+## Known Decoys (False Positives to Avoid)
+
+- **D1**: €480,000 machine — real capital investment with Investitionsantrag
+- **D2**: "Nord Logistik GmbH" vs "Nordlicht Logistik GmbH" — different VAT-IDs, both with real goods receipts
+- **D3**: "Vega Werkstoffe GmbH" (209112) — new mid-year vendor but four-eyes + real deliveries (honest twin of F1)
+- **D4**: Year-end volume bonuses — documented rebate
+- **D5**: €220,000 Konzernumlage to Austrian parent — related party but disclosed, arm's length
+- **D6**: Asset disposal for €1,200 — scrapping of old machine, documented
+- **D7**: Invoice + credit note same period (€18,500 each) — normal correction
+
+## Evaluation Scoring
+
+- Top marks: catch **F1** by combining sources + **F2/F3** (profit overstatement pair)
+- Bonus: **F4**
+- Penalty: accusing any decoy (D1–D7)
+
+---
+
 # User Flow
 
 ```

@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "cognee>=0.3.4",
     "fastapi>=0.136.1",
     "google-genai>=1.73.1",
     "httpx>=0.28.1",

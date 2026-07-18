@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     hera_poll_interval_seconds: float = Field(default=3.0, gt=0)
     openai_key: str = Field(default="")
     openai_model: str = Field(default="gpt-4o")
+    cognee_enabled: bool = Field(default=False)
+    cognee_storage_path: str = Field(default="/tmp/cognee")
+    cognee_model: str = Field(default="gpt-4o")
     cors_origins: str = Field(
         default="http://localhost:5173,http://localhost:8080,https://corpuscan.vercel.app",
     )

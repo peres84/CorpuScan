@@ -12,6 +12,7 @@ from app.investigation.buffer import InvestigationBufferRow, InvestigationState
 from app.investigation.evidence_store import EvidenceStore
 from app.investigation.graph import DocumentGraph
 from app.investigation.models import ParsedDocument
+from app.mcp.registry import get_tool
 
 logger = logging.getLogger(__name__)
 
@@ -226,3 +227,25 @@ class InvestigationAgent:
             if doc.filename == name or name in doc.filename:
                 return doc
         return None
+
+    async def research_via_mcp(self, query: str) -> str | None:
+        """Use the MCP web.search tool for external research.
+
+        Returns search results as formatted text, or None if MCP is unavailable.
+        """
+        tool = get_tool("web.search")
+        if tool is None:
+            return None
+
+        try:
+            result = tool.handler(query=query, max_results=3)
+            items = result.get("results", [])
+            if not items:
+                return None
+            lines = [f"External research for: {query}"]
+            for item in items:
+                lines.append(f"- {item.get('title', '')}: {item.get('snippet', '')}")
+            return "\n".join(lines)
+        except Exception:
+            logger.debug("MCP web.search failed for query: %s", query)
+            return None

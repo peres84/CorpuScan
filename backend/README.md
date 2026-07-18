@@ -181,6 +181,9 @@ The API will be available at `http://localhost:8000`.
 | `HERA_API_KEY` | Video mode | Hera Motion API key |
 | `OPENAI_KEY` | Investigation mode | OpenAI API key (primary LLM for investigation) |
 | `OPENAI_MODEL` | No | OpenAI model name. Defaults to `gpt-4o` |
+| `COGNEE_ENABLED` | No | Enable Cognee knowledge memory layer (default: `false`) |
+| `COGNEE_STORAGE_PATH` | No | Local storage for Cognee data (default: `/tmp/cognee`) |
+| `COGNEE_MODEL` | No | LLM model for Cognee entity extraction (default: `gpt-4o`) |
 | `HERA_BASE_URL` | No | Defaults to `https://api.hera.video/v1` |
 | `HERA_RENDER_TIMEOUT_SECONDS` | No | Defaults to `240` |
 | `HERA_RENDER_RETRY_ATTEMPTS` | No | Defaults to `2` |

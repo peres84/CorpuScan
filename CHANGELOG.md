@@ -1,5 +1,37 @@
 # Rebuild Summary
 
+## Cognee Knowledge Memory Layer Integration (TASKS_COGNEE Phases 1–11)
+
+Added Cognee as the investigation knowledge memory layer.
+
+### Added
+- **Cognee Client** (`backend/app/cognee/client.py`): Wrapper with graceful degradation
+- **Document Ingestion** (`backend/app/cognee/ingestion.py`): Pipes documents into Cognee with node set organization
+- **Graph Extraction** (`backend/app/cognee/graph.py`): Entity/relationship extraction + merge into existing EvidenceStore/DocumentGraph
+- **Semantic Retrieval** (`backend/app/cognee/retrieval.py`): search_context, find_related_entities, get_relationship_graph
+- **MCP Tools**: `cognee.search`, `cognee.related_entities`, `cognee.relationship_graph` registered in MCP registry
+- **Enhanced DFS**: Investigation agent uses Cognee leads to prioritize documents with strong entity connections
+- **Pipeline Integration**: New `COGNEE_INGEST` step (skipped seamlessly when disabled)
+- **API Endpoints**: `GET /investigations/{id}/graph`, `GET /investigations/{id}/related`, `POST /investigations/{id}/memory/build`
+- **Frontend**: Knowledge Graph tab with color-coded entities, clickable nodes, relationship display
+- **Report Enhancement**: Relationship chains and knowledge graph summary in final reports
+
+### New Environment Variables
+- `COGNEE_ENABLED` — Enable/disable Cognee (default: `false`)
+- `COGNEE_STORAGE_PATH` — Local storage path (default: `/tmp/cognee`)
+- `COGNEE_MODEL` — LLM model for Cognee (default: `gpt-4o`)
+
+### New Dependencies
+- `cognee>=0.3.4`
+
+### Key Design Decisions
+- Cognee is additive — supplements existing DocumentGraph, never replaces it
+- Graceful degradation — system works identically without Cognee
+- Cognee is memory, not evidence — relationships are leads, not proof
+- No new architecture constraints violated
+
+---
+
 ## Audit Investigation Mode (Phase 1–12)
 
 New product mode: AI-powered forensic investigation assistant for financial document analysis.

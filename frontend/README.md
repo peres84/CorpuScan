@@ -69,6 +69,14 @@ frontend/
 │   │   ├── use-mobile.tsx      # Breakpoint hook (≤768 px = mobile)
 │   │   └── use-toast.ts        # Imperative toast helper (shadcn)
 │   │
+│   ├── components/
+│   │   ├── investigation/
+│   │   │   ├── FileUpload.tsx          # Drag-and-drop multi-file upload with priority selection
+│   │   │   ├── InvestigationProgress.tsx # Real-time progress with step indicators
+│   │   │   ├── InvestigationResults.tsx  # Tabbed results: findings, graph, timeline, buffer
+│   │   │   └── KnowledgeGraph.tsx      # Entity/relationship visualization (Cognee data)
+│   │   ├── Nav.tsx
+│   │
 │   ├── lib/
 │   │   ├── api.ts              # All fetch calls + TypeScript types for backend responses
 │   │   └── utils.ts            # cn() — clsx + tailwind-merge helper

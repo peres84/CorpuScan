@@ -6,6 +6,7 @@ import {
   useInvestigationReport,
 } from "@/hooks/useInvestigation";
 import type { Finding, BufferRow, InvestigationReport } from "@/hooks/useInvestigation";
+import KnowledgeGraph from "./KnowledgeGraph";
 
 interface InvestigationResultsProps {
   jobId: string;
@@ -16,7 +17,7 @@ const InvestigationResults = ({ jobId, onReset }: InvestigationResultsProps) => 
   const { findings, fetchFindings } = useInvestigationFindings(jobId);
   const { buffer, fetchBuffer } = useInvestigationBuffer(jobId);
   const { report, fetchReport } = useInvestigationReport(jobId);
-  const [activeTab, setActiveTab] = useState<"findings" | "timeline" | "buffer">("findings");
+  const [activeTab, setActiveTab] = useState<"findings" | "graph" | "timeline" | "buffer">("findings");
 
   useEffect(() => {
     fetchFindings();
@@ -67,6 +68,9 @@ const InvestigationResults = ({ jobId, onReset }: InvestigationResultsProps) => 
         <TabButton active={activeTab === "findings"} onClick={() => setActiveTab("findings")}>
           Findings ({findings.length})
         </TabButton>
+        <TabButton active={activeTab === "graph"} onClick={() => setActiveTab("graph")}>
+          Knowledge Graph
+        </TabButton>
         <TabButton active={activeTab === "timeline"} onClick={() => setActiveTab("timeline")}>
           Timeline
         </TabButton>
@@ -77,6 +81,7 @@ const InvestigationResults = ({ jobId, onReset }: InvestigationResultsProps) => 
 
       {/* Tab content */}
       {activeTab === "findings" && <FindingsList findings={findings} />}
+      {activeTab === "graph" && <KnowledgeGraph jobId={jobId} />}
       {activeTab === "timeline" && <TimelineView buffer={buffer} />}
       {activeTab === "buffer" && <BufferView buffer={buffer} />}
     </div>

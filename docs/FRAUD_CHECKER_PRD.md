@@ -778,3 +778,27 @@ Possible improvements:
 - External knowledge is separate from internal evidence.
 - Investigation history must be reproducible.
 - Transparency is more important than automation.
+
+---
+
+# Implementation Decisions & Deviations
+
+## LLM Strategy
+- **Primary**: OpenAI (configurable model via `OPENAI_MODEL`, default `gpt-4o`)
+- **Fallback**: Google Gemini 2.5 Pro (same key used by video pipeline)
+- `LLMRouter` class handles retry + fallback logic transparently
+
+## Architecture
+- Investigation pipeline reuses the same in-memory job store pattern as video pipeline
+- Entity extraction is LLM-powered (not rule-based) for flexibility with varied document formats
+- Document graph is built from shared entities (vendors, accounts, amounts, dates)
+- DFS investigation follows the strongest leads first, backtracks on dead ends
+
+## Classifier
+- Rule-based baseline (not ML model) detecting: round amounts, threshold splitting, timing anomalies, duplicate patterns
+- Output always labeled "model signal, not evidence" — never treated as proof
+
+## Deviations from PRD
+- Embeddings step skipped (not needed for DFS-based investigation; entity matching handles relationships)
+- No separate MCP server for Tavily — existing `TavilyClient` integration reused directly
+- Report generation uses LLM with fallback to deterministic template when LLM unavailable

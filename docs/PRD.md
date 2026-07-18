@@ -94,3 +94,36 @@ See [docs/branding.md](docs/branding.md). Color tokens, typography, voice. Stric
 - Long PDFs (>80k tokens) may exceed Gemini context — chunk-and-summarize is a v2 problem
 - ElevenLabs timing precision varies by voice — pick a stable voice for demo
 - ffmpeg availability on the host (must be in Docker base image / Railway buildpack)
+
+---
+
+## Mode 2: Audit Investigation Mode
+
+CorpuScan has a second product mode: an AI-powered forensic investigation assistant that analyzes collections of financial documents to identify suspicious activity and produce evidence-backed investigation reports.
+
+### Investigation flow
+
+1. Upload financial documents (CSV, TXT, XLSX, PDF, DOCX)
+2. System parses documents and builds a knowledge graph
+3. LLM-driven investigator performs DFS over the document graph
+4. Findings are produced with evidence references (exact document + row/page + passage)
+5. Structured report generated with timeline, entity relationships, and fraud assessment
+
+### Investigation API
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/investigate` | Upload documents, start investigation |
+| `GET` | `/investigations/{id}` | Poll status |
+| `GET` | `/investigations/{id}/findings` | Get findings with evidence |
+| `GET` | `/investigations/{id}/buffer` | Investigation step history |
+| `GET` | `/investigations/{id}/report` | Final structured report |
+
+### Key principles
+
+- Every conclusion must be traceable to evidence
+- The AI investigates, humans decide
+- External knowledge is separated from internal evidence
+- Investigation history is reproducible
+
+See [docs/FRAUD_CHECKER_PRD.md](FRAUD_CHECKER_PRD.md) for the full Investigation Mode PRD.

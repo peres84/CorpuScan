@@ -99,7 +99,9 @@ These are intentional constraints for the MVP. If a task pressures you to break 
 
 ## The product's AI agents
 
-Three AI agents run **inside the product**. They are not you, the coding agent. Do not put their prompts here — put them in `docs/agent-prompts.md`.
+Three AI agents run **inside the product** for video briefings, plus one for investigations. They are not you, the coding agent. Do not put their prompts here — put them in `docs/agent-prompts.md`.
+
+### Video Briefing Agents
 
 | Agent          | Job                                                          | Input                          | Output                              |
 | -------------- | ------------------------------------------------------------ | ------------------------------ | ----------------------------------- |
@@ -108,6 +110,22 @@ Three AI agents run **inside the product**. They are not you, the coding agent. 
 | **Hera** (×4)  | Convert one scene + audio timings into a Hera animation spec | Scene + sentence timings       | Hera-format JSON                    |
 
 All three use Google Gemini 2.5 Pro. Full system prompts live in YAML at [backend/app/prompts/](backend/app/prompts/) — one file per agent (`finance.yaml`, `scripter.yaml`, `hera.yaml`). Each YAML file declares model, temperature, response_mime_type, system prompt, and user-message template. Edit the YAML, not Python. Pipeline: [README.md](README.md).
+
+### Investigation Agent
+
+| Agent              | Job                                                        | Input                                 | Output                                    |
+| ------------------ | ---------------------------------------------------------- | ------------------------------------- | ----------------------------------------- |
+| **Investigator**   | Analyze documents, follow evidence trails via DFS          | Document content + investigation buffer | JSON: notes, evidence, fraud likelihood, next leads |
+| **Report Generator** | Produce structured final report from investigation state | Investigation buffer + findings       | JSON: executive summary, findings, timeline, assessment |
+
+The Investigation Agent uses **OpenAI** (primary) with **Gemini** fallback via `LLMRouter`. Prompts: `investigator.yaml`, `report_generator.yaml`.
+
+**Key conventions for the investigation pipeline:**
+- All code lives in `backend/app/investigation/`
+- Models use pydantic (same pattern as video pipeline)
+- Entity extraction is LLM-powered — do not hardcode entity lists
+- The classifier is a signal tool, never evidence — always label output accordingly
+- Investigation state is in-memory (same constraint as video jobs)
 
 ## Definition of done for a task
 

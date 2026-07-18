@@ -17,6 +17,7 @@ import yaml
 from app.config import get_settings
 from app.integrations.tavily import TavilyClient
 from app.ingest import extract_pdf_documents
+from app.investigation.routes import router as investigation_router
 from app.jobs import JobStore
 from app.logging_utils import stage_tag
 from app.pipeline import run_pipeline
@@ -55,6 +56,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="CorpuScan API", lifespan=lifespan)
+app.include_router(investigation_router)
 
 _origins = settings.cors_origins_list
 # CORS spec: credentials cannot be combined with wildcard origins.

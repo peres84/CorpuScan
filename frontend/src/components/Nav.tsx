@@ -12,6 +12,12 @@ export const Nav = () => {
         <div className="flex items-center gap-3">
           <ThemeToggle />
           <Link
+            to="/investigate"
+            className="inline-flex items-center border border-accent text-accent rounded-lg px-4 py-2 text-sm font-medium hover:bg-accent/10 transition-colors"
+          >
+            Investigate
+          </Link>
+          <Link
             to="/dashboard"
             className="inline-flex items-center bg-accent text-accent-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-accent/90 transition-colors"
           >

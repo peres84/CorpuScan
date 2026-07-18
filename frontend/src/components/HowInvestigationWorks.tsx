@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { PromoCard } from "@/components/ui/card-9";
 
 interface Step {
@@ -13,26 +13,26 @@ const STEPS: Step[] = [
   {
     num: "01",
     label: "Step 01 · Upload",
-    title: "Drop a quarterly report PDF, paste a URL, or search a query.",
+    title: "Upload financial documents — invoices, ledgers, bank statements, contracts.",
   },
   {
     num: "02",
-    label: "Step 02 · Extract",
-    title: "A finance agent finds the signal in the noise.",
+    label: "Step 02 · Graph",
+    title: "AI builds a knowledge graph connecting entities across all documents.",
   },
   {
     num: "03",
-    label: "Step 03 · Narrate",
-    title: "A scripter agent writes a 4-scene voiceover.",
+    label: "Step 03 · Investigate",
+    title: "A forensic agent follows evidence trails using depth-first search.",
   },
   {
     num: "04",
-    label: "Step 04 · Render",
-    title: "Motion graphics and voice combine into a 2-minute video.",
+    label: "Step 04 · Report",
+    title: "Evidence-backed findings with exact document, page, and passage references.",
   },
 ];
 
-export const HowItWorks = () => {
+export const HowInvestigationWorks = () => {
   const [visible, setVisible] = useState<Record<string, boolean>>(
     () => Object.fromEntries(STEPS.map((s) => [s.num, true])),
   );
@@ -42,16 +42,17 @@ export const HowItWorks = () => {
   };
 
   return (
-    <section id="how" className="max-w-6xl mx-auto px-6 py-24">
+    <section className="max-w-6xl mx-auto px-6 py-24 border-t border-border">
       <div className="flex items-end justify-between gap-6 flex-wrap">
         <div>
           <p className="font-mono text-accent text-xs uppercase tracking-wider">
-            The pipeline
+            Audit Investigation
           </p>
-          <h2 className="mt-3 text-3xl font-semibold text-primary">How report analysis works</h2>
+          <h2 className="mt-3 text-3xl font-semibold text-primary">How fraud investigation works</h2>
         </div>
         <p className="text-secondary text-sm max-w-sm">
-          Four agents work in sequence. From raw PDF to finished briefing in under three minutes.
+          An AI forensic investigator analyzes document collections, discovers hidden
+          relationships, and produces evidence-backed findings.
         </p>
       </div>
 
@@ -69,16 +70,17 @@ export const HowItWorks = () => {
           )}
         </AnimatePresence>
       </div>
+
       <div className="mt-10 text-center">
         <Link
-          to="/dashboard"
+          to="/investigate"
           className="inline-flex items-center border border-accent text-accent rounded-lg px-6 py-3 font-medium hover:bg-accent/10 transition-colors"
         >
-          Start an Analysis
+          Start an investigation
         </Link>
       </div>
     </section>
   );
 };
 
-export default HowItWorks;
+export default HowInvestigationWorks;

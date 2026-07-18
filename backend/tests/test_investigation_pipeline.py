@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -113,12 +113,13 @@ class TestRunInvestigationPipeline:
         fake_router = FakeLLMRouterForPipeline()
 
         with patch("app.investigation.pipeline._build_llm_router", return_value=fake_router):
-            await run_investigation_pipeline(
-                job_store=store,
-                job_id=job_id,
-                documents=docs,
-                priority_doc_ids=["d1"],
-            )
+            with patch("app.investigation.pipeline._try_cognee_ingest", new=AsyncMock(return_value=None)):
+                await run_investigation_pipeline(
+                    job_store=store,
+                    job_id=job_id,
+                    documents=docs,
+                    priority_doc_ids=["d1"],
+                )
 
         job = store.get(job_id)
         assert job is not None
@@ -134,13 +135,13 @@ class TestRunInvestigationPipeline:
         store = InvestigationJobStore()
         job_id = store.create()
 
-        # Empty documents list — agent will fail gracefully
         with patch("app.investigation.pipeline._build_llm_router", side_effect=RuntimeError("No LLM")):
-            await run_investigation_pipeline(
-                job_store=store,
-                job_id=job_id,
-                documents=[],
-            )
+            with patch("app.investigation.pipeline._try_cognee_ingest", new=AsyncMock(return_value=None)):
+                await run_investigation_pipeline(
+                    job_store=store,
+                    job_id=job_id,
+                    documents=[],
+                )
 
         job = store.get(job_id)
         assert job is not None
@@ -162,16 +163,16 @@ class TestRunInvestigationPipeline:
         fake_router = FakeLLMRouterForPipeline()
 
         with patch("app.investigation.pipeline._build_llm_router", return_value=fake_router):
-            await run_investigation_pipeline(
-                job_store=store,
-                job_id=job_id,
-                documents=docs,
-                priority_doc_ids=["d2"],
-            )
+            with patch("app.investigation.pipeline._try_cognee_ingest", new=AsyncMock(return_value=None)):
+                await run_investigation_pipeline(
+                    job_store=store,
+                    job_id=job_id,
+                    documents=docs,
+                    priority_doc_ids=["d2"],
+                )
 
         job = store.get(job_id)
         assert job is not None
         assert job.status == InvestigationJobState.DONE
-        # d2 should be first visited since it was the priority
         assert job.investigation_state is not None
         assert "d2" in job.investigation_state.visited

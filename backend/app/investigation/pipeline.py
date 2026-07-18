@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class InvestigationJobStep(StrEnum):
     PARSE = "parse"
+    COGNEE_INGEST = "cognee_ingest"
     BUILD_GRAPH = "build_graph"
     INVESTIGATE = "investigate"
     REPORT = "report"
@@ -126,7 +127,7 @@ async def run_investigation_pipeline(
     documents: list[ParsedDocument],
     priority_doc_ids: list[str] | None = None,
 ) -> None:
-    """Run the full investigation pipeline: parse → graph → investigate → report."""
+    """Run the full investigation pipeline: parse → cognee → graph → investigate → report."""
     try:
         job = job_store.get(job_id)
         if job is None:
@@ -139,9 +140,12 @@ async def run_investigation_pipeline(
             job.graph.add_document(doc.doc_id, doc.filename)
 
         logger.info("Investigation [%s] parsed %d documents", job_id, len(documents))
-        job_store.update_step(job_id, step=InvestigationJobStep.PARSE, progress=20)
+        job_store.update_step(job_id, step=InvestigationJobStep.PARSE, progress=15)
 
-        # Stage 2: Build graph via entity extraction
+        # Stage 2: Cognee ingestion (if enabled)
+        cognee_client = await _try_cognee_ingest(job_store, job_id, documents)
+
+        # Stage 3: Build graph via entity extraction
         job_store.update_step(job_id, step=InvestigationJobStep.BUILD_GRAPH, progress=25)
         llm_router = _build_llm_router()
 
@@ -154,6 +158,10 @@ async def run_investigation_pipeline(
             progress = 25 + int((idx + 1) / total_docs * 25)
             job_store.update_step(job_id, step=InvestigationJobStep.BUILD_GRAPH, progress=progress)
 
+        # Merge Cognee graph data if available
+        if cognee_client is not None and cognee_client.is_available():
+            await _merge_cognee_graph(cognee_client, job)
+
         logger.info(
             "Investigation [%s] graph built: %d nodes, %d edges, %d entities",
             job_id,
@@ -162,7 +170,7 @@ async def run_investigation_pipeline(
             job.evidence_store.entity_count,
         )
 
-        # Stage 3: Run investigation agent
+        # Stage 4: Run investigation agent
         job_store.update_step(job_id, step=InvestigationJobStep.INVESTIGATE, progress=55)
 
         settings = get_settings()
@@ -179,6 +187,7 @@ async def run_investigation_pipeline(
             evidence_store=job.evidence_store,
             graph=job.graph,
             tavily_client=tavily_client,
+            cognee_client=cognee_client,
             max_iterations=min(len(documents), 50),
         )
 
@@ -193,7 +202,7 @@ async def run_investigation_pipeline(
             investigation_state.overall_fraud_likelihood,
         )
 
-        # Stage 4: Generate findings from investigation state
+        # Stage 5: Generate findings from investigation state
         job_store.update_step(job_id, step=InvestigationJobStep.REPORT, progress=90)
         findings = _extract_findings_from_state(investigation_state)
         job.findings = findings
@@ -205,6 +214,60 @@ async def run_investigation_pipeline(
     except Exception as exc:
         logger.exception("Investigation [%s] pipeline failed: %s", job_id, exc)
         job_store.set_error(job_id, str(exc))
+
+
+async def _try_cognee_ingest(
+    job_store: InvestigationJobStore,
+    job_id: str,
+    documents: list[ParsedDocument],
+) -> object | None:
+    """Attempt Cognee ingestion. Returns CogneeClient if successful, None otherwise.
+
+    If Cognee is disabled or fails, the pipeline continues without it.
+    """
+    settings = get_settings()
+    if not settings.cognee_enabled:
+        logger.info("Investigation [%s] Cognee disabled — skipping ingestion", job_id)
+        return None
+
+    try:
+        from app.cognee.client import CogneeClient
+        from app.cognee.ingestion import ingest_documents
+
+        job_store.update_step(job_id, step=InvestigationJobStep.COGNEE_INGEST, progress=16)
+
+        client = CogneeClient()
+        initialized = await client.init()
+        if not initialized:
+            logger.info("Investigation [%s] Cognee not available — skipping", job_id)
+            return None
+
+        await client.reset()
+        count = await ingest_documents(client, documents)
+        job_store.update_step(job_id, step=InvestigationJobStep.COGNEE_INGEST, progress=22)
+
+        logger.info("Investigation [%s] Cognee ingested %d documents", job_id, count)
+        return client
+
+    except Exception:
+        logger.warning("Investigation [%s] Cognee ingestion failed — continuing without it", job_id)
+        return None
+
+
+async def _merge_cognee_graph(cognee_client: object, job: InvestigationJobRecord) -> None:
+    """Merge Cognee knowledge graph into the investigation graph."""
+    try:
+        from app.cognee.graph import (
+            build_knowledge_graph,
+            merge_cognee_into_document_graph,
+            merge_cognee_into_evidence_store,
+        )
+
+        graph_response = await build_knowledge_graph(cognee_client)  # type: ignore[arg-type]
+        merge_cognee_into_evidence_store(graph_response, job.evidence_store)
+        merge_cognee_into_document_graph(graph_response, job.graph, job.evidence_store)
+    except Exception:
+        logger.warning("Cognee graph merge failed — continuing with existing graph")
 
 
 def _extract_findings_from_state(state: InvestigationState) -> list[Finding]:

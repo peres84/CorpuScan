@@ -135,6 +135,93 @@ Job state is held in an in-memory `JobStore` (a plain `dict`). There is no datab
 
 ---
 
+## Investigation Pipeline Architecture
+
+The Audit Investigation Mode follows a DFS (Depth-First Search) strategy over a document relationship graph. The system is designed to behave like a forensic auditor: it reads documents, forms hypotheses, follows leads, and documents every step.
+
+### Pipeline Stages
+
+```
+Documents (CSV, TXT, XLSX, PDF, DOCX, XML, MD)
+        │
+        ▼
+   [PARSE]  Auto-detect format + delimiter → ParsedDocument objects
+        │
+        ▼
+[COGNEE_INGEST]  (optional) Remember documents in Cognee knowledge graph
+        │
+        ▼
+[BUILD_GRAPH]  LLM entity extraction → DocumentGraph (nodes=docs, edges=shared entities)
+        │
+        ▼
+[INVESTIGATE]  DFS loop with LLM-powered analysis per document
+        │
+        ▼
+  [REPORT]  Aggregate findings → structured report with evidence
+```
+
+### The Investigation Buffer
+
+The buffer is the agent's memory — a sequential log of every document analyzed. Each row contains:
+
+| Field | Purpose |
+|---|---|
+| `doc_id` / `filename` | Which document was analyzed |
+| `notes_summary` | The agent's analysis and reasoning |
+| `fraud_likelihood` | 0.0–1.0 score for this document |
+| `flagged_entries` | SPECIFIC rows/invoices/amounts the agent found suspicious |
+| `related_files` | Other files that relate to this one + how they contribute to suspicion |
+| `primary_next_doc` | The strongest lead to investigate next (top of DFS stack) |
+| `alt_doc_leads` | Alternative leads (pushed deeper in stack) |
+| `open_questions` | Questions requiring answers from other documents |
+| `tavily_results` | External web research performed for this document |
+
+### DFS Investigation Loop
+
+```
+1. Pop next doc from stack
+2. Skip if already visited
+3. Query Cognee for context (if enabled)
+4. Send doc content + buffer history + related docs to LLM
+5. LLM returns: flagged entries, likelihood, next leads, related files, tavily queries
+6. Execute Tavily queries (via MCP, with HTTP fallback)
+7. Append buffer row
+8. Push leads onto stack (Cognee-suggested leads prioritized)
+9. Repeat until stack empty or max_iterations reached
+```
+
+### Termination Conditions
+
+The investigation stops when:
+- **Stack empty** — all leads have been explored
+- **Max iterations reached** — `min(num_documents, 50)` documents visited
+- **All documents visited** — nothing left to analyze
+
+### Cross-File Discrepancy Detection
+
+A core innovation: the agent receives the full investigation buffer on each step. This means when analyzing document B, it already knows what it found in document A. If document B contradicts or confirms something from A, the agent flags it in `related_files` with:
+- Which file it connects to
+- How they relate (shared vendor, shared transaction, shared date)
+- Whether it increases or decreases suspicion
+
+### Tavily MCP Integration
+
+The agent can request external web research during investigation. The system:
+1. Tries the internal MCP registry (`web.search` tool) first
+2. Falls back to direct HTTP `TavilyClient` if MCP fails
+3. Stores all research results in the buffer for transparency
+
+Use cases: verify if a company exists, check accounting regulations, research fraud patterns.
+
+### Priority Scoring
+
+When the user doesn't specify priority documents, the system auto-selects starting points:
+- **High priority**: files with financial keywords (Buchung, Lieferant, Zahlung, Rechnung)
+- **Medium**: CSV/XLSX with financial content
+- **Low**: XML schema files, metadata
+
+---
+
 ## Setup
 
 ### Prerequisites

@@ -61,6 +61,7 @@ class BufferRowResponse(BaseModel):
     open_questions: list[str]
     flagged_entries: list[dict[str, str]]
     tavily_results: list[dict[str, str]]
+    related_files: list[dict[str, str]]
 
 
 class ReportResponse(BaseModel):
@@ -200,6 +201,7 @@ async def get_investigation_buffer(job_id: str) -> list[BufferRowResponse]:
             open_questions=row.open_questions,
             flagged_entries=row.flagged_entries,
             tavily_results=row.tavily_results,
+            related_files=row.related_files,
         )
         for row in job.investigation_state.buffer
     ]
@@ -260,6 +262,7 @@ async def get_investigation_report(job_id: str) -> ReportResponse:
                 open_questions=row.open_questions,
                 flagged_entries=row.flagged_entries,
                 tavily_results=row.tavily_results,
+                related_files=row.related_files,
             )
             for row in state.buffer
         ]

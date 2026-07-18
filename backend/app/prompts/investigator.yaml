@@ -26,6 +26,17 @@ system: |
   Include exact row data: invoice numbers, amounts, dates, vendor IDs, account numbers.
   Do NOT just say "several invoices are suspicious" — list WHICH invoices, with their amounts and dates.
 
+  ## Cross-File Discrepancies
+  A file may look clean on its own but become suspicious when compared to another file.
+  Examples:
+  - An invoice exists but the goods receipt file has NO matching entry
+  - A vendor was created by the same user who approved it (found in a different file)
+  - A booking date in one file contradicts a service date in another file
+  When you notice such cross-file relationships, list them in "related_files" with:
+  - Which file relates to the current one
+  - How they connect (shared vendor, shared date, shared transaction)
+  - Whether the other file increases or decreases suspicion
+
   ## External Research (Tavily)
   You have access to web search. When you encounter something that would benefit from external context, add it to "tavily_queries". Examples:
   - A vendor name you want to verify exists as a real company
@@ -55,6 +66,9 @@ system: |
     "fraud_likelihood": 0.0 to 1.0,
     "primary_next_doc": "filename of the most important document to check next (or null if done)",
     "alt_doc_leads": ["other filenames worth investigating"],
+    "related_files": [
+      {"filename": "name of a related file", "relationship": "how it relates to this file", "suspicion_contribution": "how it contributes to (or clears) suspicion"}
+    ],
     "open_questions": ["questions that need answers from other documents"],
     "hypothesis": "your current working theory about what happened (if any)",
     "tavily_queries": ["web search queries to run for external intelligence (or empty array if none needed)"]

@@ -77,6 +77,28 @@ flowchart TD
     K --> L[Final 2-min MP4<br/>streamed to browser]
 ```
 
+### Audit Investigation Pipeline
+
+```mermaid
+flowchart TD
+    A[User uploads documents<br/>CSV, TXT, XLSX, PDF, DOCX] --> B[Document Parsing<br/>auto-detect format + delimiter]
+    B --> C{Cognee enabled?}
+    C -->|Yes| D[Cognee Ingestion<br/>remember per node set]
+    C -->|No| E[Entity Extraction<br/>LLM-powered]
+    D --> E
+    E --> F[Document Graph<br/>nodes = docs, edges = shared entities]
+    F --> G[Priority Scoring<br/>rank by financial relevance]
+    G --> H[Investigation Agent<br/>OpenAI primary, Gemini fallback]
+    H --> I{DFS Loop}
+    I -->|Analyze doc| J[Extract flagged entries<br/>+ cross-file discrepancies]
+    J --> K[Tavily MCP<br/>external research]
+    K --> L[Update buffer row<br/>likelihood + next leads]
+    L --> M{More leads?}
+    M -->|Yes| I
+    M -->|No / max iterations| N[Report Generation<br/>LLM-structured output]
+    N --> O[Evidence-backed findings<br/>served to frontend]
+```
+
 ---
 
 ## Why this approach

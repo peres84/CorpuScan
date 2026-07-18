@@ -225,6 +225,29 @@ function FindingsTimeline({ findings, buffer, notAnalyzedCount }: { findings: Fi
                         ))}
                       </div>
                     )}
+
+                    {/* Related files with cross-file discrepancies */}
+                    {buffer[idx]?.related_files && buffer[idx].related_files.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-foreground mb-1">Related Files:</p>
+                        <div className="space-y-1">
+                          {buffer[idx].related_files.map((rf, rfIdx) => (
+                            <div key={rfIdx} className="text-xs border rounded px-2 py-1.5 bg-muted/30">
+                              <div className="flex items-center gap-1">
+                                <FileSearch className="h-3 w-3 text-muted-foreground" />
+                                <span className="font-medium text-foreground">{rf.filename}</span>
+                              </div>
+                              <p className="text-muted-foreground mt-0.5">
+                                <span className="font-medium">Relationship:</span> {rf.relationship}
+                              </p>
+                              <p className="text-muted-foreground">
+                                <span className="font-medium">Suspicion:</span> {rf.suspicion_contribution}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

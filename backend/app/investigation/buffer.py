@@ -13,6 +13,7 @@ class InvestigationBufferRow(BaseModel):
     open_questions: list[str] = Field(default_factory=list)
     flagged_entries: list[dict[str, str]] = Field(default_factory=list)
     tavily_results: list[dict[str, str]] = Field(default_factory=list)
+    related_files: list[dict[str, str]] = Field(default_factory=list)
 
 
 class InvestigationState(BaseModel):

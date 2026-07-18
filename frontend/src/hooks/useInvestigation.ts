@@ -33,6 +33,7 @@ export interface BufferRow {
   open_questions: string[];
   flagged_entries: { row_ref: string; data: string; reason: string }[];
   tavily_results: { query: string; result: string }[];
+  related_files: { filename: string; relationship: string; suspicion_contribution: string }[];
 }
 
 export interface InvestigationReport {

@@ -225,6 +225,16 @@ class InvestigationAgent:
                         "reason": str(entry.get("reason", "")),
                     })
 
+            # Parse related files
+            related_files: list[dict[str, str]] = []
+            for rf in (data.get("related_files") or []):
+                if isinstance(rf, dict) and rf.get("filename"):
+                    related_files.append({
+                        "filename": str(rf.get("filename", "")),
+                        "relationship": str(rf.get("relationship", "")),
+                        "suspicion_contribution": str(rf.get("suspicion_contribution", "")),
+                    })
+
             row = InvestigationBufferRow(
                 doc_id=doc.doc_id,
                 filename=doc.filename,
@@ -234,6 +244,7 @@ class InvestigationAgent:
                 alt_doc_leads=[str(d) for d in (data.get("alt_doc_leads") or []) if d],
                 open_questions=[str(q) for q in (data.get("open_questions") or []) if q],
                 flagged_entries=flagged_entries,
+                related_files=related_files,
             )
 
             # Stash tavily queries for execution after parsing

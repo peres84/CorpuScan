@@ -229,23 +229,38 @@ class InvestigationAgent:
         return None
 
     async def research_via_mcp(self, query: str) -> str | None:
-        """Use the MCP web.search tool for external research.
+        """Use the MCP web.search tool for external research, falling back to direct HTTP.
 
-        Returns search results as formatted text, or None if MCP is unavailable.
+        Tries the internal MCP registry first. If that fails (tool not registered,
+        Tavily key missing, network error), falls back to the TavilyClient passed
+        at construction time.
+
+        Returns search results as formatted text, or None if both paths fail.
         """
+        # Try MCP first
         tool = get_tool("web.search")
-        if tool is None:
-            return None
+        if tool is not None:
+            try:
+                result = tool.handler(query=query, max_results=3)
+                items = result.get("results", [])
+                if items:
+                    lines = [f"External research for: {query}"]
+                    for item in items:
+                        lines.append(f"- {item.get('title', '')}: {item.get('snippet', '')}")
+                    return "\n".join(lines)
+            except Exception:
+                logger.debug("MCP web.search failed for query: %s — falling back to HTTP", query)
 
-        try:
-            result = tool.handler(query=query, max_results=3)
-            items = result.get("results", [])
-            if not items:
-                return None
-            lines = [f"External research for: {query}"]
-            for item in items:
-                lines.append(f"- {item.get('title', '')}: {item.get('snippet', '')}")
-            return "\n".join(lines)
-        except Exception:
-            logger.debug("MCP web.search failed for query: %s", query)
-            return None
+        # Fallback to direct TavilyClient
+        if self._tavily is not None:
+            try:
+                results = await self._tavily.search(query, max_results=3)
+                if results:
+                    lines = [f"External research for: {query}"]
+                    for item in results:
+                        lines.append(f"- {item.title}: {item.content or ''}")
+                    return "\n".join(lines)
+            except Exception:
+                logger.debug("Tavily HTTP fallback also failed for query: %s", query)
+
+        return None

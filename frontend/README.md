@@ -65,8 +65,17 @@ frontend/
 │   ├── hooks/
 │   │   ├── useGenerate.ts      # POST /generate — returns { mutate, loading, error }
 │   │   ├── useJobStatus.ts     # Polls GET /jobs/:id every 1.5 s until done or error
+│   │   ├── useInvestigation.ts # Investigation hooks: create, poll status, fetch findings/buffer/report
 │   │   ├── use-mobile.tsx      # Breakpoint hook (≤768 px = mobile)
 │   │   └── use-toast.ts        # Imperative toast helper (shadcn)
+│   │
+│   ├── components/
+│   │   ├── investigation/
+│   │   │   ├── FileUpload.tsx          # Drag-and-drop multi-file upload with priority selection
+│   │   │   ├── InvestigationProgress.tsx # Real-time progress with step indicators
+│   │   │   ├── InvestigationResults.tsx  # Tabbed results: findings, graph, timeline, buffer
+│   │   │   └── KnowledgeGraph.tsx      # Entity/relationship visualization (Cognee data)
+│   │   ├── Nav.tsx
 │   │
 │   ├── lib/
 │   │   ├── api.ts              # All fetch calls + TypeScript types for backend responses
@@ -98,6 +107,7 @@ frontend/
 | `/` | `Landing` | Marketing page — hero, how it works, CTA |
 | `/dashboard` | `Dashboard` | Generate form — upload / URL / search |
 | `/dashboard/job/:jobId` | `JobPage` | Live progress polling, video result, error state |
+| `/investigate` | `InvestigatePage` | Audit investigation — file upload, progress, results |
 | `*` | `NotFound` | 404 fallback |
 
 ---

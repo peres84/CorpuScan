@@ -46,14 +46,47 @@ backend/
 │   │
 │   ├── integrations/
 │   │   ├── gemini.py        # GeminiClient — async wrapper around google-genai
+│   │   ├── openai.py        # OpenAIClient — async OpenAI chat completions
+│   │   ├── llm_router.py    # LLMRouter — OpenAI primary, Gemini fallback
 │   │   ├── elevenlabs.py    # ElevenLabsClient — TTS with timestamps + sound effects
 │   │   ├── hera.py          # HeraClient — submit / poll / download Hera renders
 │   │   └── tavily.py        # TavilyClient — web search + URL content extraction
 │   │
+│   ├── investigation/
+│   │   ├── __init__.py
+│   │   ├── models.py        # ParsedDocument, ContentChunk, DocumentType
+│   │   ├── parsers.py       # TXT, PDF, XLSX, CSV, DOCX, GDPdU index.xml parsers
+│   │   ├── chunker.py       # Content chunking with overlap
+│   │   ├── scanner.py       # Recursive directory scanner
+│   │   ├── evidence_store.py # EvidenceStore, Finding, Entity, EvidenceReference
+│   │   ├── entities.py      # LLM-powered entity extraction
+│   │   ├── graph.py         # DocumentGraph — nodes + edges via shared entities
+│   │   ├── agent.py         # InvestigationAgent — DFS over document graph
+│   │   ├── buffer.py        # InvestigationBufferRow, InvestigationState
+│   │   ├── pipeline.py      # Investigation pipeline orchestration + job store
+│   │   ├── prioritization.py # Document priority scoring + smart start selection
+│   │   ├── report.py        # ReportGenerator + InvestigationReport model
+│   │   ├── classifier.py    # Rule-based fraud signal classifier
+│   │   └── routes.py        # FastAPI investigation endpoints
+│   │
 │   └── prompts/
 │       ├── finance.yaml     # System prompt + user template for the Finance agent
 │       ├── scripter.yaml    # System prompt + user template for the Scripter agent
-│       └── hera.yaml        # System prompt + user template for the Hera agent
+│       ├── hera.yaml        # System prompt + user template for the Hera agent
+│       ├── investigator.yaml # System prompt for the Investigation agent
+│       └── report_generator.yaml # System prompt for report generation
+│
+├── tests/
+│   ├── test_parsers.py              # Document parsing tests
+│   ├── test_llm_router.py           # LLM router + OpenAI client tests
+│   ├── test_evidence_store.py       # Evidence store + graph + entity extraction
+│   ├── test_investigation_agent.py  # DFS agent tests
+│   ├── test_investigation_pipeline.py # Full pipeline tests
+│   ├── test_investigation_api.py    # API endpoint tests
+│   ├── test_report_generation.py    # Report generation tests
+│   ├── test_prioritization.py       # Document prioritization tests
+│   ├── test_classifier.py           # Fraud classifier tests
+│   └── test_integration_fraud_detection.py # End-to-end fraud detection
 │
 ├── src/corpuscan_backend/   # Package entry point (uv_build)
 ├── .env                     # Local secrets (git-ignored)
@@ -102,6 +135,93 @@ Job state is held in an in-memory `JobStore` (a plain `dict`). There is no datab
 
 ---
 
+## Investigation Pipeline Architecture
+
+The Audit Investigation Mode follows a DFS (Depth-First Search) strategy over a document relationship graph. The system is designed to behave like a forensic auditor: it reads documents, forms hypotheses, follows leads, and documents every step.
+
+### Pipeline Stages
+
+```
+Documents (CSV, TXT, XLSX, PDF, DOCX, XML, MD)
+        │
+        ▼
+   [PARSE]  Auto-detect format + delimiter → ParsedDocument objects
+        │
+        ▼
+[COGNEE_INGEST]  (optional) Remember documents in Cognee knowledge graph
+        │
+        ▼
+[BUILD_GRAPH]  LLM entity extraction → DocumentGraph (nodes=docs, edges=shared entities)
+        │
+        ▼
+[INVESTIGATE]  DFS loop with LLM-powered analysis per document
+        │
+        ▼
+  [REPORT]  Aggregate findings → structured report with evidence
+```
+
+### The Investigation Buffer
+
+The buffer is the agent's memory — a sequential log of every document analyzed. Each row contains:
+
+| Field | Purpose |
+|---|---|
+| `doc_id` / `filename` | Which document was analyzed |
+| `notes_summary` | The agent's analysis and reasoning |
+| `fraud_likelihood` | 0.0–1.0 score for this document |
+| `flagged_entries` | SPECIFIC rows/invoices/amounts the agent found suspicious |
+| `related_files` | Other files that relate to this one + how they contribute to suspicion |
+| `primary_next_doc` | The strongest lead to investigate next (top of DFS stack) |
+| `alt_doc_leads` | Alternative leads (pushed deeper in stack) |
+| `open_questions` | Questions requiring answers from other documents |
+| `tavily_results` | External web research performed for this document |
+
+### DFS Investigation Loop
+
+```
+1. Pop next doc from stack
+2. Skip if already visited
+3. Query Cognee for context (if enabled)
+4. Send doc content + buffer history + related docs to LLM
+5. LLM returns: flagged entries, likelihood, next leads, related files, tavily queries
+6. Execute Tavily queries (via MCP, with HTTP fallback)
+7. Append buffer row
+8. Push leads onto stack (Cognee-suggested leads prioritized)
+9. Repeat until stack empty or max_iterations reached
+```
+
+### Termination Conditions
+
+The investigation stops when:
+- **Stack empty** — all leads have been explored
+- **Max iterations reached** — `min(num_documents, 50)` documents visited
+- **All documents visited** — nothing left to analyze
+
+### Cross-File Discrepancy Detection
+
+A core innovation: the agent receives the full investigation buffer on each step. This means when analyzing document B, it already knows what it found in document A. If document B contradicts or confirms something from A, the agent flags it in `related_files` with:
+- Which file it connects to
+- How they relate (shared vendor, shared transaction, shared date)
+- Whether it increases or decreases suspicion
+
+### Tavily MCP Integration
+
+The agent can request external web research during investigation. The system:
+1. Tries the internal MCP registry (`web.search` tool) first
+2. Falls back to direct HTTP `TavilyClient` if MCP fails
+3. Stores all research results in the buffer for transparency
+
+Use cases: verify if a company exists, check accounting regulations, research fraud patterns.
+
+### Priority Scoring
+
+When the user doesn't specify priority documents, the system auto-selects starting points:
+- **High priority**: files with financial keywords (Buchung, Lieferant, Zahlung, Rechnung)
+- **Medium**: CSV/XLSX with financial content
+- **Low**: XML schema files, metadata
+
+---
+
 ## Setup
 
 ### Prerequisites
@@ -143,9 +263,14 @@ The API will be available at `http://localhost:8000`.
 |---|---|---|
 | `GEMINI_API_KEY` | Yes | Google AI Studio key |
 | `TAVILY_API_KEY` | Yes | Tavily search/extract key |
-| `ELEVENLABS_API_KEY` | Yes | ElevenLabs API key |
-| `ELEVENLABS_VOICE_ID` | Yes | ElevenLabs voice ID to use for narration |
-| `HERA_API_KEY` | Yes | Hera Motion API key |
+| `ELEVENLABS_API_KEY` | Video mode | ElevenLabs API key |
+| `ELEVENLABS_VOICE_ID` | Video mode | ElevenLabs voice ID to use for narration |
+| `HERA_API_KEY` | Video mode | Hera Motion API key |
+| `OPENAI_KEY` | Investigation mode | OpenAI API key (primary LLM for investigation) |
+| `OPENAI_MODEL` | No | OpenAI model name. Defaults to `gpt-4o` |
+| `COGNEE_ENABLED` | No | Enable Cognee knowledge memory layer (default: `false`) |
+| `COGNEE_STORAGE_PATH` | No | Local storage for Cognee data (default: `/tmp/cognee`) |
+| `COGNEE_MODEL` | No | LLM model for Cognee entity extraction (default: `gpt-4o`) |
 | `HERA_BASE_URL` | No | Defaults to `https://api.hera.video/v1` |
 | `HERA_RENDER_TIMEOUT_SECONDS` | No | Defaults to `240` |
 | `HERA_RENDER_RETRY_ATTEMPTS` | No | Defaults to `2` |
@@ -192,6 +317,58 @@ Poll for job status. Returns a `JobStatus` object:
 
 ### `GET /jobs/{job_id}/video`
 Streams the final MP4. Add `?download=1` to trigger a file download instead of inline playback.
+
+---
+
+### Investigation Endpoints
+
+### `POST /investigate`
+Accepts `multipart/form-data`. Upload multiple financial documents for AI-driven investigation.
+
+| Field | Type | Description |
+|---|---|---|
+| `files` | File[] | One or more documents (CSV, TXT, XLSX, PDF, DOCX, XML). Max 50 files, 50 MB each. |
+| `priority_doc_ids` | string (optional) | Comma-separated doc IDs to prioritize |
+
+Returns `{"job_id": "<uuid>"}`. The investigation pipeline runs in the background.
+
+### `GET /investigations/{id}`
+Poll investigation status:
+
+```json
+{
+  "status": "running",
+  "step": "investigate",
+  "progress": 65,
+  "error": null
+}
+```
+
+`status`: `pending` | `running` | `done` | `error`  
+`step`: `parse` → `build_graph` → `investigate` → `report` → `done`
+
+### `GET /investigations/{id}/findings`
+Returns findings with evidence references:
+
+```json
+[
+  {
+    "finding_id": "f001",
+    "finding_text": "Suspicious round amounts to vendor 209101",
+    "evidence": [{"doc_id": "...", "location": "row:45", "passage": "...", "confidence": 0.85}],
+    "fraud_likelihood": 0.92
+  }
+]
+```
+
+### `GET /investigations/{id}/buffer`
+Returns the step-by-step investigation history (each document analyzed).
+
+### `GET /investigations/{id}/evidence/{finding_id}`
+Returns detailed evidence for a specific finding.
+
+### `GET /investigations/{id}/report`
+Returns the full structured report (only available when status is `done`).
 
 ---
 

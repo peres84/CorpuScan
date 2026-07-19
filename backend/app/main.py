@@ -17,6 +17,9 @@ import yaml
 from app.config import get_settings
 from app.integrations.tavily import TavilyClient
 from app.ingest import extract_pdf_documents
+from app.investigation.routes import router as investigation_router
+from app.mcp.routes import router as mcp_router
+from app.mcp.tavily_mcp import register_tavily_tools
 from app.jobs import JobStore
 from app.logging_utils import stage_tag
 from app.pipeline import run_pipeline
@@ -48,6 +51,7 @@ LOG_DIR = BACKEND_ROOT / "logs"
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     configure_application_logging()
+    register_tavily_tools()
     logger.info("%s clearing all job temp state on startup", stage_tag("job"))
     cleanup_all_tmp_jobs()
     yield
@@ -55,6 +59,8 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="CorpuScan API", lifespan=lifespan)
+app.include_router(investigation_router)
+app.include_router(mcp_router)
 
 _origins = settings.cors_origins_list
 # CORS spec: credentials cannot be combined with wildcard origins.

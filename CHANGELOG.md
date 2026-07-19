@@ -1,5 +1,71 @@
 # Rebuild Summary
 
+## Cognee Knowledge Memory Layer Integration (TASKS_COGNEE Phases 1–11)
+
+Added Cognee as the investigation knowledge memory layer.
+
+### Added
+- **Cognee Client** (`backend/app/cognee/client.py`): Wrapper with graceful degradation
+- **Document Ingestion** (`backend/app/cognee/ingestion.py`): Pipes documents into Cognee with node set organization
+- **Graph Extraction** (`backend/app/cognee/graph.py`): Entity/relationship extraction + merge into existing EvidenceStore/DocumentGraph
+- **Semantic Retrieval** (`backend/app/cognee/retrieval.py`): search_context, find_related_entities, get_relationship_graph
+- **MCP Tools**: `cognee.search`, `cognee.related_entities`, `cognee.relationship_graph` registered in MCP registry
+- **Enhanced DFS**: Investigation agent uses Cognee leads to prioritize documents with strong entity connections
+- **Pipeline Integration**: New `COGNEE_INGEST` step (skipped seamlessly when disabled)
+- **API Endpoints**: `GET /investigations/{id}/graph`, `GET /investigations/{id}/related`, `POST /investigations/{id}/memory/build`
+- **Frontend**: Knowledge Graph tab with color-coded entities, clickable nodes, relationship display
+- **Report Enhancement**: Relationship chains and knowledge graph summary in final reports
+
+### New Environment Variables
+- `COGNEE_ENABLED` — Enable/disable Cognee (default: `false`)
+- `COGNEE_STORAGE_PATH` — Local storage path (default: `/tmp/cognee`)
+- `COGNEE_MODEL` — LLM model for Cognee (default: `gpt-4o`)
+
+### New Dependencies
+- `cognee>=0.3.4`
+
+### Key Design Decisions
+- Cognee is additive — supplements existing DocumentGraph, never replaces it
+- Graceful degradation — system works identically without Cognee
+- Cognee is memory, not evidence — relationships are leads, not proof
+- No new architecture constraints violated
+
+---
+
+## Audit Investigation Mode (Phase 1–12)
+
+New product mode: AI-powered forensic investigation assistant for financial document analysis.
+
+### Added
+- **Document Parsing** (`backend/app/investigation/parsers.py`): TXT, PDF, XLSX, CSV, DOCX, GDPdU index.xml parsers with content chunking
+- **LLM Integration** (`backend/app/integrations/openai.py`, `llm_router.py`): OpenAI client + LLMRouter (OpenAI primary → Gemini fallback)
+- **Evidence Store** (`backend/app/investigation/evidence_store.py`): In-memory store for documents, entities, and findings
+- **Document Graph** (`backend/app/investigation/graph.py`): Relationship graph built from shared entities
+- **Investigation Agent** (`backend/app/investigation/agent.py`): DFS-driven autonomous investigator with investigation buffer
+- **Pipeline** (`backend/app/investigation/pipeline.py`): Full async pipeline orchestration with job management
+- **API Endpoints** (`backend/app/investigation/routes.py`): POST /investigate, GET /investigations/{id}, findings, buffer, evidence, report
+- **Report Generation** (`backend/app/investigation/report.py`): Structured reports with timeline, entity relationships, fraud assessment
+- **Frontend** (`frontend/src/pages/InvestigatePage.tsx`): Full investigation UI with file upload, progress, and tabbed results
+- **Prioritization** (`backend/app/investigation/prioritization.py`): Smart document scoring and auto-start selection
+- **Classifier** (`backend/app/investigation/classifier.py`): Rule-based fraud signal detection (round amounts, threshold splitting, timing anomalies)
+- **Integration Tests** (`backend/tests/test_integration_fraud_detection.py`): Full test suite for F1-F4 detection against fraud_train_dataset/
+
+### New Environment Variables
+- `OPENAI_KEY` — OpenAI API key (primary LLM for investigation)
+- `OPENAI_MODEL` — Model name (default: `gpt-4o`)
+
+### New Dependencies
+- `openai>=1.82.0`
+- `openpyxl>=3.1.5`
+- `python-docx>=1.1.2`
+
+### Test Suite
+- 108 tests passing, 5 skipped (require LLM API keys)
+
+---
+
+# Rebuild Summary (Original)
+
 ## 1. Hera skill rebuilt as a general guide
 
 `.claude/skills/hera-api/SKILL.md` and the mirror [docs/hera-api.md](docs/hera-api.md) no longer mention CorpuScan. The guide now has two focused halves:

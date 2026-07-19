@@ -1,7 +1,7 @@
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import HowItWorks from "@/components/HowItWorks";
-import BottomCta from "@/components/BottomCta";
+import HowInvestigationWorks from "@/components/HowInvestigationWorks";
 import Footer from "@/components/Footer";
 
 const Landing = () => {
@@ -11,7 +11,7 @@ const Landing = () => {
       <main className="flex-1">
         <Hero />
         <HowItWorks />
-        <BottomCta />
+        <HowInvestigationWorks />
       </main>
       <Footer />
     </div>

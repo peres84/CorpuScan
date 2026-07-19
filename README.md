@@ -77,6 +77,28 @@ flowchart TD
     K --> L[Final 2-min MP4<br/>streamed to browser]
 ```
 
+### Audit Investigation Pipeline
+
+```mermaid
+flowchart TD
+    A[User uploads documents<br/>CSV, TXT, XLSX, PDF, DOCX] --> B[Document Parsing<br/>auto-detect format + delimiter]
+    B --> C{Cognee enabled?}
+    C -->|Yes| D[Cognee Ingestion<br/>remember per node set]
+    C -->|No| E[Entity Extraction<br/>LLM-powered]
+    D --> E
+    E --> F[Document Graph<br/>nodes = docs, edges = shared entities]
+    F --> G[Priority Scoring<br/>rank by financial relevance]
+    G --> H[Investigation Agent<br/>OpenAI primary, Gemini fallback]
+    H --> I{DFS Loop}
+    I -->|Analyze doc| J[Extract flagged entries<br/>+ cross-file discrepancies]
+    J --> K[Tavily MCP<br/>external research]
+    K --> L[Update buffer row<br/>likelihood + next leads]
+    L --> M{More leads?}
+    M -->|Yes| I
+    M -->|No / max iterations| N[Report Generation<br/>LLM-structured output]
+    N --> O[Evidence-backed findings<br/>served to frontend]
+```
+
 ---
 
 ## Why this approach
@@ -170,9 +192,11 @@ System dependency: **ffmpeg** must be on `PATH`. Install via `brew install ffmpe
 | -------- | -------- | ----------- |
 | `GEMINI_API_KEY` | Yes | Google AI Studio key |
 | `TAVILY_API_KEY` | Yes | Tavily search/extract key |
-| `ELEVENLABS_API_KEY` | Yes | ElevenLabs API key |
-| `ELEVENLABS_VOICE_ID` | Yes | ElevenLabs voice ID for narration |
-| `HERA_API_KEY` | Yes | Hera Motion API key |
+| `ELEVENLABS_API_KEY` | Video mode | ElevenLabs API key |
+| `ELEVENLABS_VOICE_ID` | Video mode | ElevenLabs voice ID for narration |
+| `HERA_API_KEY` | Video mode | Hera Motion API key |
+| `OPENAI_KEY` | Investigation mode | OpenAI API key (primary LLM for investigation) |
+| `OPENAI_MODEL` | No | Defaults to `gpt-4o` |
 | `VITE_API_BASE_URL` | Frontend | Backend base URL (default: `http://localhost:8000`) |
 
 Optional backend tuning vars (`HERA_BASE_URL`, `HERA_RENDER_TIMEOUT_SECONDS`, `CORS_ORIGINS`, etc.) are documented in [backend/README.md](backend/README.md).
@@ -194,6 +218,11 @@ docker run --env-file backend/.env -p 8000:8000 corpuscan-backend
 | `POST` | `/generate` | Submit a job (PDF file, URL, or query). Returns `{"job_id": "..."}` |
 | `GET` | `/jobs/{job_id}` | Poll status — `pending` → `running` → `done` \| `error` |
 | `GET` | `/jobs/{job_id}/video` | Stream the final MP4. Append `?download=1` to force download |
+| `POST` | `/investigate` | Submit documents for fraud investigation. Returns `{"job_id": "..."}` |
+| `GET` | `/investigations/{id}` | Poll investigation status and progress |
+| `GET` | `/investigations/{id}/findings` | Get findings with evidence references |
+| `GET` | `/investigations/{id}/buffer` | Get investigation step history |
+| `GET` | `/investigations/{id}/report` | Get final structured report |
 
 Frontend polls `/jobs/{id}` every 1.5 s. Full request/response shapes are in [backend/README.md](backend/README.md).
 
@@ -201,11 +230,22 @@ Frontend polls `/jobs/{id}` every 1.5 s. Full request/response shapes are in [ba
 
 ## Demo flow
 
+### Video Briefing Mode
+
 1. Open the landing page → **Start now**.
 2. Drag a quarterly report PDF (or paste a URL, or type "Apple Q4 2025 earnings").
 3. Click **Generate video**.
 4. Watch the 6-step pipeline indicator tick through (~2 minutes).
 5. Embedded video player loads. **Download MP4**.
+
+### Audit Investigation Mode
+
+1. Navigate to `/investigate`.
+2. Upload financial documents (CSV, TXT, XLSX, PDF, DOCX) — drag-and-drop supported.
+3. Optionally mark priority documents (e.g., vendor ledgers, bank statements).
+4. Click **Start Investigation**.
+5. Watch the 4-stage pipeline: Parse → Build Graph → Investigate → Report.
+6. Review findings with evidence references, investigation timeline, and full buffer history.
 
 ---
 

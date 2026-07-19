@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 import { PromoCard } from "@/components/ui/card-9";
 
 interface Step {
@@ -47,7 +48,7 @@ export const HowItWorks = () => {
           <p className="font-mono text-accent text-xs uppercase tracking-wider">
             The pipeline
           </p>
-          <h2 className="mt-3 text-3xl font-semibold text-primary">How it works</h2>
+          <h2 className="mt-3 text-3xl font-semibold text-primary">How report analysis works</h2>
         </div>
         <p className="text-secondary text-sm max-w-sm">
           Four agents work in sequence. From raw PDF to finished briefing in under three minutes.
@@ -67,6 +68,14 @@ export const HowItWorks = () => {
             ) : null,
           )}
         </AnimatePresence>
+      </div>
+      <div className="mt-10 text-center">
+        <Link
+          to="/dashboard"
+          className="inline-flex items-center border border-accent text-accent rounded-lg px-6 py-3 font-medium hover:bg-accent/10 transition-colors"
+        >
+          Start an Analysis
+        </Link>
       </div>
     </section>
   );

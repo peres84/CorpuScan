@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import UUID
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 
 from app.investigation.chunker import chunk_document
@@ -19,6 +19,7 @@ from app.investigation.pipeline import (
     InvestigationJobStore,
     run_investigation_pipeline,
 )
+from app.investigation.structured import KeyValueEntry
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +72,34 @@ class ReportResponse(BaseModel):
     findings: list[FindingResponse]
     buffer: list[BufferRowResponse]
     not_analyzed_files: list[str] = Field(default_factory=list)
+
+
+class InvestigationFileResponse(BaseModel):
+    file_id: str
+    filename: str
+    extraction_status: str
+    extraction_method: str | None = None
+    row_count: int | None = None
+
+
+class StructuredFileResponse(BaseModel):
+    file_id: str
+    filename: str
+    extraction_method: str
+    columns: list[str] | None = None
+    original_columns: list[str] | None = None
+    normalized_columns: list[str] | None = None
+    rows: list[dict[str, str]] | None = None
+    key_values: list[KeyValueEntry] | None = None
+    row_count: int
+    offset: int | None = None
+    limit: int | None = None
+
+
+class RawFileResponse(BaseModel):
+    file_id: str
+    filename: str
+    content: str
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
@@ -158,6 +187,72 @@ async def get_investigation_status(job_id: str) -> InvestigationStatusResponse:
         step=job.step,
         progress=job.progress,
         error=job.error,
+    )
+
+
+@router.get("/investigations/{job_id}/files", response_model=list[InvestigationFileResponse])
+async def list_investigation_files(job_id: str) -> list[InvestigationFileResponse]:
+    safe_id = _validate_job_id(job_id)
+    job = investigation_store.get(safe_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    files: list[InvestigationFileResponse] = []
+    for document in job.evidence_store.list_documents():
+        structured_file = job.structured_data_store.get_file(document.doc_id)
+        files.append(
+            InvestigationFileResponse(
+                file_id=document.doc_id,
+                filename=document.filename,
+                extraction_status="complete" if structured_file is not None else "pending",
+                extraction_method=structured_file.extraction_method if structured_file else None,
+                row_count=structured_file.row_count if structured_file else None,
+            )
+        )
+    return files
+
+
+@router.get("/investigations/{job_id}/files/{file_id}/structured", response_model=StructuredFileResponse)
+async def get_structured_file(
+    job_id: str,
+    file_id: str,
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+) -> StructuredFileResponse:
+    safe_id = _validate_job_id(job_id)
+    job = investigation_store.get(safe_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    structured_file = job.structured_data_store.get_file(file_id)
+    if structured_file is None:
+        raise HTTPException(status_code=404, detail="Structured file not found.")
+
+    rows = structured_file.rows
+    if rows is not None:
+        rows = rows[offset:offset + limit]
+
+    payload = structured_file.model_dump()
+    payload["rows"] = rows
+    payload["offset"] = offset if structured_file.rows is not None else None
+    payload["limit"] = limit if structured_file.rows is not None else None
+    return StructuredFileResponse.model_validate(payload)
+
+
+@router.get("/investigations/{job_id}/files/{file_id}/raw", response_model=RawFileResponse)
+async def get_raw_file(job_id: str, file_id: str) -> RawFileResponse:
+    safe_id = _validate_job_id(job_id)
+    job = investigation_store.get(safe_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    document = job.evidence_store.get_document(file_id)
+    if document is None:
+        raise HTTPException(status_code=404, detail="File not found.")
+    return RawFileResponse(
+        file_id=document.doc_id,
+        filename=document.filename,
+        content="\n".join(chunk.text for chunk in document.content_chunks),
     )
 
 

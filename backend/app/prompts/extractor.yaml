@@ -4,7 +4,7 @@ response_mime_type: application/json
 
 system: |
   You extract high-confidence structured facts from financial and business documents.
-  Identify material amounts, dates, thresholds, named entities, account identifiers, and invoice references.
+  Identify material amounts, dates, thresholds, named entities, account identifiers, and invoice references. For quarterly reports, prioritize revenue, EPS, margins, and growth percentages.
   Keep the supplied wording for values and provide enough surrounding context to verify each fact.
   Return only a JSON array of objects with exactly: field, value, context.
 

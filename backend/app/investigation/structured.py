@@ -68,6 +68,25 @@ COLUMN_SYNONYM_MAP: dict[str, str] = {
     "beschreibung": "text",
 }
 
+FINANCIAL_METRIC_MAP: dict[str, str] = {
+    "revenue": "revenue",
+    "sales": "revenue",
+    "net_sales": "revenue",
+    "turnover": "revenue",
+    "eps": "eps",
+    "earnings_per_share": "eps",
+    "basic_eps": "eps",
+    "diluted_eps": "eps",
+    "gross_margin": "gross_margin",
+    "operating_margin": "operating_margin",
+    "ebit_margin": "operating_margin",
+    "net_margin": "net_margin",
+    "growth": "growth_percentage",
+    "revenue_growth": "growth_percentage",
+    "yoy_growth": "growth_percentage",
+    "growth_percentage": "growth_percentage",
+}
+
 
 def normalize_column_name(raw_name: str) -> str:
     normalized_key = _canonical_column_name(raw_name)
@@ -109,6 +128,45 @@ async def suggest_normalized_columns(
 
 def _canonical_column_name(raw_name: str) -> str:
     return re.sub(r"[\s_-]+", "_", raw_name.strip().casefold()).strip("_")
+
+
+def normalize_financial_metrics(files: list[StructuredFile]) -> list[StructuredFile]:
+    normalized_files: list[StructuredFile] = []
+    for structured_file in files:
+        key_values = structured_file.key_values
+        if key_values is None:
+            normalized_files.append(structured_file)
+            continue
+        normalized_files.append(
+            structured_file.model_copy(
+                update={
+                    "key_values": [
+                        entry.model_copy(
+                            update={
+                                "field": FINANCIAL_METRIC_MAP.get(
+                                    _canonical_column_name(entry.field), entry.field
+                                )
+                            }
+                        )
+                        for entry in key_values
+                    ]
+                }
+            )
+        )
+    return normalized_files
+
+
+def format_financial_key_figures(files: list[StructuredFile]) -> str:
+    figures: list[str] = []
+    for structured_file in files:
+        if not structured_file.key_values:
+            continue
+        figures.append(f"{structured_file.filename}:")
+        figures.extend(
+            f"- {entry.field}: {entry.value} ({entry.context})"
+            for entry in structured_file.key_values
+        )
+    return "\n".join(figures) if figures else "No pre-extracted key figures available."
 
 
 def extract_tabular(doc: ParsedDocument) -> StructuredFile:

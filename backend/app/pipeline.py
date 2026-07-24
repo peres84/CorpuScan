@@ -18,10 +18,19 @@ from app.integrations.elevenlabs import (
 )
 from app.integrations.gemini import GeminiClient
 from app.integrations.hera import HeraClient
+from app.integrations.llm_router import LLMRouter
+from app.investigation.models import ContentChunk, DocumentType, ParsedDocument
+from app.investigation.structured import (
+    StructuredDataStore,
+    StructuredFile,
+    extract_unstructured,
+    format_financial_key_figures,
+    normalize_financial_metrics,
+)
 from app.jobs import JobStore
 from app.logging_utils import stage_tag
 from app.render import compose
-from app.schemas import BrandingPalette, JobStep, PipelineContext, SlideChunk
+from app.schemas import BrandingPalette, JobStep, PipelineContext, SlideChunk, SourceKind
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
@@ -56,14 +65,28 @@ async def run_pipeline(
         job.source_text = source_text
         job.pipeline_context = pipeline_context
         job_store.update_step(job_id, step=JobStep.INGEST, progress=10)
-        job_store.update_step(job_id, step=JobStep.FINANCE, progress=20)
-        logger.info("%s [%s] running finance agent", stage_tag("finance"), job_id)
 
         gemini_client = GeminiClient(api_key=settings.gemini_api_key, model=settings.gemini_model)
+        out_dir = Path("/tmp") / job_id
+        out_dir.mkdir(parents=True, exist_ok=True)
+        structured_files = await _extract_video_structured_data(
+            source_text=source_text,
+            pipeline_context=pipeline_context,
+            gemini_client=gemini_client,
+        )
+        structured_store = StructuredDataStore()
+        for structured_file in structured_files:
+            structured_store.add_file(structured_file)
+        structured_store.save_to_json(job_id)
+        key_figures = format_financial_key_figures(structured_files)
+
+        job_store.update_step(job_id, step=JobStep.FINANCE, progress=20)
+        logger.info("%s [%s] running finance agent", stage_tag("finance"), job_id)
         qa_markdown = await run_finance_agent(
             source_text=source_text,
             pipeline_context=pipeline_context,
             gemini_client=gemini_client,
+            key_figures=key_figures,
         )
         job.qa_markdown = qa_markdown
         logger.info("%s [%s] finance done, qa_markdown length=%d", stage_tag("finance"), job_id, len(qa_markdown))
@@ -112,8 +135,6 @@ async def run_pipeline(
             )
             slide_chunks_by_scene.append(chunks)
 
-        out_dir = Path("/tmp") / job_id
-        out_dir.mkdir(parents=True, exist_ok=True)
         audio_path = out_dir / "voice.mp3"
         audio_path.write_bytes(audio_bytes)
         intro_sound_path = out_dir / "intro_sound.mp3"
@@ -198,6 +219,56 @@ async def run_pipeline(
     except Exception as exc:
         logger.exception("%s [%s] pipeline failed: %s", stage_tag("job"), job_id, exc)
         job_store.set_error(job_id, str(exc))
+
+
+async def _extract_video_structured_data(
+    *,
+    source_text: str,
+    pipeline_context: PipelineContext,
+    gemini_client: GeminiClient,
+) -> list[StructuredFile]:
+    if pipeline_context.source_kind is not SourceKind.PDF:
+        return []
+
+    router = LLMRouter(gemini_client=gemini_client)
+    documents = _build_video_extraction_documents(source_text, pipeline_context)
+    extracted = await asyncio.gather(
+        *[extract_unstructured(document, router) for document in documents]
+    )
+    return normalize_financial_metrics(extracted)
+
+
+def _build_video_extraction_documents(
+    source_text: str, pipeline_context: PipelineContext
+) -> list[ParsedDocument]:
+    if not pipeline_context.pdf_documents:
+        return [
+            ParsedDocument(
+                doc_id="video_source_1",
+                filename="source.pdf",
+                doc_type=DocumentType.PDF,
+                content_chunks=[ContentChunk(text=source_text, source_ref="source.pdf:page:1", chunk_index=0)],
+            )
+        ]
+
+    documents: list[ParsedDocument] = []
+    for index, metadata in enumerate(pipeline_context.pdf_documents, start=1):
+        marker = f"=== DOCUMENT {index} ==="
+        start = source_text.find(marker)
+        next_marker = source_text.find(f"=== DOCUMENT {index + 1} ===", start + len(marker))
+        block = source_text[start:next_marker if next_marker != -1 else None] if start != -1 else source_text
+        _, _, content = block.partition("\n\n")
+        documents.append(
+            ParsedDocument(
+                doc_id=f"video_source_{index}",
+                filename=metadata.filename,
+                doc_type=DocumentType.PDF,
+                content_chunks=[
+                    ContentChunk(text=content or block, source_ref=f"{metadata.filename}:page:1", chunk_index=0)
+                ],
+            )
+        )
+    return documents
 
 
 async def render_hera_assets(

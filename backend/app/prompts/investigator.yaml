@@ -86,6 +86,9 @@ user_template: |
   ## Document Content
   {content}
 
+  ## Structured Data Summary
+  {structured_data_summary}
+
   ## Related Documents in Graph
   {related_documents}
 

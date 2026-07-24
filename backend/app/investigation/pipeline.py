@@ -17,6 +17,7 @@ from app.investigation.evidence_store import EvidenceStore, Finding
 from app.investigation.graph import DocumentGraph
 from app.investigation.models import ParsedDocument
 from app.investigation.prioritization import select_start_documents
+from app.investigation.structured import StructuredDataStore
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ class InvestigationJobRecord:
     progress: int = 0
     error: str | None = None
     evidence_store: EvidenceStore = field(default_factory=EvidenceStore)
+    structured_data_store: StructuredDataStore = field(default_factory=StructuredDataStore)
     graph: DocumentGraph = field(default_factory=DocumentGraph)
     investigation_state: InvestigationState | None = None
     findings: list[Finding] = field(default_factory=list)

@@ -15,6 +15,7 @@ from app.cognee.ingestion import (
     ingest_documents,
 )
 from app.investigation.models import ContentChunk, DocumentType, ParsedDocument
+from app.investigation.structured import StructuredDataStore, StructuredFile
 
 
 def _make_doc(
@@ -74,6 +75,25 @@ class TestBuildIngestionText:
         doc = _make_doc(content=long_content)
         text = _build_ingestion_text(doc)
         assert len(text) <= 15200  # _MAX_CONTENT_PER_DOC + header
+
+    def test_includes_structured_data(self) -> None:
+        doc = _make_doc(doc_id="d1", filename="ledger.csv")
+        store = StructuredDataStore()
+        store.add_file(
+            StructuredFile(
+                file_id="d1",
+                filename="ledger.csv",
+                extraction_method="deterministic",
+                normalized_columns=["amount"],
+                rows=[{"amount": "50000,00"}],
+                row_count=1,
+            )
+        )
+
+        text = _build_ingestion_text(doc, store)
+
+        assert "Structured data:" in text
+        assert "50000,00" in text
 
 
 class TestIngestDocuments:

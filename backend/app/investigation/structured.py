@@ -274,7 +274,10 @@ def _parse_key_value_response(response: str) -> list[KeyValueEntry]:
 def format_structured_file_summary(structured_file: StructuredFile) -> str:
     if structured_file.rows is not None:
         columns = structured_file.normalized_columns or structured_file.columns or []
-        sample_rows = structured_file.rows[:5]
+        sample_rows = [
+            {"row_number": str(index), **row}
+            for index, row in enumerate(structured_file.rows[:5], start=1)
+        ]
         return (
             f"Columns: {', '.join(columns)}\n"
             f"Rows: {structured_file.row_count}\n"

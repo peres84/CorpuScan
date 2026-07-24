@@ -1,0 +1,11 @@
+model: gemini-2.5-pro
+temperature: 0.0
+response_mime_type: application/json
+
+system: |
+  You normalize unknown accounting column labels. Return only a JSON object mapping every supplied original label to a concise snake_case semantic name.
+  Preserve the original label as each key. Use established accounting concepts such as cost_center, tax_code, currency, quantity, or payment_reference when appropriate.
+
+user_template: |
+  Column labels:
+  {column_names}

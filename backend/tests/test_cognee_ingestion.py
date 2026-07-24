@@ -94,6 +94,7 @@ class TestBuildIngestionText:
 
         assert "Structured data:" in text
         assert "50000,00" in text
+        assert '"row_number": "1"' in text
 
 
 class TestIngestDocuments:

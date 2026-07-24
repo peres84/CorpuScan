@@ -106,3 +106,5 @@ class TestStructuredPipelineIntegration:
 
         assert any("## Structured Data Summary" in prompt for prompt in router.user_prompts)
         assert any("50000,00" in prompt for prompt in router.user_prompts)
+        assert any('"row_number": "1"' in prompt for prompt in router.user_prompts)
+        assert any("row:<number>" in prompt for prompt in router.user_prompts)

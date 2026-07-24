@@ -8,6 +8,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from app.agents._prompts import load_prompt
+from app.integrations.llm_router import LLMRouter
 from app.investigation.models import DocumentType, ParsedDocument
 
 
@@ -124,6 +126,107 @@ def _find_header_row(rows: list[list[str]]) -> int | None:
         if any(any(character.isalpha() for character in value) for value in row):
             return index
     return None
+
+
+async def extract_unstructured(doc: ParsedDocument, llm_router: LLMRouter) -> StructuredFile:
+    if doc.doc_type is DocumentType.DOCX:
+        table_extraction = _extract_docx_tables(doc)
+        if table_extraction is not None:
+            prose_chunks = [chunk for chunk in doc.content_chunks if ":table:" not in chunk.source_ref]
+            key_values = await _extract_key_values(doc, prose_chunks, llm_router)
+            table_extraction.key_values = key_values
+            if key_values:
+                table_extraction.extraction_method = "deterministic_and_llm"
+            return table_extraction
+
+    return StructuredFile(
+        file_id=doc.doc_id,
+        filename=doc.filename,
+        extraction_method="llm_assisted",
+        key_values=await _extract_key_values(doc, doc.content_chunks, llm_router),
+    )
+
+
+def _extract_docx_tables(doc: ParsedDocument) -> StructuredFile | None:
+    table_chunks = [chunk for chunk in doc.content_chunks if ":table:" in chunk.source_ref]
+    if not table_chunks:
+        return None
+
+    table_doc = doc.model_copy(
+        update={
+            "doc_type": DocumentType.TXT,
+            "content_chunks": table_chunks,
+            "metadata": {"delimiter": "|"},
+        }
+    )
+    extracted = extract_tabular(table_doc)
+    return extracted if extracted.row_count else None
+
+
+async def _extract_key_values(
+    doc: ParsedDocument,
+    chunks: list[object],
+    llm_router: LLMRouter,
+) -> list[KeyValueEntry]:
+    content = _build_unstructured_content(chunks)
+    if not content:
+        return []
+
+    prompt = load_prompt("extractor")
+    try:
+        response = await llm_router.generate(
+            system=prompt.system,
+            user=prompt.user_template.format(filename=doc.filename, content=content),
+            model=prompt.model,
+            temperature=prompt.temperature,
+            response_mime_type=prompt.response_mime_type,
+        )
+    except Exception:
+        return []
+    return _parse_key_value_response(response)
+
+
+def _build_unstructured_content(chunks: list[object]) -> str:
+    content_parts: list[str] = []
+    total_chars = 0
+    for chunk in chunks:
+        text = getattr(chunk, "text", "")
+        if not isinstance(text, str):
+            continue
+        remaining = 3000 - total_chars
+        if remaining <= 0:
+            break
+        content_parts.append(text[:remaining])
+        total_chars += len(text[:remaining])
+    return "\n".join(content_parts)
+
+
+def _parse_key_value_response(response: str) -> list[KeyValueEntry]:
+    cleaned = response.strip()
+    if cleaned.startswith("```"):
+        cleaned = "\n".join(cleaned.splitlines()[1:])
+        if cleaned.endswith("```"):
+            cleaned = cleaned[:-3]
+        cleaned = cleaned.strip()
+
+    try:
+        payload = json.loads(cleaned)
+    except json.JSONDecodeError:
+        return []
+
+    raw_entries = payload.get("key_values", []) if isinstance(payload, dict) else payload
+    if not isinstance(raw_entries, list):
+        return []
+
+    entries: list[KeyValueEntry] = []
+    for raw_entry in raw_entries:
+        if not isinstance(raw_entry, dict):
+            continue
+        try:
+            entries.append(KeyValueEntry.model_validate(raw_entry))
+        except ValueError:
+            continue
+    return entries
 
 
 class StructuredDataStore:

@@ -15,15 +15,16 @@ from app.investigation.buffer import InvestigationState
 from app.investigation.entities import extract_entities_from_document
 from app.investigation.evidence_store import EvidenceStore, Finding
 from app.investigation.graph import DocumentGraph
-from app.investigation.models import ParsedDocument
+from app.investigation.models import DocumentType, ParsedDocument
 from app.investigation.prioritization import select_start_documents
-from app.investigation.structured import StructuredDataStore
+from app.investigation.structured import StructuredDataStore, extract_tabular, extract_unstructured
 
 logger = logging.getLogger(__name__)
 
 
 class InvestigationJobStep(StrEnum):
     PARSE = "parse"
+    STRUCTURED_EXTRACT = "structured_extract"
     COGNEE_INGEST = "cognee_ingest"
     BUILD_GRAPH = "build_graph"
     INVESTIGATE = "investigate"
@@ -144,13 +145,26 @@ async def run_investigation_pipeline(
         logger.info("Investigation [%s] parsed %d documents", job_id, len(documents))
         job_store.update_step(job_id, step=InvestigationJobStep.PARSE, progress=15)
 
+        llm_router = _build_llm_router()
+
+        job_store.update_step(job_id, step=InvestigationJobStep.STRUCTURED_EXTRACT, progress=16)
+        for index, doc in enumerate(documents):
+            if doc.doc_type in (DocumentType.CSV, DocumentType.XLSX, DocumentType.TXT):
+                structured_file = extract_tabular(doc)
+            else:
+                structured_file = await extract_unstructured(doc, llm_router)
+            job.structured_data_store.add_file(structured_file)
+            progress = 16 + int((index + 1) / max(len(documents), 1) * 8)
+            job_store.update_step(job_id, step=InvestigationJobStep.STRUCTURED_EXTRACT, progress=progress)
+        job.structured_data_store.save_to_json(job_id)
+
         # Stage 2: Cognee ingestion (if enabled)
-        cognee_client = await _try_cognee_ingest(job_store, job_id, documents)
+        cognee_client = await _try_cognee_ingest(
+            job_store, job_id, documents, job.structured_data_store
+        )
 
         # Stage 3: Build graph via entity extraction
         job_store.update_step(job_id, step=InvestigationJobStep.BUILD_GRAPH, progress=25)
-        llm_router = _build_llm_router()
-
         total_docs = len(documents)
         for idx, doc in enumerate(documents):
             entities = await extract_entities_from_document(doc, llm_router)
@@ -188,6 +202,7 @@ async def run_investigation_pipeline(
             llm_router=llm_router,
             evidence_store=job.evidence_store,
             graph=job.graph,
+            structured_data_store=job.structured_data_store,
             tavily_client=tavily_client,
             cognee_client=cognee_client,
             max_iterations=min(len(documents), 50),
@@ -222,6 +237,7 @@ async def _try_cognee_ingest(
     job_store: InvestigationJobStore,
     job_id: str,
     documents: list[ParsedDocument],
+    structured_data_store: StructuredDataStore,
 ) -> object | None:
     """Attempt Cognee ingestion. Returns CogneeClient if successful, None otherwise.
 
@@ -245,7 +261,7 @@ async def _try_cognee_ingest(
             return None
 
         await client.reset()
-        count = await ingest_documents(client, documents)
+        count = await ingest_documents(client, documents, structured_data_store)
         job_store.update_step(job_id, step=InvestigationJobStep.COGNEE_INGEST, progress=22)
 
         logger.info("Investigation [%s] Cognee ingested %d documents", job_id, count)

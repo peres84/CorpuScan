@@ -12,6 +12,7 @@ from app.investigation.buffer import InvestigationBufferRow, InvestigationState
 from app.investigation.evidence_store import EvidenceStore
 from app.investigation.graph import DocumentGraph
 from app.investigation.models import ParsedDocument
+from app.investigation.structured import StructuredDataStore, format_structured_file_summary
 from app.mcp.registry import get_tool
 
 try:
@@ -42,6 +43,7 @@ class InvestigationAgent:
         llm_router: LLMRouter,
         evidence_store: EvidenceStore,
         graph: DocumentGraph,
+        structured_data_store: StructuredDataStore | None = None,
         tavily_client: TavilyClient | None = None,
         cognee_client: object | None = None,
         max_iterations: int = 50,
@@ -49,6 +51,7 @@ class InvestigationAgent:
         self._llm = llm_router
         self._store = evidence_store
         self._graph = graph
+        self._structured_data_store = structured_data_store
         self._tavily = tavily_client
         self._cognee = cognee_client
         self._prompt_config = _load_investigator_prompt()
@@ -96,6 +99,7 @@ class InvestigationAgent:
         self._state.add_visited(doc.doc_id)
 
         content = self._build_document_content(doc)
+        structured_data_summary = self._build_structured_data_summary(doc.doc_id)
         related_docs = self._get_related_docs_summary(doc.doc_id)
         buffer_text = self._state.format_buffer_for_llm()
 
@@ -110,6 +114,7 @@ class InvestigationAgent:
             doc_id=doc.doc_id,
             doc_type=doc.doc_type.value,
             content=content,
+            structured_data_summary=structured_data_summary,
             related_documents=related_docs,
         )
 
@@ -183,6 +188,14 @@ class InvestigationAgent:
             parts.append(f"[{chunk.source_ref}]\n{chunk.text}")
             total += len(chunk.text)
         return "\n\n".join(parts) if parts else "(empty document)"
+
+    def _build_structured_data_summary(self, doc_id: str) -> str:
+        if self._structured_data_store is None:
+            return "No structured data available."
+        structured_file = self._structured_data_store.get_file(doc_id)
+        if structured_file is None:
+            return "No structured data available."
+        return format_structured_file_summary(structured_file)
 
     def _get_related_docs_summary(self, doc_id: str) -> str:
         """Get a summary of related documents for context."""

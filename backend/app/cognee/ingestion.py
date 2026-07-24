@@ -4,6 +4,7 @@ import logging
 
 from app.cognee.client import CogneeClient
 from app.investigation.models import DocumentType, ParsedDocument
+from app.investigation.structured import StructuredDataStore, format_structured_file_summary
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ def get_node_set(doc: ParsedDocument) -> str:
     return _NODE_SET_MAPPING.get(doc.doc_type, "other")
 
 
-def _build_ingestion_text(doc: ParsedDocument) -> str:
+def _build_ingestion_text(doc: ParsedDocument, structured_data_store: StructuredDataStore | None = None) -> str:
     """Convert ParsedDocument chunks into a single text block for Cognee ingestion."""
     parts: list[str] = []
     total_chars = 0
@@ -53,6 +54,13 @@ def _build_ingestion_text(doc: ParsedDocument) -> str:
     header = f"Document: {doc.filename}\nType: {doc.doc_type.value}\nID: {doc.doc_id}\n---\n"
     parts.append(header)
     total_chars += len(header)
+
+    if structured_data_store is not None:
+        structured_file = structured_data_store.get_file(doc.doc_id)
+        if structured_file is not None:
+            structured_summary = f"Structured data:\n{format_structured_file_summary(structured_file)}\n---\n"
+            parts.append(structured_summary)
+            total_chars += len(structured_summary)
 
     for chunk in doc.content_chunks:
         if total_chars + len(chunk.text) > _MAX_CONTENT_PER_DOC:
@@ -69,6 +77,7 @@ def _build_ingestion_text(doc: ParsedDocument) -> str:
 async def ingest_documents(
     client: CogneeClient,
     documents: list[ParsedDocument],
+    structured_data_store: StructuredDataStore | None = None,
 ) -> int:
     """Ingest parsed documents into Cognee's knowledge memory.
 
@@ -99,7 +108,7 @@ async def ingest_documents(
             batch = docs[batch_start:batch_start + _BATCH_SIZE]
 
             for doc in batch:
-                text = _build_ingestion_text(doc)
+                text = _build_ingestion_text(doc, structured_data_store)
                 if not text.strip():
                     continue
 

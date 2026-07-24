@@ -271,6 +271,23 @@ def _parse_key_value_response(response: str) -> list[KeyValueEntry]:
     return entries
 
 
+def format_structured_file_summary(structured_file: StructuredFile) -> str:
+    if structured_file.rows is not None:
+        columns = structured_file.normalized_columns or structured_file.columns or []
+        sample_rows = structured_file.rows[:5]
+        return (
+            f"Columns: {', '.join(columns)}\n"
+            f"Rows: {structured_file.row_count}\n"
+            f"Sample rows: {json.dumps(sample_rows, ensure_ascii=False)}"
+        )
+    if structured_file.key_values:
+        return "\n".join(
+            f"- {entry.field}: {entry.value} ({entry.context})"
+            for entry in structured_file.key_values
+        )
+    return "No structured data extracted."
+
+
 class StructuredDataStore:
     """In-memory structured file extractions for a single investigation job."""
 

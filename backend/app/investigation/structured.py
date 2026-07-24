@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import csv
+import re
 from collections import defaultdict
 from io import StringIO
 from pathlib import Path
@@ -10,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from app.agents._prompts import load_prompt
 from app.integrations.llm_router import LLMRouter
-from app.investigation.models import DocumentType, ParsedDocument
+from app.investigation.models import ContentChunk, DocumentType, ParsedDocument
 
 
 STRUCTURED_DATA_ROOT = Path("/tmp")
@@ -40,19 +41,25 @@ COLUMN_SYNONYM_MAP: dict[str, str] = {
     "betrag_eur": "amount",
     "buchungsbetrag": "amount",
     "rechnungsbetrag": "amount",
+    "sollbetrag": "amount",
+    "habenbetrag": "amount",
     "date": "date",
     "datum": "date",
     "wertstellung": "date",
     "buchungsdatum": "date",
+    "belegdatum": "date",
+    "rechnungsdatum": "date",
     "vendor": "vendor_id",
     "vendor_id": "vendor_id",
     "kreditor": "vendor_id",
     "lieferant": "vendor_id",
     "creditor": "vendor_id",
+    "lieferantennummer": "vendor_id",
     "invoice_number": "invoice_number",
     "rechnungsnummer": "invoice_number",
     "belegnummer": "invoice_number",
     "invoice_no": "invoice_number",
+    "rechnung_nr": "invoice_number",
     "account": "account_id",
     "konto": "account_id",
     "kontonummer": "account_id",
@@ -63,8 +70,45 @@ COLUMN_SYNONYM_MAP: dict[str, str] = {
 
 
 def normalize_column_name(raw_name: str) -> str:
-    normalized_key = "_".join(raw_name.strip().casefold().replace("-", " ").split())
+    normalized_key = _canonical_column_name(raw_name)
     return COLUMN_SYNONYM_MAP.get(normalized_key, raw_name)
+
+
+async def suggest_normalized_columns(
+    raw_names: list[str], llm_router: LLMRouter
+) -> dict[str, str]:
+    unknown_names = [
+        raw_name
+        for raw_name in raw_names
+        if _canonical_column_name(raw_name) not in COLUMN_SYNONYM_MAP
+    ]
+    if not unknown_names:
+        return {}
+
+    prompt = load_prompt("column_normalizer")
+    try:
+        response = await llm_router.generate(
+            system=prompt.system,
+            user=prompt.user_template.format(column_names=json.dumps(unknown_names)),
+            model=prompt.model,
+            temperature=prompt.temperature,
+            response_mime_type=prompt.response_mime_type,
+        )
+        payload = json.loads(response)
+    except (Exception, json.JSONDecodeError):
+        return {}
+
+    if not isinstance(payload, dict):
+        return {}
+    return {
+        raw_name: suggestion.strip()
+        for raw_name, suggestion in payload.items()
+        if raw_name in unknown_names and isinstance(suggestion, str) and suggestion.strip()
+    }
+
+
+def _canonical_column_name(raw_name: str) -> str:
+    return re.sub(r"[\s_-]+", "_", raw_name.strip().casefold()).strip("_")
 
 
 def extract_tabular(doc: ParsedDocument) -> StructuredFile:
@@ -165,7 +209,7 @@ def _extract_docx_tables(doc: ParsedDocument) -> StructuredFile | None:
 
 async def _extract_key_values(
     doc: ParsedDocument,
-    chunks: list[object],
+    chunks: list[ContentChunk],
     llm_router: LLMRouter,
 ) -> list[KeyValueEntry]:
     content = _build_unstructured_content(chunks)
@@ -186,13 +230,11 @@ async def _extract_key_values(
     return _parse_key_value_response(response)
 
 
-def _build_unstructured_content(chunks: list[object]) -> str:
+def _build_unstructured_content(chunks: list[ContentChunk]) -> str:
     content_parts: list[str] = []
     total_chars = 0
     for chunk in chunks:
-        text = getattr(chunk, "text", "")
-        if not isinstance(text, str):
-            continue
+        text = chunk.text
         remaining = 3000 - total_chars
         if remaining <= 0:
             break

@@ -3,10 +3,16 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from app.investigation.models import ContentChunk, DocumentType, ParsedDocument
-from app.investigation.structured import extract_tabular, normalize_column_name
+from app.investigation.structured import (
+    extract_tabular,
+    normalize_column_name,
+    suggest_normalized_columns,
+)
 
 
 def _document(
@@ -73,6 +79,23 @@ class TestTabularExtraction:
         assert normalize_column_name("BETRAG_EUR") == "amount"
         assert normalize_column_name(" datum ") == "date"
         assert normalize_column_name("KREDITOR") == "vendor_id"
+
+    def test_column_normalization_handles_variants_and_unknown_columns(self) -> None:
+        assert normalize_column_name("Betrag  EUR") == "amount"
+        assert normalize_column_name("WERTSTELLUNG") == "date"
+        assert normalize_column_name("Custom Field") == "Custom Field"
+
+    @pytest.mark.asyncio
+    async def test_unknown_column_suggestions_are_batched(self) -> None:
+        class MockRouter:
+            async def generate(self, **kwargs: object) -> str:
+                return '{"Kostenstelle": "cost_center", "Steuerschluessel": "tax_code"}'
+
+        suggestions = await suggest_normalized_columns(
+            ["BETRAG_EUR", "Kostenstelle", "Steuerschluessel"], MockRouter()  # type: ignore[arg-type]
+        )
+
+        assert suggestions == {"Kostenstelle": "cost_center", "Steuerschluessel": "tax_code"}
 
     def test_gdpdu_semicolon_txt_extracts_correctly(self) -> None:
         document = _document(

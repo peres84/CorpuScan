@@ -44,7 +44,7 @@ def web_search(query: str, max_results: int = 5) -> dict:
         "search_depth": "basic",
     }
 
-    with httpx.Client(timeout=_TIMEOUT_SECONDS) as client:
+    with httpx.Client(timeout=_TIMEOUT_SECONDS, follow_redirects=False) as client:
         response = client.post(f"{_TAVILY_BASE_URL}/search", json=payload)
         response.raise_for_status()
 
@@ -80,7 +80,7 @@ def web_extract(url: str) -> dict:
         "extract_depth": "advanced",
     }
 
-    with httpx.Client(timeout=60) as client:
+    with httpx.Client(timeout=60, follow_redirects=False) as client:
         response = client.post(f"{_TAVILY_BASE_URL}/extract", json=payload)
         response.raise_for_status()
 

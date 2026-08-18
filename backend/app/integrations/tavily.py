@@ -24,9 +24,14 @@ class TavilyClient:
         self._base_url = "https://api.tavily.com"
 
     async def search(self, query: str, max_results: int = 5) -> list[TavilyResult]:
-        logger.info("%s tavily search started (query=%r, max_results=%d)", stage_tag("tavily"), query, max_results)
+        logger.info(
+            "%s tavily search started (query=%r, max_results=%d)",
+            stage_tag("tavily"), query, max_results,
+        )
         payload = {"api_key": self._api_key, "query": query, "max_results": max_results}
-        async with httpx.AsyncClient(timeout=30) as client:
+        async with httpx.AsyncClient(
+            timeout=30, follow_redirects=False
+        ) as client:
             response = await client.post(f"{self._base_url}/search", json=payload)
             response.raise_for_status()
         data = response.json()
@@ -37,7 +42,9 @@ class TavilyClient:
     async def extract(self, url: str) -> str:
         logger.info("%s tavily extract started (url=%s)", stage_tag("tavily"), url)
         payload = {"api_key": self._api_key, "urls": [url], "extract_depth": "advanced"}
-        async with httpx.AsyncClient(timeout=60) as client:
+        async with httpx.AsyncClient(
+            timeout=60, follow_redirects=False
+        ) as client:
             response = await client.post(f"{self._base_url}/extract", json=payload)
             response.raise_for_status()
         data = response.json()

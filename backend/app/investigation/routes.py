@@ -13,6 +13,7 @@ from app.investigation.chunker import chunk_document
 from app.investigation.evidence_store import EvidenceReference
 from app.investigation.models import ParsedDocument
 from app.investigation.parsers import parse_document
+from app.upload_security import validate_upload, INVESTIGATE_ALLOWED_MIMES
 from app.investigation.pipeline import (
     InvestigationJobState,
     InvestigationJobStep,
@@ -134,23 +135,24 @@ async def create_investigation(
     documents: list[ParsedDocument] = []
     for upload in files:
         file_bytes = await upload.read()
-        if len(file_bytes) > MAX_UPLOAD_BYTES:
-            raise HTTPException(
-                status_code=413,
-                detail=f"File too large: {upload.filename}. Max {MAX_UPLOAD_BYTES // (1024 * 1024)} MB.",
-            )
+        safe_bytes, safe_name = validate_upload(
+            file_bytes=file_bytes,
+            filename=upload.filename or "unknown",
+            claimed_mime=upload.content_type or "application/octet-stream",
+            allowed_mimes=INVESTIGATE_ALLOWED_MIMES,
+            max_bytes=MAX_UPLOAD_BYTES,
+        )
 
-        filename = upload.filename or "unknown"
-        tmp_path = Path(TemporaryDirectory().name) / filename
+        tmp_path = Path(TemporaryDirectory().name) / safe_name
         tmp_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp_path.write_bytes(file_bytes)
+        tmp_path.write_bytes(safe_bytes)
 
         try:
             doc = parse_document(tmp_path)
             doc = chunk_document(doc)
             documents.append(doc)
         except Exception:
-            logger.warning("Failed to parse uploaded file: %s", filename)
+            logger.warning("Failed to parse uploaded file: %s", safe_name)
             continue
 
     if not documents:

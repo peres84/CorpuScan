@@ -8,14 +8,12 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import pytest
 
 from app.cognee.schemas import CogneeEntity, CogneeGraphResponse, CogneeRelationship
-from app.investigation.models import ContentChunk, DocumentType, ParsedDocument
 from app.investigation.report import build_knowledge_graph_summary, build_relationship_chains
 from app.investigation.scanner import scan_directory
 

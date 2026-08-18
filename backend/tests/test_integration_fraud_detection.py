@@ -87,7 +87,6 @@ class TestFullPipeline:
     @pytest.mark.asyncio
     async def test_pipeline_runs_to_completion(self) -> None:
         """Run full investigation pipeline against fraud_train_dataset/."""
-        from unittest.mock import patch
         from app.investigation.pipeline import (
             InvestigationJobStore,
             run_investigation_pipeline,

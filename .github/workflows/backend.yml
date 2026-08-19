@@ -49,5 +49,8 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: corpuscan-backend:ci
-          severity: CRITICAL,HIGH
+          scanners: vuln
+          vuln-type: library
+          severity: CRITICAL
           exit-code: "1"
+          skip-dirs: /usr

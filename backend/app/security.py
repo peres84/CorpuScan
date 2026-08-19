@@ -66,7 +66,7 @@ class RateLimiterStore:
         del self._buckets[oldest_ip]
 
 
-EXPENSIVE_PREFIXES: tuple[str, ...] = ("/generate", "/investigate")
+EXPENSIVE_PATHS: set[str] = {"/generate", "/investigate"}
 HEALTH_PATHS: set[str] = {"/health"}
 
 
@@ -74,7 +74,7 @@ def classify_endpoint(path: str) -> str:
     """Classify an endpoint for rate limit tier selection."""
     if path in HEALTH_PATHS:
         return "health"
-    if any(path.startswith(prefix) for prefix in EXPENSIVE_PREFIXES):
+    if path in EXPENSIVE_PATHS:
         return "expensive"
     return "default"
 

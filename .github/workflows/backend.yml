@@ -40,7 +40,7 @@ jobs:
         run: uv run pytest
 
       - name: Dependency audit (pip-audit)
-        run: uv run pip-audit --desc --severity-threshold 7.0
+        run: uvx pip-audit --strict --desc
 
       - name: Build Docker image
         run: docker build -t corpuscan-backend:ci -f Dockerfile .

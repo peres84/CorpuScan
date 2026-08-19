@@ -89,7 +89,9 @@ class OpenAIClient:
             raise RuntimeError("OpenAI returned no choices in response.")
 
         output = (choices[0].get("message", {}).get("content") or "").strip()
-        logger.info("%s openai generate finished (%d chars)", stage_tag("openai"), len(output))
+        logger.info(
+            "%s openai generate finished (%d chars)", stage_tag("openai"), len(output)
+        )
         return output
 
 

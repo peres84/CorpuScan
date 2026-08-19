@@ -11,6 +11,7 @@ Expected results (from fraud_train_dataset/truth_revealed.md):
 
 Decoys that must NOT be flagged: D1-D7
 """
+
 from __future__ import annotations
 
 import os
@@ -26,16 +27,28 @@ from app.investigation.scanner import scan_directory
 
 DATASET_ROOT = Path(__file__).resolve().parent.parent.parent / "fraud_train_dataset"
 
-_has_openai = bool(os.environ.get("OPENAI_KEY", "").strip()) and os.environ.get("OPENAI_KEY", "").strip().lower() not in (
-    "key_here", "your_api_key", "api_key_here", "replace_me",
+_has_openai = bool(os.environ.get("OPENAI_KEY", "").strip()) and os.environ.get(
+    "OPENAI_KEY", ""
+).strip().lower() not in (
+    "key_here",
+    "your_api_key",
+    "api_key_here",
+    "replace_me",
 )
-_has_gemini = bool(os.environ.get("GEMINI_API_KEY", "").strip()) and os.environ.get("GEMINI_API_KEY", "").strip().lower() not in (
-    "key_here", "your_api_key", "api_key_here", "replace_me",
+_has_gemini = bool(os.environ.get("GEMINI_API_KEY", "").strip()) and os.environ.get(
+    "GEMINI_API_KEY", ""
+).strip().lower() not in (
+    "key_here",
+    "your_api_key",
+    "api_key_here",
+    "replace_me",
 )
 _has_llm_key = _has_openai or _has_gemini
 
 skip_no_llm = pytest.mark.skipif(not _has_llm_key, reason="No LLM API key available")
-skip_no_dataset = pytest.mark.skipif(not DATASET_ROOT.exists(), reason="Dataset not found")
+skip_no_dataset = pytest.mark.skipif(
+    not DATASET_ROOT.exists(), reason="Dataset not found"
+)
 
 
 class TestDocumentParsing:
@@ -87,7 +100,6 @@ class TestFullPipeline:
     @pytest.mark.asyncio
     async def test_pipeline_runs_to_completion(self) -> None:
         """Run full investigation pipeline against fraud_train_dataset/."""
-        from unittest.mock import patch
         from app.investigation.pipeline import (
             InvestigationJobStore,
             run_investigation_pipeline,
@@ -136,7 +148,10 @@ class TestFullPipeline:
         # Check findings mention Ratio Consulting or 209101
         all_text = " ".join(f.finding_text for f in job.findings)
         buffer_text = " ".join(
-            row.notes_summary for row in (job.investigation_state.buffer if job.investigation_state else [])
+            row.notes_summary
+            for row in (
+                job.investigation_state.buffer if job.investigation_state else []
+            )
         )
         combined = f"{all_text} {buffer_text}".lower()
 
@@ -170,13 +185,17 @@ class TestFullPipeline:
             pytest.skip("Pipeline did not complete successfully")
 
         buffer_text = " ".join(
-            row.notes_summary for row in (job.investigation_state.buffer if job.investigation_state else [])
+            row.notes_summary
+            for row in (
+                job.investigation_state.buffer if job.investigation_state else []
+            )
         )
         combined = buffer_text.lower()
 
-        assert any(kw in combined for kw in ("reparatur", "instandsetzung", "repair", "capitaliz")), (
-            "F2 not detected: expected mention of repairs booked as assets"
-        )
+        assert any(
+            kw in combined
+            for kw in ("reparatur", "instandsetzung", "repair", "capitaliz")
+        ), "F2 not detected: expected mention of repairs booked as assets"
 
     @skip_no_llm
     @skip_no_dataset
@@ -204,13 +223,25 @@ class TestFullPipeline:
             pytest.skip("Pipeline did not complete successfully")
 
         buffer_text = " ".join(
-            row.notes_summary for row in (job.investigation_state.buffer if job.investigation_state else [])
+            row.notes_summary
+            for row in (
+                job.investigation_state.buffer if job.investigation_state else []
+            )
         )
         combined = buffer_text.lower()
 
-        assert any(kw in combined for kw in ("cut-off", "cutoff", "dezember", "december", "januar", "january", "accrual")), (
-            "F3 not detected: expected mention of cut-off manipulation"
-        )
+        assert any(
+            kw in combined
+            for kw in (
+                "cut-off",
+                "cutoff",
+                "dezember",
+                "december",
+                "januar",
+                "january",
+                "accrual",
+            )
+        ), "F3 not detected: expected mention of cut-off manipulation"
 
     @skip_no_llm
     @skip_no_dataset
@@ -238,13 +269,17 @@ class TestFullPipeline:
             pytest.skip("Pipeline did not complete successfully")
 
         buffer_text = " ".join(
-            row.notes_summary for row in (job.investigation_state.buffer if job.investigation_state else [])
+            row.notes_summary
+            for row in (
+                job.investigation_state.buffer if job.investigation_state else []
+            )
         )
         combined = buffer_text.lower()
 
-        assert any(kw in combined for kw in ("split", "threshold", "10.000", "10,000", "castor papier")), (
-            "F4 not detected: expected mention of split payments or threshold evasion"
-        )
+        assert any(
+            kw in combined
+            for kw in ("split", "threshold", "10.000", "10,000", "castor papier")
+        ), "F4 not detected: expected mention of split payments or threshold evasion"
 
 
 class TestClassifierOnDataset:
@@ -252,7 +287,10 @@ class TestClassifierOnDataset:
 
     @skip_no_dataset
     def test_classifier_detects_signals(self) -> None:
-        from app.investigation.classifier import FraudClassifierInput, classify_documents
+        from app.investigation.classifier import (
+            FraudClassifierInput,
+            classify_documents,
+        )
 
         documents = scan_directory(DATASET_ROOT)
         result = classify_documents(FraudClassifierInput(documents=documents))

@@ -26,20 +26,24 @@ def chunk_document(
 
     for original in document.content_chunks:
         if len(original.text) <= chunk_size:
-            new_chunks.append(ContentChunk(
-                text=original.text,
-                source_ref=original.source_ref,
-                chunk_index=chunk_idx,
-            ))
+            new_chunks.append(
+                ContentChunk(
+                    text=original.text,
+                    source_ref=original.source_ref,
+                    chunk_index=chunk_idx,
+                )
+            )
             chunk_idx += 1
         else:
             sub_chunks = _split_text(original.text, chunk_size, overlap)
             for sub_idx, sub_text in enumerate(sub_chunks):
-                new_chunks.append(ContentChunk(
-                    text=sub_text,
-                    source_ref=f"{original.source_ref}:chunk:{sub_idx + 1}",
-                    chunk_index=chunk_idx,
-                ))
+                new_chunks.append(
+                    ContentChunk(
+                        text=sub_text,
+                        source_ref=f"{original.source_ref}:chunk:{sub_idx + 1}",
+                        chunk_index=chunk_idx,
+                    )
+                )
                 chunk_idx += 1
 
     return document.model_copy(update={"content_chunks": new_chunks})

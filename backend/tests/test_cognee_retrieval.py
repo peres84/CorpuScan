@@ -55,10 +55,12 @@ class TestFindRelatedEntities:
         client._available = True
 
         mock_cognee = MagicMock()
-        mock_cognee.recall = AsyncMock(return_value=[
-            {"name": "MV-U05", "type": "person", "relationship": "created"},
-            {"name": "209101", "type": "account", "relationship": "belongs_to"},
-        ])
+        mock_cognee.recall = AsyncMock(
+            return_value=[
+                {"name": "MV-U05", "type": "person", "relationship": "created"},
+                {"name": "209101", "type": "account", "relationship": "belongs_to"},
+            ]
+        )
         mock_cognee.SearchType = MagicMock()
         mock_cognee.SearchType.GRAPH_COMPLETION = "GRAPH_COMPLETION"
 
@@ -140,7 +142,11 @@ class TestAgentCogneeIntegration:
             doc_id="d1",
             filename="test.csv",
             doc_type=DocumentType.CSV,
-            content_chunks=[ContentChunk(text="vendor data", source_ref="test.csv:row:1", chunk_index=0)],
+            content_chunks=[
+                ContentChunk(
+                    text="vendor data", source_ref="test.csv:row:1", chunk_index=0
+                )
+            ],
         )
         store.add_document(doc)
 
@@ -150,13 +156,15 @@ class TestAgentCogneeIntegration:
         # Mock LLM
         class FakeRouter:
             async def generate(self, **kwargs):
-                return json.dumps({
-                    "notes_summary": "checked doc",
-                    "fraud_likelihood": 0.3,
-                    "primary_next_doc": None,
-                    "alt_doc_leads": [],
-                    "open_questions": [],
-                })
+                return json.dumps(
+                    {
+                        "notes_summary": "checked doc",
+                        "fraud_likelihood": 0.3,
+                        "primary_next_doc": None,
+                        "alt_doc_leads": [],
+                        "open_questions": [],
+                    }
+                )
 
         # Mock Cognee client
         mock_cognee = MagicMock()
@@ -171,7 +179,10 @@ class TestAgentCogneeIntegration:
         )
 
         # Patch cognee_search_context to verify it's called
-        with patch("app.investigation.agent.cognee_search_context", new=AsyncMock(return_value="Cognee context: entity related")) as mock_search:
+        with patch(
+            "app.investigation.agent.cognee_search_context",
+            new=AsyncMock(return_value="Cognee context: entity related"),
+        ) as mock_search:
             await agent.investigate_document(doc)
             mock_search.assert_called_once()
 
@@ -189,7 +200,9 @@ class TestAgentCogneeIntegration:
             doc_id="d1",
             filename="test.csv",
             doc_type=DocumentType.CSV,
-            content_chunks=[ContentChunk(text="data", source_ref="test.csv:row:1", chunk_index=0)],
+            content_chunks=[
+                ContentChunk(text="data", source_ref="test.csv:row:1", chunk_index=0)
+            ],
         )
         store.add_document(doc)
 
@@ -198,13 +211,15 @@ class TestAgentCogneeIntegration:
 
         class FakeRouter:
             async def generate(self, **kwargs):
-                return json.dumps({
-                    "notes_summary": "analyzed",
-                    "fraud_likelihood": 0.2,
-                    "primary_next_doc": None,
-                    "alt_doc_leads": [],
-                    "open_questions": [],
-                })
+                return json.dumps(
+                    {
+                        "notes_summary": "analyzed",
+                        "fraud_likelihood": 0.2,
+                        "primary_next_doc": None,
+                        "alt_doc_leads": [],
+                        "open_questions": [],
+                    }
+                )
 
         agent = InvestigationAgent(
             llm_router=FakeRouter(),  # type: ignore[arg-type]

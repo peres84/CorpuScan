@@ -15,14 +15,20 @@ from app.investigation.buffer import InvestigationState
 from app.investigation.entities import extract_entities_from_document
 from app.investigation.evidence_store import EvidenceStore, Finding
 from app.investigation.graph import DocumentGraph
-from app.investigation.models import ParsedDocument
+from app.investigation.models import DocumentType, ParsedDocument
 from app.investigation.prioritization import select_start_documents
+from app.investigation.structured import (
+    StructuredDataStore,
+    extract_tabular,
+    extract_unstructured,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class InvestigationJobStep(StrEnum):
     PARSE = "parse"
+    STRUCTURED_EXTRACT = "structured_extract"
     COGNEE_INGEST = "cognee_ingest"
     BUILD_GRAPH = "build_graph"
     INVESTIGATE = "investigate"
@@ -44,6 +50,9 @@ class InvestigationJobRecord:
     progress: int = 0
     error: str | None = None
     evidence_store: EvidenceStore = field(default_factory=EvidenceStore)
+    structured_data_store: StructuredDataStore = field(
+        default_factory=StructuredDataStore
+    )
     graph: DocumentGraph = field(default_factory=DocumentGraph)
     investigation_state: InvestigationState | None = None
     findings: list[Finding] = field(default_factory=list)
@@ -65,12 +74,16 @@ class InvestigationJobStore:
     def get(self, job_id: str) -> InvestigationJobRecord | None:
         return self._jobs.get(job_id)
 
-    def update_step(self, job_id: str, *, step: InvestigationJobStep, progress: int) -> None:
+    def update_step(
+        self, job_id: str, *, step: InvestigationJobStep, progress: int
+    ) -> None:
         job = self._require(job_id)
         job.step = step
         job.progress = progress
         job.status = InvestigationJobState.RUNNING
-        logger.info("Investigation [%s] step -> %s (%d%%)", job_id, step.value, progress)
+        logger.info(
+            "Investigation [%s] step -> %s (%d%%)", job_id, step.value, progress
+        )
 
     def set_error(self, job_id: str, message: str) -> None:
         job = self._require(job_id)
@@ -100,7 +113,11 @@ def _build_llm_router() -> LLMRouter:
     gemini_client: GeminiClient | None = None
 
     if settings.openai_api_key and settings.openai_api_key.strip().lower() not in (
-        "", "key_here", "your_api_key", "api_key_here", "replace_me",
+        "",
+        "key_here",
+        "your_api_key",
+        "api_key_here",
+        "replace_me",
     ):
         try:
             openai_client = OpenAIClient(
@@ -111,10 +128,16 @@ def _build_llm_router() -> LLMRouter:
             pass
 
     if settings.gemini_api_key and settings.gemini_api_key.strip().lower() not in (
-        "", "key_here", "your_api_key", "api_key_here", "replace_me",
+        "",
+        "key_here",
+        "your_api_key",
+        "api_key_here",
+        "replace_me",
     ):
         try:
-            gemini_client = GeminiClient(api_key=settings.gemini_api_key, model=settings.gemini_model)
+            gemini_client = GeminiClient(
+                api_key=settings.gemini_api_key, model=settings.gemini_model
+            )
         except RuntimeError:
             pass
 
@@ -142,13 +165,32 @@ async def run_investigation_pipeline(
         logger.info("Investigation [%s] parsed %d documents", job_id, len(documents))
         job_store.update_step(job_id, step=InvestigationJobStep.PARSE, progress=15)
 
-        # Stage 2: Cognee ingestion (if enabled)
-        cognee_client = await _try_cognee_ingest(job_store, job_id, documents)
-
-        # Stage 3: Build graph via entity extraction
-        job_store.update_step(job_id, step=InvestigationJobStep.BUILD_GRAPH, progress=25)
         llm_router = _build_llm_router()
 
+        job_store.update_step(
+            job_id, step=InvestigationJobStep.STRUCTURED_EXTRACT, progress=16
+        )
+        for index, doc in enumerate(documents):
+            if doc.doc_type in (DocumentType.CSV, DocumentType.XLSX, DocumentType.TXT):
+                structured_file = extract_tabular(doc)
+            else:
+                structured_file = await extract_unstructured(doc, llm_router)
+            job.structured_data_store.add_file(structured_file)
+            progress = 16 + int((index + 1) / max(len(documents), 1) * 8)
+            job_store.update_step(
+                job_id, step=InvestigationJobStep.STRUCTURED_EXTRACT, progress=progress
+            )
+        job.structured_data_store.save_to_json(job_id)
+
+        # Stage 2: Cognee ingestion (if enabled)
+        cognee_client = await _try_cognee_ingest(
+            job_store, job_id, documents, job.structured_data_store
+        )
+
+        # Stage 3: Build graph via entity extraction
+        job_store.update_step(
+            job_id, step=InvestigationJobStep.BUILD_GRAPH, progress=25
+        )
         total_docs = len(documents)
         for idx, doc in enumerate(documents):
             entities = await extract_entities_from_document(doc, llm_router)
@@ -156,7 +198,9 @@ async def run_investigation_pipeline(
                 job.evidence_store.add_entity(entity)
                 job.graph.add_entity_to_document(doc.doc_id, entity)
             progress = 25 + int((idx + 1) / total_docs * 25)
-            job_store.update_step(job_id, step=InvestigationJobStep.BUILD_GRAPH, progress=progress)
+            job_store.update_step(
+                job_id, step=InvestigationJobStep.BUILD_GRAPH, progress=progress
+            )
 
         # Merge Cognee graph data if available
         if cognee_client is not None and cognee_client.is_available():
@@ -171,12 +215,16 @@ async def run_investigation_pipeline(
         )
 
         # Stage 4: Run investigation agent
-        job_store.update_step(job_id, step=InvestigationJobStep.INVESTIGATE, progress=55)
+        job_store.update_step(
+            job_id, step=InvestigationJobStep.INVESTIGATE, progress=55
+        )
 
         settings = get_settings()
         tavily_client: TavilyClient | None = None
         if settings.tavily_api_key and settings.tavily_api_key.strip().lower() not in (
-            "", "key_here", "your_api_key",
+            "",
+            "key_here",
+            "your_api_key",
         ):
             tavily_client = TavilyClient(api_key=settings.tavily_api_key)
 
@@ -186,6 +234,7 @@ async def run_investigation_pipeline(
             llm_router=llm_router,
             evidence_store=job.evidence_store,
             graph=job.graph,
+            structured_data_store=job.structured_data_store,
             tavily_client=tavily_client,
             cognee_client=cognee_client,
             max_iterations=min(len(documents), 50),
@@ -194,7 +243,9 @@ async def run_investigation_pipeline(
         investigation_state = await agent.run(start_doc_ids=start_doc_ids)
         job.investigation_state = investigation_state
 
-        job_store.update_step(job_id, step=InvestigationJobStep.INVESTIGATE, progress=85)
+        job_store.update_step(
+            job_id, step=InvestigationJobStep.INVESTIGATE, progress=85
+        )
         logger.info(
             "Investigation [%s] agent done: %d docs visited, likelihood=%.2f",
             job_id,
@@ -220,6 +271,7 @@ async def _try_cognee_ingest(
     job_store: InvestigationJobStore,
     job_id: str,
     documents: list[ParsedDocument],
+    structured_data_store: StructuredDataStore,
 ) -> object | None:
     """Attempt Cognee ingestion. Returns CogneeClient if successful, None otherwise.
 
@@ -234,7 +286,9 @@ async def _try_cognee_ingest(
         from app.cognee.client import CogneeClient
         from app.cognee.ingestion import ingest_documents
 
-        job_store.update_step(job_id, step=InvestigationJobStep.COGNEE_INGEST, progress=16)
+        job_store.update_step(
+            job_id, step=InvestigationJobStep.COGNEE_INGEST, progress=16
+        )
 
         client = CogneeClient()
         initialized = await client.init()
@@ -243,18 +297,24 @@ async def _try_cognee_ingest(
             return None
 
         await client.reset()
-        count = await ingest_documents(client, documents)
-        job_store.update_step(job_id, step=InvestigationJobStep.COGNEE_INGEST, progress=22)
+        count = await ingest_documents(client, documents, structured_data_store)
+        job_store.update_step(
+            job_id, step=InvestigationJobStep.COGNEE_INGEST, progress=22
+        )
 
         logger.info("Investigation [%s] Cognee ingested %d documents", job_id, count)
         return client
 
     except Exception:
-        logger.warning("Investigation [%s] Cognee ingestion failed — continuing without it", job_id)
+        logger.warning(
+            "Investigation [%s] Cognee ingestion failed — continuing without it", job_id
+        )
         return None
 
 
-async def _merge_cognee_graph(cognee_client: object, job: InvestigationJobRecord) -> None:
+async def _merge_cognee_graph(
+    cognee_client: object, job: InvestigationJobRecord
+) -> None:
     """Merge Cognee knowledge graph into the investigation graph."""
     try:
         from app.cognee.graph import (
@@ -278,11 +338,13 @@ def _extract_findings_from_state(state: InvestigationState) -> list[Finding]:
     for row in state.buffer:
         if row.fraud_likelihood >= 0.4:
             finding_counter += 1
-            findings.append(Finding(
-                finding_id=f"finding_{finding_counter:03d}",
-                finding_text=row.notes_summary,
-                evidence=[],
-                fraud_likelihood=row.fraud_likelihood,
-            ))
+            findings.append(
+                Finding(
+                    finding_id=f"finding_{finding_counter:03d}",
+                    finding_text=row.notes_summary,
+                    evidence=[],
+                    fraud_likelihood=row.fraud_likelihood,
+                )
+            )
 
     return findings

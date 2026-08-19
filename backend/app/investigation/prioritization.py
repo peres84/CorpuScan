@@ -15,22 +15,55 @@ _TYPE_WEIGHTS: dict[DocumentType, float] = {
 
 # Filename keywords that suggest high investigative relevance
 _HIGH_PRIORITY_KEYWORDS = [
-    "buchung", "lieferant", "kredit", "zahlung", "rechnung", "invoice",
-    "payment", "vendor", "bank", "konto", "saldo", "saldenliste",
-    "wareneingangsliste", "wareneingang", "faktura", "journal",
-    "berechtigung", "stammdaten", "pruefung", "prüfung",
+    "buchung",
+    "lieferant",
+    "kredit",
+    "zahlung",
+    "rechnung",
+    "invoice",
+    "payment",
+    "vendor",
+    "bank",
+    "konto",
+    "saldo",
+    "saldenliste",
+    "wareneingangsliste",
+    "wareneingang",
+    "faktura",
+    "journal",
+    "berechtigung",
+    "stammdaten",
+    "pruefung",
+    "prüfung",
 ]
 
 # Filename keywords that suggest lower priority (metadata, schema files)
 _LOW_PRIORITY_KEYWORDS = [
-    "index", "gdpdu", "dtd", "export", "protokoll", "it-bestaetigung",
+    "index",
+    "gdpdu",
+    "dtd",
+    "export",
+    "protokoll",
+    "it-bestaetigung",
     "vollstaendigkeit",
 ]
 
 # Financial-relevance keywords in content
 _FINANCIAL_KEYWORDS = [
-    "eur", "€", "betrag", "summe", "zahlung", "rechnung", "kredit",
-    "debit", "saldo", "konto", "buchung", "invoice", "payment", "amount",
+    "eur",
+    "€",
+    "betrag",
+    "summe",
+    "zahlung",
+    "rechnung",
+    "kredit",
+    "debit",
+    "saldo",
+    "konto",
+    "buchung",
+    "invoice",
+    "payment",
+    "amount",
 ]
 
 

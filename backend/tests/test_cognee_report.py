@@ -23,7 +23,8 @@ def _build_state() -> InvestigationState:
     return InvestigationState(
         buffer=[
             InvestigationBufferRow(
-                doc_id="d1", filename="test.csv",
+                doc_id="d1",
+                filename="test.csv",
                 notes_summary="Found suspicious activity",
                 fraud_likelihood=0.8,
             ),
@@ -43,9 +44,21 @@ def _build_cognee_graph() -> CogneeGraphResponse:
             CogneeEntity(name="€248,000", entity_type="amount"),
         ],
         relationships=[
-            CogneeRelationship(source_entity="MV-U05", target_entity="Ratio Consulting GmbH", relationship_type="created"),
-            CogneeRelationship(source_entity="Ratio Consulting GmbH", target_entity="209101", relationship_type="has_account"),
-            CogneeRelationship(source_entity="Ratio Consulting GmbH", target_entity="€248,000", relationship_type="invoiced"),
+            CogneeRelationship(
+                source_entity="MV-U05",
+                target_entity="Ratio Consulting GmbH",
+                relationship_type="created",
+            ),
+            CogneeRelationship(
+                source_entity="Ratio Consulting GmbH",
+                target_entity="209101",
+                relationship_type="has_account",
+            ),
+            CogneeRelationship(
+                source_entity="Ratio Consulting GmbH",
+                target_entity="€248,000",
+                relationship_type="invoiced",
+            ),
         ],
     )
 
@@ -90,14 +103,20 @@ class TestReportWithCognee:
 
         class FakeLLM:
             async def generate(self, **kwargs) -> str:
-                return json.dumps({
-                    "executive_summary": "Investigation found issues.",
-                    "findings": [],
-                    "timeline": [],
-                    "entity_relationships": [],
-                    "fraud_assessment": {"overall_likelihood": 0.8, "estimated_financial_impact": "Unknown", "schemes_identified": []},
-                    "remaining_questions": [],
-                })
+                return json.dumps(
+                    {
+                        "executive_summary": "Investigation found issues.",
+                        "findings": [],
+                        "timeline": [],
+                        "entity_relationships": [],
+                        "fraud_assessment": {
+                            "overall_likelihood": 0.8,
+                            "estimated_financial_impact": "Unknown",
+                            "schemes_identified": [],
+                        },
+                        "remaining_questions": [],
+                    }
+                )
 
         state = _build_state()
         store = EvidenceStore()
@@ -117,14 +136,20 @@ class TestReportWithCognee:
 
         class FakeLLM:
             async def generate(self, **kwargs) -> str:
-                return json.dumps({
-                    "executive_summary": "Basic report.",
-                    "findings": [],
-                    "timeline": [],
-                    "entity_relationships": [],
-                    "fraud_assessment": {"overall_likelihood": 0.5, "estimated_financial_impact": "Unknown", "schemes_identified": []},
-                    "remaining_questions": [],
-                })
+                return json.dumps(
+                    {
+                        "executive_summary": "Basic report.",
+                        "findings": [],
+                        "timeline": [],
+                        "entity_relationships": [],
+                        "fraud_assessment": {
+                            "overall_likelihood": 0.5,
+                            "estimated_financial_impact": "Unknown",
+                            "schemes_identified": [],
+                        },
+                        "remaining_questions": [],
+                    }
+                )
 
         state = _build_state()
         store = EvidenceStore()

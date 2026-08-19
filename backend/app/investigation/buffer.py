@@ -39,7 +39,9 @@ class InvestigationState(BaseModel):
     def update_overall_likelihood(self) -> None:
         """Compute overall fraud likelihood as max of individual document likelihoods."""
         if self.buffer:
-            self.overall_fraud_likelihood = max(row.fraud_likelihood for row in self.buffer)
+            self.overall_fraud_likelihood = max(
+                row.fraud_likelihood for row in self.buffer
+            )
 
     def format_buffer_for_llm(self) -> str:
         """Format the investigation buffer as a readable string for the LLM context."""

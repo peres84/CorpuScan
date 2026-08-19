@@ -94,6 +94,12 @@ user_template: |
 
   ---
 
+  Key Figures (pre-extracted; verify against the source text before using):
+
+  {key_figures}
+
+  ---
+
   Source document text:
 
   <<<

@@ -7,6 +7,7 @@ import {
 } from "@/hooks/useInvestigation";
 import type { Finding, BufferRow, InvestigationReport } from "@/hooks/useInvestigation";
 import KnowledgeGraph from "./KnowledgeGraph";
+import FileViewer from "./FileViewer";
 
 interface InvestigationResultsProps {
   jobId: string;
@@ -82,7 +83,7 @@ const InvestigationResults = ({ jobId, onReset }: InvestigationResultsProps) => 
       {/* Tab content */}
       {activeTab === "findings" && <FindingsTimeline findings={findings} buffer={buffer} notAnalyzedFiles={notAnalyzedFiles} />}
       {activeTab === "graph" && <KnowledgeGraph jobId={jobId} />}
-      {activeTab === "steps" && <StepsView buffer={buffer} />}
+      {activeTab === "steps" && <StepsView jobId={jobId} buffer={buffer} />}
     </div>
   );
 };
@@ -282,7 +283,7 @@ function FindingsTimeline({ findings, buffer, notAnalyzedFiles }: { findings: Fi
   );
 }
 
-function StepsView({ buffer }: { buffer: BufferRow[] }) {
+function StepsView({ jobId, buffer }: { jobId: string; buffer: BufferRow[] }) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   const toggleExpand = (idx: number) => {
@@ -337,6 +338,7 @@ function StepsView({ buffer }: { buffer: BufferRow[] }) {
                   </ul>
                 </div>
               )}
+              <FileViewer jobId={jobId} fileId={row.doc_id} />
             </div>
           )}
         </div>

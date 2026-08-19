@@ -86,6 +86,11 @@ user_template: |
   ## Document Content
   {content}
 
+  ## Structured Data Summary
+  {structured_data_summary}
+
+  For tabular structured data, reference flagged entries using the supplied `row_number` as `row:<number>`.
+
   ## Related Documents in Graph
   {related_documents}
 

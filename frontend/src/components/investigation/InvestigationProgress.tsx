@@ -7,6 +7,8 @@ interface InvestigationProgressProps {
 
 const STEP_LABELS: Record<string, string> = {
   parse: "Parsing documents",
+  structured_extract: "Extracting structured data",
+  cognee_ingest: "Building knowledge memory",
   build_graph: "Building document graph",
   investigate: "Running investigation",
   report: "Generating report",

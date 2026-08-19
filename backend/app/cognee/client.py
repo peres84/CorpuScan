@@ -31,9 +31,15 @@ class CogneeClient:
             return False
 
         if not settings.openai_api_key or settings.openai_api_key.strip().lower() in (
-            "", "key_here", "your_api_key", "api_key_here", "replace_me",
+            "",
+            "key_here",
+            "your_api_key",
+            "api_key_here",
+            "replace_me",
         ):
-            logger.warning("Cognee enabled but no OPENAI_API_KEY set — disabling Cognee")
+            logger.warning(
+                "Cognee enabled but no OPENAI_API_KEY set — disabling Cognee"
+            )
             self._available = False
             return False
 
@@ -58,16 +64,21 @@ class CogneeClient:
             self._available = True
             logger.info(
                 "Cognee initialized (storage=%s, model=%s)",
-                storage_path, settings.cognee_model,
+                storage_path,
+                settings.cognee_model,
             )
             return True
 
         except ImportError:
-            logger.warning("Cognee SDK not installed — continuing without knowledge memory")
+            logger.warning(
+                "Cognee SDK not installed — continuing without knowledge memory"
+            )
             self._available = False
             return False
         except Exception:
-            logger.exception("Cognee initialization failed — continuing without knowledge memory")
+            logger.exception(
+                "Cognee initialization failed — continuing without knowledge memory"
+            )
             self._available = False
             return False
 
@@ -78,6 +89,7 @@ class CogneeClient:
 
         try:
             import cognee
+
             await cognee.forget(everything=True)
             logger.info("Cognee memory reset")
         except Exception:

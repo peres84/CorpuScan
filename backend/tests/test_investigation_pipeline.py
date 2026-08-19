@@ -18,12 +18,16 @@ from app.investigation.pipeline import (
 )
 
 
-def _make_doc(doc_id: str, filename: str, content: str = "test content") -> ParsedDocument:
+def _make_doc(
+    doc_id: str, filename: str, content: str = "test content"
+) -> ParsedDocument:
     return ParsedDocument(
         doc_id=doc_id,
         filename=filename,
         doc_type=DocumentType.CSV,
-        content_chunks=[ContentChunk(text=content, source_ref=f"{filename}:row:1", chunk_index=0)],
+        content_chunks=[
+            ContentChunk(text=content, source_ref=f"{filename}:row:1", chunk_index=0)
+        ],
     )
 
 
@@ -39,20 +43,24 @@ class FakeLLMRouterForPipeline:
 
         # Entity extraction calls
         if "entity extractor" in system.lower():
-            return json.dumps([
-                {"name": "TestVendor", "type": "vendor", "aliases": []},
-            ])
+            return json.dumps(
+                [
+                    {"name": "TestVendor", "type": "vendor", "aliases": []},
+                ]
+            )
 
         # Investigation agent calls
-        return json.dumps({
-            "notes_summary": f"Analyzed document (call {self._call_count})",
-            "evidence_found": [],
-            "fraud_likelihood": 0.3,
-            "primary_next_doc": None,
-            "alt_doc_leads": [],
-            "open_questions": [],
-            "hypothesis": None,
-        })
+        return json.dumps(
+            {
+                "notes_summary": f"Analyzed document (call {self._call_count})",
+                "evidence_found": [],
+                "fraud_likelihood": 0.3,
+                "primary_next_doc": None,
+                "alt_doc_leads": [],
+                "open_questions": [],
+                "hypothesis": None,
+            }
+        )
 
 
 class TestInvestigationJobStore:
@@ -112,8 +120,13 @@ class TestRunInvestigationPipeline:
 
         fake_router = FakeLLMRouterForPipeline()
 
-        with patch("app.investigation.pipeline._build_llm_router", return_value=fake_router):
-            with patch("app.investigation.pipeline._try_cognee_ingest", new=AsyncMock(return_value=None)):
+        with patch(
+            "app.investigation.pipeline._build_llm_router", return_value=fake_router
+        ):
+            with patch(
+                "app.investigation.pipeline._try_cognee_ingest",
+                new=AsyncMock(return_value=None),
+            ):
                 await run_investigation_pipeline(
                     job_store=store,
                     job_id=job_id,
@@ -135,8 +148,14 @@ class TestRunInvestigationPipeline:
         store = InvestigationJobStore()
         job_id = store.create()
 
-        with patch("app.investigation.pipeline._build_llm_router", side_effect=RuntimeError("No LLM")):
-            with patch("app.investigation.pipeline._try_cognee_ingest", new=AsyncMock(return_value=None)):
+        with patch(
+            "app.investigation.pipeline._build_llm_router",
+            side_effect=RuntimeError("No LLM"),
+        ):
+            with patch(
+                "app.investigation.pipeline._try_cognee_ingest",
+                new=AsyncMock(return_value=None),
+            ):
                 await run_investigation_pipeline(
                     job_store=store,
                     job_id=job_id,
@@ -162,8 +181,13 @@ class TestRunInvestigationPipeline:
 
         fake_router = FakeLLMRouterForPipeline()
 
-        with patch("app.investigation.pipeline._build_llm_router", return_value=fake_router):
-            with patch("app.investigation.pipeline._try_cognee_ingest", new=AsyncMock(return_value=None)):
+        with patch(
+            "app.investigation.pipeline._build_llm_router", return_value=fake_router
+        ):
+            with patch(
+                "app.investigation.pipeline._try_cognee_ingest",
+                new=AsyncMock(return_value=None),
+            ):
                 await run_investigation_pipeline(
                     job_store=store,
                     job_id=job_id,

@@ -31,12 +31,20 @@ def _create_job_with_graph() -> str:
     job.progress = 100
 
     doc1 = ParsedDocument(
-        doc_id="doc1", filename="ledger.csv", doc_type=DocumentType.CSV,
-        content_chunks=[ContentChunk(text="data", source_ref="ledger.csv:row:1", chunk_index=0)],
+        doc_id="doc1",
+        filename="ledger.csv",
+        doc_type=DocumentType.CSV,
+        content_chunks=[
+            ContentChunk(text="data", source_ref="ledger.csv:row:1", chunk_index=0)
+        ],
     )
     doc2 = ParsedDocument(
-        doc_id="doc2", filename="vendors.csv", doc_type=DocumentType.CSV,
-        content_chunks=[ContentChunk(text="data", source_ref="vendors.csv:row:1", chunk_index=0)],
+        doc_id="doc2",
+        filename="vendors.csv",
+        doc_type=DocumentType.CSV,
+        content_chunks=[
+            ContentChunk(text="data", source_ref="vendors.csv:row:1", chunk_index=0)
+        ],
     )
     job.evidence_store.add_document(doc1)
     job.evidence_store.add_document(doc2)
@@ -44,18 +52,28 @@ def _create_job_with_graph() -> str:
     job.graph.add_document("doc1", "ledger.csv")
     job.graph.add_document("doc2", "vendors.csv")
 
-    entity1 = Entity(name="Ratio Consulting GmbH", entity_type="vendor", source_doc_id="doc1")
-    entity2 = Entity(name="Ratio Consulting GmbH", entity_type="vendor", source_doc_id="doc2")
+    entity1 = Entity(
+        name="Ratio Consulting GmbH", entity_type="vendor", source_doc_id="doc1"
+    )
+    entity2 = Entity(
+        name="Ratio Consulting GmbH", entity_type="vendor", source_doc_id="doc2"
+    )
     entity3 = Entity(name="MV-U05", entity_type="person", source_doc_id="doc2")
 
     job.evidence_store.add_entity(entity1)
-    job.evidence_store.add_entity(Entity(name="MV-U05", entity_type="person", source_doc_id="doc2"))
+    job.evidence_store.add_entity(
+        Entity(name="MV-U05", entity_type="person", source_doc_id="doc2")
+    )
     job.graph.add_entity_to_document("doc1", entity1)
     job.graph.add_entity_to_document("doc2", entity2)
     job.graph.add_entity_to_document("doc2", entity3)
 
     job.investigation_state = InvestigationState(
-        buffer=[InvestigationBufferRow(doc_id="doc1", filename="ledger.csv", fraud_likelihood=0.8)],
+        buffer=[
+            InvestigationBufferRow(
+                doc_id="doc1", filename="ledger.csv", fraud_likelihood=0.8
+            )
+        ],
         visited={"doc1", "doc2"},
         overall_fraud_likelihood=0.8,
         iteration_count=2,
@@ -78,7 +96,9 @@ class TestGetGraph:
         assert len(data["entities"]) >= 1
 
     def test_missing_job_returns_404(self) -> None:
-        response = client.get("/investigations/00000000-0000-0000-0000-000000000000/graph")
+        response = client.get(
+            "/investigations/00000000-0000-0000-0000-000000000000/graph"
+        )
         assert response.status_code == 404
 
 
@@ -88,7 +108,9 @@ class TestGetRelated:
 
     def test_returns_related_entities(self) -> None:
         job_id = _create_job_with_graph()
-        response = client.get(f"/investigations/{job_id}/related?entity=Ratio Consulting GmbH")
+        response = client.get(
+            f"/investigations/{job_id}/related?entity=Ratio Consulting GmbH"
+        )
         assert response.status_code == 200
         data = response.json()
         # MV-U05 is in the same doc as Ratio Consulting GmbH
@@ -101,7 +123,9 @@ class TestGetRelated:
         assert response.status_code == 400
 
     def test_missing_job_returns_404(self) -> None:
-        response = client.get("/investigations/00000000-0000-0000-0000-000000000000/related?entity=test")
+        response = client.get(
+            "/investigations/00000000-0000-0000-0000-000000000000/related?entity=test"
+        )
         assert response.status_code == 404
 
 
@@ -111,6 +135,7 @@ class TestBuildMemory:
 
     def test_cognee_disabled_returns_503(self) -> None:
         from unittest.mock import patch, MagicMock
+
         job_id = _create_job_with_graph()
         mock_settings = MagicMock()
         mock_settings.cognee_enabled = False
@@ -119,5 +144,7 @@ class TestBuildMemory:
         assert response.status_code == 503
 
     def test_missing_job_returns_404(self) -> None:
-        response = client.post("/investigations/00000000-0000-0000-0000-000000000000/memory/build")
+        response = client.post(
+            "/investigations/00000000-0000-0000-0000-000000000000/memory/build"
+        )
         assert response.status_code == 404

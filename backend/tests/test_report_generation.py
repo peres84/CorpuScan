@@ -63,49 +63,71 @@ def _build_completed_state() -> InvestigationState:
 
 def _build_evidence_store() -> EvidenceStore:
     store = EvidenceStore()
-    store.add_entity(Entity(name="Ratio Consulting GmbH", entity_type="vendor", source_doc_id="d1"))
+    store.add_entity(
+        Entity(name="Ratio Consulting GmbH", entity_type="vendor", source_doc_id="d1")
+    )
     store.add_entity(Entity(name="209101", entity_type="account", source_doc_id="d1"))
     store.add_entity(Entity(name="€248,000", entity_type="amount", source_doc_id="d1"))
     store.add_entity(Entity(name="MV-U05", entity_type="person", source_doc_id="d2"))
-    store.add_finding(Finding(
-        finding_id="f001",
-        finding_text="Fake vendor scheme detected",
-        fraud_likelihood=0.92,
-    ))
+    store.add_finding(
+        Finding(
+            finding_id="f001",
+            finding_text="Fake vendor scheme detected",
+            fraud_likelihood=0.92,
+        )
+    )
     return store
 
 
 class FakeLLMForReport:
     async def generate(self, **kwargs: object) -> str:
-        return json.dumps({
-            "executive_summary": "Investigation found strong evidence of a fake vendor scheme.",
-            "findings": [
-                {
-                    "title": "Fake Vendor — Ratio Consulting GmbH",
-                    "description": "Shell vendor 209101 received €248,000 in round-amount invoices.",
-                    "severity": "critical",
-                    "fraud_likelihood": 0.92,
-                    "evidence_references": [
-                        "Lieferantenbuchungen.txt:row:45 — €50,000 Beratung invoice",
-                        "Stammdatenaenderungen_2025.csv:row:7 — creator=approver=MV-U05",
-                    ],
-                }
-            ],
-            "timeline": [
-                {"date": "2025-05-12", "event": "Vendor 209101 created by MV-U05", "source": "Stammdatenaenderungen"},
-                {"date": "2025-06-01", "event": "First invoice €50,000", "source": "Lieferantenbuchungen"},
-            ],
-            "entity_relationships": [
-                {"entity_a": "MV-U05", "entity_b": "Ratio Consulting GmbH", "relationship": "created and paid"},
-                {"entity_a": "Ratio Consulting GmbH", "entity_b": "209101", "relationship": "vendor account"},
-            ],
-            "fraud_assessment": {
-                "overall_likelihood": 0.92,
-                "estimated_financial_impact": "€248,000 cash misappropriation",
-                "schemes_identified": ["Fake vendor / shell company scheme"],
-            },
-            "remaining_questions": ["Are there co-conspirators beyond MV-U05?"],
-        })
+        return json.dumps(
+            {
+                "executive_summary": "Investigation found strong evidence of a fake vendor scheme.",
+                "findings": [
+                    {
+                        "title": "Fake Vendor — Ratio Consulting GmbH",
+                        "description": "Shell vendor 209101 received €248,000 in round-amount invoices.",
+                        "severity": "critical",
+                        "fraud_likelihood": 0.92,
+                        "evidence_references": [
+                            "Lieferantenbuchungen.txt:row:45 — €50,000 Beratung invoice",
+                            "Stammdatenaenderungen_2025.csv:row:7 — creator=approver=MV-U05",
+                        ],
+                    }
+                ],
+                "timeline": [
+                    {
+                        "date": "2025-05-12",
+                        "event": "Vendor 209101 created by MV-U05",
+                        "source": "Stammdatenaenderungen",
+                    },
+                    {
+                        "date": "2025-06-01",
+                        "event": "First invoice €50,000",
+                        "source": "Lieferantenbuchungen",
+                    },
+                ],
+                "entity_relationships": [
+                    {
+                        "entity_a": "MV-U05",
+                        "entity_b": "Ratio Consulting GmbH",
+                        "relationship": "created and paid",
+                    },
+                    {
+                        "entity_a": "Ratio Consulting GmbH",
+                        "entity_b": "209101",
+                        "relationship": "vendor account",
+                    },
+                ],
+                "fraud_assessment": {
+                    "overall_likelihood": 0.92,
+                    "estimated_financial_impact": "€248,000 cash misappropriation",
+                    "schemes_identified": ["Fake vendor / shell company scheme"],
+                },
+                "remaining_questions": ["Are there co-conspirators beyond MV-U05?"],
+            }
+        )
 
 
 class TestReportGenerator:

@@ -25,11 +25,13 @@ async def run_finance_agent(
     source_text: str,
     pipeline_context: PipelineContext,
     gemini_client: GeminiClient,
+    key_figures: str = "No pre-extracted key figures available.",
 ) -> str:
     prompt = load_prompt("finance")
     user = prompt.user_template.format(
         source_text=source_text,
         comparison_instructions=build_finance_context_block(pipeline_context),
+        key_figures=key_figures,
     )
     return await gemini_client.generate(
         system=prompt.system,

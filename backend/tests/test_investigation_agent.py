@@ -15,12 +15,16 @@ from app.investigation.graph import DocumentGraph
 from app.investigation.models import ContentChunk, DocumentType, ParsedDocument
 
 
-def _make_doc(doc_id: str, filename: str, content: str = "test content") -> ParsedDocument:
+def _make_doc(
+    doc_id: str, filename: str, content: str = "test content"
+) -> ParsedDocument:
     return ParsedDocument(
         doc_id=doc_id,
         filename=filename,
         doc_type=DocumentType.CSV,
-        content_chunks=[ContentChunk(text=content, source_ref=f"{filename}:row:1", chunk_index=0)],
+        content_chunks=[
+            ContentChunk(text=content, source_ref=f"{filename}:row:1", chunk_index=0)
+        ],
     )
 
 
@@ -241,14 +245,16 @@ class TestInvestigationState:
 
     def test_format_buffer_with_rows(self) -> None:
         state = InvestigationState()
-        state.buffer.append(InvestigationBufferRow(
-            doc_id="d1",
-            filename="test.csv",
-            notes_summary="Found issue",
-            fraud_likelihood=0.6,
-            primary_next_doc="next.csv",
-            open_questions=["Why no receipt?"],
-        ))
+        state.buffer.append(
+            InvestigationBufferRow(
+                doc_id="d1",
+                filename="test.csv",
+                notes_summary="Found issue",
+                fraud_likelihood=0.6,
+                primary_next_doc="next.csv",
+                open_questions=["Why no receipt?"],
+            )
+        )
         output = state.format_buffer_for_llm()
         assert "test.csv" in output
         assert "Found issue" in output

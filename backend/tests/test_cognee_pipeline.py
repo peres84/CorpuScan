@@ -23,7 +23,9 @@ def _make_doc(doc_id: str, filename: str, content: str = "data") -> ParsedDocume
         doc_id=doc_id,
         filename=filename,
         doc_type=DocumentType.CSV,
-        content_chunks=[ContentChunk(text=content, source_ref=f"{filename}:row:1", chunk_index=0)],
+        content_chunks=[
+            ContentChunk(text=content, source_ref=f"{filename}:row:1", chunk_index=0)
+        ],
     )
 
 
@@ -36,14 +38,16 @@ class FakeLLMRouterForPipeline:
         system = str(kwargs.get("system", ""))
         if "entity extractor" in system.lower():
             return json.dumps([{"name": "TestEntity", "type": "vendor", "aliases": []}])
-        return json.dumps({
-            "notes_summary": f"Analyzed (call {self._call_count})",
-            "evidence_found": [],
-            "fraud_likelihood": 0.3,
-            "primary_next_doc": None,
-            "alt_doc_leads": [],
-            "open_questions": [],
-        })
+        return json.dumps(
+            {
+                "notes_summary": f"Analyzed (call {self._call_count})",
+                "evidence_found": [],
+                "fraud_likelihood": 0.3,
+                "primary_next_doc": None,
+                "alt_doc_leads": [],
+                "open_questions": [],
+            }
+        )
 
 
 class TestPipelineWithCogneeEnabled:
@@ -60,8 +64,13 @@ class TestPipelineWithCogneeEnabled:
         mock_cognee_client = MagicMock()
         mock_cognee_client.is_available.return_value = False  # Skip graph merge
 
-        with patch("app.investigation.pipeline._build_llm_router", return_value=fake_router):
-            with patch("app.investigation.pipeline._try_cognee_ingest", new=AsyncMock(return_value=mock_cognee_client)):
+        with patch(
+            "app.investigation.pipeline._build_llm_router", return_value=fake_router
+        ):
+            with patch(
+                "app.investigation.pipeline._try_cognee_ingest",
+                new=AsyncMock(return_value=mock_cognee_client),
+            ):
                 await run_investigation_pipeline(
                     job_store=store,
                     job_id=job_id,
@@ -84,8 +93,13 @@ class TestPipelineWithCogneeDisabled:
 
         fake_router = FakeLLMRouterForPipeline()
 
-        with patch("app.investigation.pipeline._build_llm_router", return_value=fake_router):
-            with patch("app.investigation.pipeline._try_cognee_ingest", new=AsyncMock(return_value=None)):
+        with patch(
+            "app.investigation.pipeline._build_llm_router", return_value=fake_router
+        ):
+            with patch(
+                "app.investigation.pipeline._try_cognee_ingest",
+                new=AsyncMock(return_value=None),
+            ):
                 await run_investigation_pipeline(
                     job_store=store,
                     job_id=job_id,
@@ -108,8 +122,13 @@ class TestPipelineWithCogneeDisabled:
         fake_router = FakeLLMRouterForPipeline()
 
         # _try_cognee_ingest raises but is caught — returns None
-        with patch("app.investigation.pipeline._build_llm_router", return_value=fake_router):
-            with patch("app.investigation.pipeline._try_cognee_ingest", new=AsyncMock(return_value=None)):
+        with patch(
+            "app.investigation.pipeline._build_llm_router", return_value=fake_router
+        ):
+            with patch(
+                "app.investigation.pipeline._try_cognee_ingest",
+                new=AsyncMock(return_value=None),
+            ):
                 await run_investigation_pipeline(
                     job_store=store,
                     job_id=job_id,

@@ -19,7 +19,7 @@ Built at **Big Tech Berlin 2026** by [**Javier Peres**](https://github.com/peres
 ## Demo and results
 
 Click on the logo to see the demo
-[![Watch here](https://raw.githubusercontent.com/peres84/CorpuScan/main/frontend/public/logo.png)](https://youtu.be/-YFkeoVrajU)
+[![Watch here](https://raw.githubusercontent.com/peres84/CorpuScan/main/frontend/public/logo.png)](https://youtu.be/tFiiEdAA90Q)
 
 - Output video results: [Briefing video results](https://drive.google.com/drive/folders/1a4klVgh3VlUttX9CAWF3r7kcYkuUEPBN?usp=drive_link)
 - Report examples: [Quarterly report pdf files](https://drive.google.com/drive/folders/1IEyToMzFP6JdemquRUPNWEr83oZafCKT?usp=drive_link)

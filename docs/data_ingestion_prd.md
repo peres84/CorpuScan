@@ -217,8 +217,33 @@ The toggle is per-file, allowing the user to switch back and forth.
 - Column normalization means features are consistent across files
 
 ### Quarterly Report Analysis (Video Mode)
-- PDF extraction benefits from key-value extraction (revenue, EPS, growth %)
-- Finance Agent gets cleaner input → better fact extraction
+- The Finance Agent currently receives the entire raw PDF text (~60k chars)
+- With structured extraction: key financial figures (revenue, EPS, growth %, margin) are pre-extracted
+- The Finance Agent gets both a concise structured summary AND the raw text
+- Result: faster, cheaper, more accurate fact extraction — especially for multi-PDF comparison mode
+- Enables future "fact table" display in the video dashboard (show extracted numbers before video generation)
+
+---
+
+## Quarterly Report Integration
+
+The video briefing pipeline (`/generate`) currently works as:
+
+```
+PDF → raw text → Finance Agent (reads everything) → Q&A facts
+```
+
+With structured extraction:
+
+```
+PDF → raw text + structured key-values → Finance Agent (reads structured summary + raw for context) → better Q&A facts
+```
+
+Specific improvements:
+- **Revenue, EPS, margins** extracted as key-values before the LLM sees the doc
+- **Multi-PDF comparison** benefits from normalized column names (same metric across quarters)
+- **Finance Agent prompt** can include a "Key Figures" section with pre-extracted numbers
+- **Less hallucination** — the LLM confirms pre-extracted figures rather than hunting for them in 80 pages
 
 ---
 

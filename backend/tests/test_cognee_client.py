@@ -39,6 +39,7 @@ class TestCogneeClientInit:
 
             # Simulate cognee not being installed
             import builtins
+
             original_import = builtins.__import__
 
             def mock_import(name: str, *args, **kwargs):

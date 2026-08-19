@@ -1,5 +1,11 @@
 # Rebuild Summary
 
+## Structured Data Extraction Layer
+
+- Added deterministic extraction for CSV, XLSX, and GDPdU-style TXT files, including accounting column normalization.
+- Added LLM-assisted key-value extraction for PDF and DOCX files, with graceful fallback behavior.
+- Added per-job structured JSON storage, enriched Cognee and Investigation Agent context, file-data API endpoints, and the frontend Raw/Table viewer.
+
 ## Cognee Knowledge Memory Layer Integration (TASKS_COGNEE Phases 1–11)
 
 Added Cognee as the investigation knowledge memory layer.

@@ -14,9 +14,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 import yaml
 
+from app.security import (
+    RateLimitMiddleware,
+    RequestSizeLimitMiddleware,
+    SecurityHeadersMiddleware,
+)
+
 from app.config import get_settings
 from app.integrations.tavily import TavilyClient
 from app.ingest import extract_pdf_documents
+from app.upload_security import (
+    validate_upload,
+    validate_url_input,
+    GENERATE_ALLOWED_MIMES,
+)
 from app.investigation.routes import router as investigation_router
 from app.mcp.routes import router as mcp_router
 from app.mcp.tavily_mcp import register_tavily_tools
@@ -62,24 +73,52 @@ app = FastAPI(title="CorpuScan API", lifespan=lifespan)
 app.include_router(investigation_router)
 app.include_router(mcp_router)
 
-_origins = settings.cors_origins_list
-# CORS spec: credentials cannot be combined with wildcard origins.
-_allow_credentials = "*" not in _origins
-logger.info("CORS origins: %s (credentials=%s)", _origins, _allow_credentials)
+# --- CORS configuration (Requirements 6.1–6.6) ---
+_raw_origins: list[str] = settings.cors_origins_list
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_origins,
-    allow_credentials=_allow_credentials,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Reject wildcard entries — explicit origins only.
+_origins = [o for o in _raw_origins if o != "*"]
+if len(_origins) < len(_raw_origins):
+    logger.warning(
+        "CORS: wildcard '*' removed from origins allow-list. "
+        "Only fully-qualified origins are permitted."
+    )
+
+
+def _is_fully_qualified_origin(origin: str) -> bool:
+    return origin.startswith("http://") or origin.startswith("https://")
+
+
+_qualified_origins = [o for o in _origins if _is_fully_qualified_origin(o)]
+
+if _qualified_origins:
+    logger.info("CORS origins: %s (credentials=True)", _qualified_origins)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_qualified_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    logger.warning(
+        "CORS: no fully-qualified origins configured. "
+        "All cross-origin requests will be denied (no CORS headers)."
+    )
+
+# Security middleware stack (order: CORS → SecurityHeaders → RateLimit → RequestSizeLimit)
+# In FastAPI the LAST add_middleware call is outermost, so register innermost first.
+app.add_middleware(RequestSizeLimitMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 @app.middleware("http")
 async def request_timeout_middleware(request: Request, call_next):
-    is_poll = request.method == "GET" and request.url.path.startswith("/jobs/") and not request.url.path.endswith(
-        "/video"
+    is_poll = (
+        request.method == "GET"
+        and request.url.path.startswith("/jobs/")
+        and not request.url.path.endswith("/video")
     )
     if not is_poll:
         logger.info(
@@ -89,12 +128,16 @@ async def request_timeout_middleware(request: Request, call_next):
             request.headers.get("origin", "unknown"),
         )
     try:
-        response = await asyncio.wait_for(call_next(request), timeout=REQUEST_TIMEOUT_SECONDS)
+        response = await asyncio.wait_for(
+            call_next(request), timeout=REQUEST_TIMEOUT_SECONDS
+        )
     except TimeoutError:
         logger.error("Request timed out: %s %s", request.method, request.url.path)
         return JSONResponse(status_code=504, content={"detail": "Request timed out."})
     if not is_poll:
-        logger.info("%s %s → %s", request.method, request.url.path, response.status_code)
+        logger.info(
+            "%s %s → %s", request.method, request.url.path, response.status_code
+        )
     return response
 
 
@@ -132,13 +175,17 @@ async def generate(
         output_aspect_ratio=output_aspect_ratio,
     )
     if not source_text.strip():
-        raise HTTPException(status_code=400, detail="Could not extract text from the provided source.")
+        raise HTTPException(
+            status_code=400, detail="Could not extract text from the provided source."
+        )
 
     job_id = job_store.create(source_kind=source_kind)
     job = job_store.get(job_id)
     if job is not None:
         job.pipeline_context = pipeline_context
-    logger.info("[%s] source resolved from %s (%d chars)", job_id, source_kind, len(source_text))
+    logger.info(
+        "[%s] source resolved from %s (%d chars)", job_id, source_kind, len(source_text)
+    )
     job_store.update_step(job_id, step=JobStep.INGEST, progress=10)
     asyncio.create_task(run_pipeline(job_store, job_id, source_text, pipeline_context))
     return GenerateResponse(job_id=job_id)
@@ -212,14 +259,18 @@ async def _resolve_source_payload(
         uploads: list[tuple[str, bytes]] = []
         for upload in files:
             file_bytes = await upload.read()
-            if len(file_bytes) > MAX_UPLOAD_BYTES:
-                raise HTTPException(
-                    status_code=413,
-                    detail=f"File too large. Max {MAX_UPLOAD_BYTES // (1024 * 1024)} MB per PDF.",
-                )
-            uploads.append((upload.filename or "report.pdf", file_bytes))
+            safe_bytes, safe_name = validate_upload(
+                file_bytes=file_bytes,
+                filename=upload.filename or "report.pdf",
+                claimed_mime=upload.content_type or "application/pdf",
+                allowed_mimes=GENERATE_ALLOWED_MIMES,
+                max_bytes=MAX_UPLOAD_BYTES,
+            )
+            uploads.append((safe_name, safe_bytes))
         try:
-            documents, source_text, branding, company_name, period_label = extract_pdf_documents(uploads)
+            documents, source_text, branding, company_name, period_label = (
+                extract_pdf_documents(uploads)
+            )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return source_text, PipelineContext(
@@ -234,12 +285,21 @@ async def _resolve_source_payload(
 
     tavily_client = TavilyClient(api_key=settings.tavily_api_key)
     if url:
-        return await tavily_client.extract(url), PipelineContext(source_kind=SourceKind.URL)
+        safe_url = validate_url_input(url)
+        return await tavily_client.extract(safe_url), PipelineContext(
+            source_kind=SourceKind.URL
+        )
     if query:
         results = await tavily_client.search(query)
         if not results:
-            raise HTTPException(status_code=404, detail="No search results found for the provided query.")
-        return await tavily_client.extract(results[0].url), PipelineContext(source_kind=SourceKind.QUERY)
+            raise HTTPException(
+                status_code=404,
+                detail="No search results found for the provided query.",
+            )
+        safe_url = validate_url_input(results[0].url)
+        return await tavily_client.extract(safe_url), PipelineContext(
+            source_kind=SourceKind.QUERY
+        )
     return "", PipelineContext(source_kind=SourceKind.PDF)
 
 
@@ -261,18 +321,30 @@ def _validate_generate_request(
     output_aspect_ratio: OutputAspectRatio | None,
 ) -> None:
     provided_sources = sum(
-        1 for present in [bool(files), bool(url and url.strip()), bool(query and query.strip())] if present
+        1
+        for present in [
+            bool(files),
+            bool(url and url.strip()),
+            bool(query and query.strip()),
+        ]
+        if present
     )
     if provided_sources != 1:
-        raise HTTPException(status_code=400, detail="Provide exactly one source: PDFs, url, or query.")
+        raise HTTPException(
+            status_code=400, detail="Provide exactly one source: PDFs, url, or query."
+        )
 
     if files:
         if len(files) > MAX_UPLOAD_FILE_COUNT:
             raise HTTPException(status_code=400, detail="Upload between 1 and 4 PDFs.")
         if template_id is None:
-            raise HTTPException(status_code=400, detail="PDF mode requires a template_id.")
+            raise HTTPException(
+                status_code=400, detail="PDF mode requires a template_id."
+            )
         if output_aspect_ratio is None:
-            raise HTTPException(status_code=400, detail="PDF mode requires an output_aspect_ratio.")
+            raise HTTPException(
+                status_code=400, detail="PDF mode requires an output_aspect_ratio."
+            )
         return
 
     if template_id is not None or output_aspect_ratio is not None:

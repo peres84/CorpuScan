@@ -47,7 +47,9 @@ class InvestigationReport(BaseModel):
     findings: list[ReportFinding] = Field(default_factory=list)
     timeline: list[TimelineEvent] = Field(default_factory=list)
     entity_relationships: list[EntityRelationship] = Field(default_factory=list)
-    fraud_assessment: FraudAssessment = Field(default_factory=lambda: FraudAssessment(overall_likelihood=0.0))
+    fraud_assessment: FraudAssessment = Field(
+        default_factory=lambda: FraudAssessment(overall_likelihood=0.0)
+    )
     remaining_questions: list[str] = Field(default_factory=list)
     relationship_chains: list[str] = Field(default_factory=list)
     knowledge_graph_summary: str = Field(default="")
@@ -140,7 +142,9 @@ class ReportGenerator:
             return "No findings recorded."
         lines: list[str] = []
         for f in findings:
-            lines.append(f"- [{f.finding_id}] (likelihood={f.fraud_likelihood:.2f}): {f.finding_text}")
+            lines.append(
+                f"- [{f.finding_id}] (likelihood={f.fraud_likelihood:.2f}): {f.finding_text}"
+            )
         return "\n".join(lines)
 
     def _format_entities(self, entities: list[Entity]) -> str:
@@ -155,7 +159,9 @@ class ReportGenerator:
             lines.append(f"  {etype}: {', '.join(names[:20])}")
         return "\n".join(lines)
 
-    def _parse_report_response(self, response: str, state: InvestigationState) -> InvestigationReport:
+    def _parse_report_response(
+        self, response: str, state: InvestigationState
+    ) -> InvestigationReport:
         """Parse LLM JSON response into an InvestigationReport."""
         try:
             cleaned = response.strip()
@@ -173,8 +179,12 @@ class ReportGenerator:
                     title=str(f.get("title", "Finding")),
                     description=str(f.get("description", "")),
                     severity=str(f.get("severity", "medium")),
-                    fraud_likelihood=max(0.0, min(1.0, float(f.get("fraud_likelihood", 0.0)))),
-                    evidence_references=[str(r) for r in (f.get("evidence_references") or [])],
+                    fraud_likelihood=max(
+                        0.0, min(1.0, float(f.get("fraud_likelihood", 0.0)))
+                    ),
+                    evidence_references=[
+                        str(r) for r in (f.get("evidence_references") or [])
+                    ],
                 )
                 for f in (data.get("findings") or [])
                 if isinstance(f, dict)
@@ -202,9 +212,23 @@ class ReportGenerator:
 
             fraud_data = data.get("fraud_assessment") or {}
             fraud_assessment = FraudAssessment(
-                overall_likelihood=max(0.0, min(1.0, float(fraud_data.get("overall_likelihood", state.overall_fraud_likelihood)))),
-                estimated_financial_impact=str(fraud_data.get("estimated_financial_impact", "Unknown")),
-                schemes_identified=[str(s) for s in (fraud_data.get("schemes_identified") or [])],
+                overall_likelihood=max(
+                    0.0,
+                    min(
+                        1.0,
+                        float(
+                            fraud_data.get(
+                                "overall_likelihood", state.overall_fraud_likelihood
+                            )
+                        ),
+                    ),
+                ),
+                estimated_financial_impact=str(
+                    fraud_data.get("estimated_financial_impact", "Unknown")
+                ),
+                schemes_identified=[
+                    str(s) for s in (fraud_data.get("schemes_identified") or [])
+                ],
             )
 
             return InvestigationReport(
@@ -213,7 +237,9 @@ class ReportGenerator:
                 timeline=timeline,
                 entity_relationships=entity_rels,
                 fraud_assessment=fraud_assessment,
-                remaining_questions=[str(q) for q in (data.get("remaining_questions") or []) if q],
+                remaining_questions=[
+                    str(q) for q in (data.get("remaining_questions") or []) if q
+                ],
             )
         except (json.JSONDecodeError, ValueError, TypeError):
             logger.warning("Failed to parse report response")
@@ -256,15 +282,21 @@ def reconstruct_timeline(state: InvestigationState) -> list[TimelineEvent]:
     """Reconstruct a chronological timeline from investigation buffer."""
     events: list[TimelineEvent] = []
     for idx, row in enumerate(state.buffer, start=1):
-        events.append(TimelineEvent(
-            date=f"Step {idx}",
-            event=row.notes_summary[:200] if row.notes_summary else f"Analyzed {row.filename}",
-            source=row.filename,
-        ))
+        events.append(
+            TimelineEvent(
+                date=f"Step {idx}",
+                event=row.notes_summary[:200]
+                if row.notes_summary
+                else f"Analyzed {row.filename}",
+                source=row.filename,
+            )
+        )
     return events
 
 
-def extract_entity_relationships(evidence_store: EvidenceStore) -> list[EntityRelationship]:
+def extract_entity_relationships(
+    evidence_store: EvidenceStore,
+) -> list[EntityRelationship]:
     """Extract entity relationships from the evidence store."""
     entities = evidence_store.list_entities()
     if not entities:
@@ -289,11 +321,13 @@ def extract_entity_relationships(evidence_store: EvidenceStore) -> list[EntityRe
                 key = (vendor.name, amount.name)
                 if key not in seen:
                     seen.add(key)
-                    relationships.append(EntityRelationship(
-                        entity_a=vendor.name,
-                        entity_b=amount.name,
-                        relationship="payment/invoice",
-                    ))
+                    relationships.append(
+                        EntityRelationship(
+                            entity_a=vendor.name,
+                            entity_b=amount.name,
+                            relationship="payment/invoice",
+                        )
+                    )
 
         # Link vendors to accounts
         for vendor in vendors[:5]:
@@ -301,11 +335,13 @@ def extract_entity_relationships(evidence_store: EvidenceStore) -> list[EntityRe
                 key = (vendor.name, account.name)
                 if key not in seen:
                     seen.add(key)
-                    relationships.append(EntityRelationship(
-                        entity_a=vendor.name,
-                        entity_b=account.name,
-                        relationship="posted to account",
-                    ))
+                    relationships.append(
+                        EntityRelationship(
+                            entity_a=vendor.name,
+                            entity_b=account.name,
+                            relationship="posted to account",
+                        )
+                    )
 
     return relationships[:50]  # Cap at 50 relationships
 
@@ -316,7 +352,9 @@ def aggregate_fraud_assessment(state: InvestigationState) -> FraudAssessment:
         return FraudAssessment(overall_likelihood=0.0)
 
     max_likelihood = max(row.fraud_likelihood for row in state.buffer)
-    avg_likelihood = sum(row.fraud_likelihood for row in state.buffer) / len(state.buffer)
+    avg_likelihood = sum(row.fraud_likelihood for row in state.buffer) / len(
+        state.buffer
+    )
 
     # Use weighted combination: 70% max, 30% average
     overall = 0.7 * max_likelihood + 0.3 * avg_likelihood
@@ -361,7 +399,9 @@ def build_relationship_chains(cognee_graph: object) -> list[str]:
     return chains[:15]  # Cap at 15 chains
 
 
-def _build_chain(start: str, adjacency: dict[str, list[tuple[str, str]]], max_depth: int) -> str:
+def _build_chain(
+    start: str, adjacency: dict[str, list[tuple[str, str]]], max_depth: int
+) -> str:
     """Build a single chain string from a starting entity."""
     parts = [start]
     current = start
@@ -407,7 +447,9 @@ def build_knowledge_graph_summary(cognee_graph: object) -> str:
     for entity in cognee_graph.entities:
         type_counts[entity.entity_type] = type_counts.get(entity.entity_type, 0) + 1
 
-    type_summary = ", ".join(f"{count} {etype}(s)" for etype, count in sorted(type_counts.items()))
+    type_summary = ", ".join(
+        f"{count} {etype}(s)" for etype, count in sorted(type_counts.items())
+    )
 
     return (
         f"Knowledge graph contains {entity_count} entities and {rel_count} relationships. "

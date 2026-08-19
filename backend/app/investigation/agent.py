@@ -12,6 +12,10 @@ from app.investigation.buffer import InvestigationBufferRow, InvestigationState
 from app.investigation.evidence_store import EvidenceStore
 from app.investigation.graph import DocumentGraph
 from app.investigation.models import ParsedDocument
+from app.investigation.structured import (
+    StructuredDataStore,
+    format_structured_file_summary,
+)
 from app.mcp.registry import get_tool
 
 try:
@@ -42,6 +46,7 @@ class InvestigationAgent:
         llm_router: LLMRouter,
         evidence_store: EvidenceStore,
         graph: DocumentGraph,
+        structured_data_store: StructuredDataStore | None = None,
         tavily_client: TavilyClient | None = None,
         cognee_client: object | None = None,
         max_iterations: int = 50,
@@ -49,6 +54,7 @@ class InvestigationAgent:
         self._llm = llm_router
         self._store = evidence_store
         self._graph = graph
+        self._structured_data_store = structured_data_store
         self._tavily = tavily_client
         self._cognee = cognee_client
         self._prompt_config = _load_investigator_prompt()
@@ -96,6 +102,7 @@ class InvestigationAgent:
         self._state.add_visited(doc.doc_id)
 
         content = self._build_document_content(doc)
+        structured_data_summary = self._build_structured_data_summary(doc.doc_id)
         related_docs = self._get_related_docs_summary(doc.doc_id)
         buffer_text = self._state.format_buffer_for_llm()
 
@@ -110,6 +117,7 @@ class InvestigationAgent:
             doc_id=doc.doc_id,
             doc_type=doc.doc_type.value,
             content=content,
+            structured_data_summary=structured_data_summary,
             related_documents=related_docs,
         )
 
@@ -154,7 +162,9 @@ class InvestigationAgent:
         )
         return row
 
-    async def _run_tavily_queries(self, row: InvestigationBufferRow) -> list[dict[str, str]]:
+    async def _run_tavily_queries(
+        self, row: InvestigationBufferRow
+    ) -> list[dict[str, str]]:
         """Execute Tavily web searches requested by the agent."""
         # Check if the agent's response included tavily_queries (stored temporarily)
         queries = getattr(row, "_pending_tavily_queries", [])
@@ -184,6 +194,14 @@ class InvestigationAgent:
             total += len(chunk.text)
         return "\n\n".join(parts) if parts else "(empty document)"
 
+    def _build_structured_data_summary(self, doc_id: str) -> str:
+        if self._structured_data_store is None:
+            return "No structured data available."
+        structured_file = self._structured_data_store.get_file(doc_id)
+        if structured_file is None:
+            return "No structured data available."
+        return format_structured_file_summary(structured_file)
+
     def _get_related_docs_summary(self, doc_id: str) -> str:
         """Get a summary of related documents for context."""
         related_ids = self._graph.get_related_documents(doc_id)
@@ -194,7 +212,9 @@ class InvestigationAgent:
         for rel_id in related_ids[:10]:  # limit to 10 most related
             doc = self._store.get_document(rel_id)
             if doc:
-                visited_mark = " (already visited)" if rel_id in self._state.visited else ""
+                visited_mark = (
+                    " (already visited)" if rel_id in self._state.visited else ""
+                )
                 edges = self._graph.get_edges_between(doc_id, rel_id)
                 shared = set(e.shared_entity for e in edges[:5])
                 lines.append(
@@ -202,7 +222,9 @@ class InvestigationAgent:
                 )
         return "\n".join(lines) if lines else "No related documents found."
 
-    def _parse_agent_response(self, response: str, doc: ParsedDocument) -> InvestigationBufferRow:
+    def _parse_agent_response(
+        self, response: str, doc: ParsedDocument
+    ) -> InvestigationBufferRow:
         """Parse the LLM JSON response into an InvestigationBufferRow."""
         try:
             cleaned = response.strip()
@@ -217,32 +239,42 @@ class InvestigationAgent:
 
             # Parse flagged entries
             flagged_entries: list[dict[str, str]] = []
-            for entry in (data.get("flagged_entries") or []):
+            for entry in data.get("flagged_entries") or []:
                 if isinstance(entry, dict):
-                    flagged_entries.append({
-                        "row_ref": str(entry.get("row_ref", "")),
-                        "data": str(entry.get("data", "")),
-                        "reason": str(entry.get("reason", "")),
-                    })
+                    flagged_entries.append(
+                        {
+                            "row_ref": str(entry.get("row_ref", "")),
+                            "data": str(entry.get("data", "")),
+                            "reason": str(entry.get("reason", "")),
+                        }
+                    )
 
             # Parse related files
             related_files: list[dict[str, str]] = []
-            for rf in (data.get("related_files") or []):
+            for rf in data.get("related_files") or []:
                 if isinstance(rf, dict) and rf.get("filename"):
-                    related_files.append({
-                        "filename": str(rf.get("filename", "")),
-                        "relationship": str(rf.get("relationship", "")),
-                        "suspicion_contribution": str(rf.get("suspicion_contribution", "")),
-                    })
+                    related_files.append(
+                        {
+                            "filename": str(rf.get("filename", "")),
+                            "relationship": str(rf.get("relationship", "")),
+                            "suspicion_contribution": str(
+                                rf.get("suspicion_contribution", "")
+                            ),
+                        }
+                    )
 
             row = InvestigationBufferRow(
                 doc_id=doc.doc_id,
                 filename=doc.filename,
                 notes_summary=str(data.get("notes_summary", ""))[:2000],
-                fraud_likelihood=max(0.0, min(1.0, float(data.get("fraud_likelihood", 0.0)))),
+                fraud_likelihood=max(
+                    0.0, min(1.0, float(data.get("fraud_likelihood", 0.0)))
+                ),
                 primary_next_doc=data.get("primary_next_doc") or None,
                 alt_doc_leads=[str(d) for d in (data.get("alt_doc_leads") or []) if d],
-                open_questions=[str(q) for q in (data.get("open_questions") or []) if q],
+                open_questions=[
+                    str(q) for q in (data.get("open_questions") or []) if q
+                ],
                 flagged_entries=flagged_entries,
                 related_files=related_files,
             )
@@ -295,7 +327,9 @@ class InvestigationAgent:
                     self._state.stack.remove(resolved_id)
                 self._state.stack.append(resolved_id)
 
-    def _get_investigation_leads(self, row: InvestigationBufferRow) -> dict[str, list[str]]:
+    def _get_investigation_leads(
+        self, row: InvestigationBufferRow
+    ) -> dict[str, list[str]]:
         """Combine LLM-suggested next docs with Cognee relationship graph suggestions.
 
         Returns dict with:
@@ -384,10 +418,14 @@ class InvestigationAgent:
                 if items:
                     lines = [f"External research for: {query}"]
                     for item in items:
-                        lines.append(f"- {item.get('title', '')}: {item.get('snippet', '')}")
+                        lines.append(
+                            f"- {item.get('title', '')}: {item.get('snippet', '')}"
+                        )
                     return "\n".join(lines)
             except Exception:
-                logger.debug("MCP web.search failed for query: %s — falling back to HTTP", query)
+                logger.debug(
+                    "MCP web.search failed for query: %s — falling back to HTTP", query
+                )
 
         # Fallback to direct TavilyClient
         if self._tavily is not None:

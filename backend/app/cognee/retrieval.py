@@ -30,7 +30,9 @@ async def search_context(client: CogneeClient, query: str) -> str:
         return ""
 
 
-async def find_related_entities(client: CogneeClient, entity_name: str) -> list[dict[str, str]]:
+async def find_related_entities(
+    client: CogneeClient, entity_name: str
+) -> list[dict[str, str]]:
     """Find entities related to the given entity via Cognee's knowledge graph.
 
     Returns a list of dicts with 'name', 'type', and 'relationship' keys.
@@ -53,7 +55,9 @@ async def find_related_entities(client: CogneeClient, entity_name: str) -> list[
         return []
 
 
-async def get_relationship_graph(client: CogneeClient, entity_name: str) -> dict[str, object]:
+async def get_relationship_graph(
+    client: CogneeClient, entity_name: str
+) -> dict[str, object]:
     """Get the relationship subgraph centered on the given entity.
 
     Returns a dict with 'entities' and 'relationships' lists.
@@ -109,11 +113,13 @@ def _parse_related_entities(results: object) -> list[dict[str, str]]:
             if isinstance(item, dict):
                 name = str(item.get("name") or item.get("entity") or "")
                 if name:
-                    entities.append({
-                        "name": name,
-                        "type": str(item.get("type", "unknown")),
-                        "relationship": str(item.get("relationship", "related")),
-                    })
+                    entities.append(
+                        {
+                            "name": name,
+                            "type": str(item.get("type", "unknown")),
+                            "relationship": str(item.get("relationship", "related")),
+                        }
+                    )
 
     return entities
 
@@ -167,4 +173,6 @@ def register_cognee_mcp_tools(client: CogneeClient) -> None:
         parameters={"entity_name": "Name of the entity to get the graph for"},
     )
 
-    logger.info("Cognee MCP tools registered: cognee.search, cognee.related_entities, cognee.relationship_graph")
+    logger.info(
+        "Cognee MCP tools registered: cognee.search, cognee.related_entities, cognee.relationship_graph"
+    )

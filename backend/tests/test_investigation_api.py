@@ -15,6 +15,7 @@ from app.investigation.pipeline import (
     InvestigationJobStep,
 )
 from app.investigation.routes import investigation_store
+from app.investigation.structured import StructuredFile
 from app.main import app
 
 client = TestClient(app)
@@ -38,9 +39,26 @@ def _create_done_job() -> str:
         doc_id="test_doc_1",
         filename="test.csv",
         doc_type=DocumentType.CSV,
-        content_chunks=[ContentChunk(text="data", source_ref="test.csv:row:1", chunk_index=0)],
+        content_chunks=[
+            ContentChunk(text="data", source_ref="test.csv:row:1", chunk_index=0)
+        ],
     )
     job.evidence_store.add_document(doc)
+    job.structured_data_store.add_file(
+        StructuredFile(
+            file_id="test_doc_1",
+            filename="test.csv",
+            extraction_method="deterministic",
+            columns=["BETRAG"],
+            original_columns=["BETRAG"],
+            normalized_columns=["amount"],
+            rows=[
+                {"BETRAG": "100,00", "amount": "100,00"},
+                {"BETRAG": "200,00", "amount": "200,00"},
+            ],
+            row_count=2,
+        )
+    )
 
     finding = Finding(
         finding_id="f001",
@@ -128,6 +146,60 @@ class TestGetInvestigationStatus:
         assert data["progress"] == 100
 
 
+class TestInvestigationFiles:
+    def setup_method(self) -> None:
+        _reset_store()
+
+    def test_lists_files_with_extraction_status(self) -> None:
+        job_id = _create_done_job()
+
+        response = client.get(f"/investigations/{job_id}/files")
+
+        assert response.status_code == 200
+        assert response.json() == [
+            {
+                "file_id": "test_doc_1",
+                "filename": "test.csv",
+                "extraction_status": "complete",
+                "extraction_method": "deterministic",
+                "row_count": 2,
+            }
+        ]
+
+    def test_returns_paginated_structured_file(self) -> None:
+        job_id = _create_done_job()
+
+        response = client.get(
+            f"/investigations/{job_id}/files/test_doc_1/structured?offset=1&limit=1"
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["row_count"] == 2
+        assert data["offset"] == 1
+        assert data["limit"] == 1
+        assert data["rows"] == [{"BETRAG": "200,00", "amount": "200,00"}]
+
+    def test_returns_raw_file_content(self) -> None:
+        job_id = _create_done_job()
+
+        response = client.get(f"/investigations/{job_id}/files/test_doc_1/raw")
+
+        assert response.status_code == 200
+        assert response.json()["content"] == "data"
+
+    def test_unknown_file_returns_404(self) -> None:
+        job_id = _create_done_job()
+
+        structured_response = client.get(
+            f"/investigations/{job_id}/files/missing/structured"
+        )
+        raw_response = client.get(f"/investigations/{job_id}/files/missing/raw")
+
+        assert structured_response.status_code == 404
+        assert raw_response.status_code == 404
+
+
 class TestGetFindings:
     def setup_method(self) -> None:
         _reset_store()
@@ -143,7 +215,9 @@ class TestGetFindings:
         assert len(data[0]["evidence"]) == 1
 
     def test_missing_job_returns_404(self) -> None:
-        response = client.get("/investigations/00000000-0000-0000-0000-000000000000/findings")
+        response = client.get(
+            "/investigations/00000000-0000-0000-0000-000000000000/findings"
+        )
         assert response.status_code == 404
 
 

@@ -27,7 +27,9 @@ class FakeHeraClient:
 
 
 @pytest.mark.asyncio
-async def test_render_hera_assets_resubmits_all_stuck_renders_after_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_render_hera_assets_resubmits_all_stuck_renders_after_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     job_store = JobStore()
     job_id = job_store.create(source_kind=SourceKind.PDF)
     client = FakeHeraClient()
@@ -44,13 +46,18 @@ async def test_render_hera_assets_resubmits_all_stuck_renders_after_timeout(monk
         completed[0] = "https://cdn.hera.video/intro.mp4"  # type: ignore[index]
         completed[1] = "https://cdn.hera.video/scene.mp4"  # type: ignore[index]
 
-    monkeypatch.setattr("app.pipeline._poll_existing_hera_assets", fake_poll_existing_hera_assets)
+    monkeypatch.setattr(
+        "app.pipeline._poll_existing_hera_assets", fake_poll_existing_hera_assets
+    )
 
     clips = await render_hera_assets(
         job_store=job_store,
         job_id=job_id,
         hera_client=client,  # type: ignore[arg-type]
-        all_specs=[{"prompt": "intro", "outputs": []}, {"prompt": "scene", "outputs": []}],
+        all_specs=[
+            {"prompt": "intro", "outputs": []},
+            {"prompt": "scene", "outputs": []},
+        ],
         timeout_seconds=1,
         retry_attempts=3,
         poll_interval_seconds=0.1,
@@ -67,7 +74,9 @@ async def test_render_hera_assets_resubmits_all_stuck_renders_after_timeout(monk
 
 
 @pytest.mark.asyncio
-async def test_render_hera_assets_only_resubmits_stuck_renders(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_render_hera_assets_only_resubmits_stuck_renders(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     job_store = JobStore()
     job_id = job_store.create(source_kind=SourceKind.PDF)
     client = FakeHeraClient()
@@ -86,13 +95,18 @@ async def test_render_hera_assets_only_resubmits_stuck_renders(monkeypatch: pyte
         # Window 2: stuck render finally finishes.
         completed[1] = "https://cdn.hera.video/scene.mp4"  # type: ignore[index]
 
-    monkeypatch.setattr("app.pipeline._poll_existing_hera_assets", fake_poll_existing_hera_assets)
+    monkeypatch.setattr(
+        "app.pipeline._poll_existing_hera_assets", fake_poll_existing_hera_assets
+    )
 
     clips = await render_hera_assets(
         job_store=job_store,
         job_id=job_id,
         hera_client=client,  # type: ignore[arg-type]
-        all_specs=[{"prompt": "intro", "outputs": []}, {"prompt": "scene", "outputs": []}],
+        all_specs=[
+            {"prompt": "intro", "outputs": []},
+            {"prompt": "scene", "outputs": []},
+        ],
         timeout_seconds=1,
         retry_attempts=3,
         poll_interval_seconds=0.1,
@@ -110,7 +124,9 @@ async def test_render_hera_assets_only_resubmits_stuck_renders(monkeypatch: pyte
 
 
 @pytest.mark.asyncio
-async def test_render_hera_assets_resubmits_only_failed_render(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_render_hera_assets_resubmits_only_failed_render(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     job_store = JobStore()
     job_id = job_store.create(source_kind=SourceKind.PDF)
     client = FakeHeraClient()
@@ -129,13 +145,18 @@ async def test_render_hera_assets_resubmits_only_failed_render(monkeypatch: pyte
         # Window 2: resubmitted render finishes.
         completed[1] = "https://cdn.hera.video/scene.mp4"  # type: ignore[index]
 
-    monkeypatch.setattr("app.pipeline._poll_existing_hera_assets", fake_poll_existing_hera_assets)
+    monkeypatch.setattr(
+        "app.pipeline._poll_existing_hera_assets", fake_poll_existing_hera_assets
+    )
 
     clips = await render_hera_assets(
         job_store=job_store,
         job_id=job_id,
         hera_client=client,  # type: ignore[arg-type]
-        all_specs=[{"prompt": "intro", "outputs": []}, {"prompt": "scene", "outputs": []}],
+        all_specs=[
+            {"prompt": "intro", "outputs": []},
+            {"prompt": "scene", "outputs": []},
+        ],
         timeout_seconds=1,
         retry_attempts=3,
         poll_interval_seconds=0.1,

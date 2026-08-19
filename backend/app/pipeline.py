@@ -18,10 +18,25 @@ from app.integrations.elevenlabs import (
 )
 from app.integrations.gemini import GeminiClient
 from app.integrations.hera import HeraClient
+from app.integrations.llm_router import LLMRouter
+from app.investigation.models import ContentChunk, DocumentType, ParsedDocument
+from app.investigation.structured import (
+    StructuredDataStore,
+    StructuredFile,
+    extract_unstructured,
+    format_financial_key_figures,
+    normalize_financial_metrics,
+)
 from app.jobs import JobStore
 from app.logging_utils import stage_tag
 from app.render import compose
-from app.schemas import BrandingPalette, JobStep, PipelineContext, SlideChunk
+from app.schemas import (
+    BrandingPalette,
+    JobStep,
+    PipelineContext,
+    SlideChunk,
+    SourceKind,
+)
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
@@ -47,7 +62,12 @@ async def run_pipeline(
     source_text: str,
     pipeline_context: PipelineContext,
 ) -> None:
-    logger.info("%s [%s] pipeline started, source_text length=%d", stage_tag("job"), job_id, len(source_text))
+    logger.info(
+        "%s [%s] pipeline started, source_text length=%d",
+        stage_tag("job"),
+        job_id,
+        len(source_text),
+    )
     try:
         settings = get_settings()
         job = job_store.get(job_id)
@@ -56,17 +76,38 @@ async def run_pipeline(
         job.source_text = source_text
         job.pipeline_context = pipeline_context
         job_store.update_step(job_id, step=JobStep.INGEST, progress=10)
-        job_store.update_step(job_id, step=JobStep.FINANCE, progress=20)
-        logger.info("%s [%s] running finance agent", stage_tag("finance"), job_id)
 
-        gemini_client = GeminiClient(api_key=settings.gemini_api_key, model=settings.gemini_model)
-        qa_markdown = await run_finance_agent(
+        gemini_client = GeminiClient(
+            api_key=settings.gemini_api_key, model=settings.gemini_model
+        )
+        out_dir = Path("/tmp") / job_id
+        out_dir.mkdir(parents=True, exist_ok=True)
+        structured_files = await _extract_video_structured_data(
             source_text=source_text,
             pipeline_context=pipeline_context,
             gemini_client=gemini_client,
         )
+        structured_store = StructuredDataStore()
+        for structured_file in structured_files:
+            structured_store.add_file(structured_file)
+        structured_store.save_to_json(job_id)
+        key_figures = format_financial_key_figures(structured_files)
+
+        job_store.update_step(job_id, step=JobStep.FINANCE, progress=20)
+        logger.info("%s [%s] running finance agent", stage_tag("finance"), job_id)
+        qa_markdown = await run_finance_agent(
+            source_text=source_text,
+            pipeline_context=pipeline_context,
+            gemini_client=gemini_client,
+            key_figures=key_figures,
+        )
         job.qa_markdown = qa_markdown
-        logger.info("%s [%s] finance done, qa_markdown length=%d", stage_tag("finance"), job_id, len(qa_markdown))
+        logger.info(
+            "%s [%s] finance done, qa_markdown length=%d",
+            stage_tag("finance"),
+            job_id,
+            len(qa_markdown),
+        )
 
         job_store.update_step(job_id, step=JobStep.SCRIPTER, progress=35)
         logger.info("%s [%s] running scripter agent", stage_tag("scripter"), job_id)
@@ -76,10 +117,17 @@ async def run_pipeline(
             gemini_client=gemini_client,
         )
         job.script = script.model_dump()
-        logger.info("%s [%s] scripter done, title=%r", stage_tag("scripter"), job_id, script.title)
+        logger.info(
+            "%s [%s] scripter done, title=%r",
+            stage_tag("scripter"),
+            job_id,
+            script.title,
+        )
 
         job_store.update_step(job_id, step=JobStep.TTS, progress=50)
-        logger.info("%s [%s] running TTS + intro typing sound", stage_tag("tts"), job_id)
+        logger.info(
+            "%s [%s] running TTS + intro typing sound", stage_tag("tts"), job_id
+        )
         tts_text, scene_spans = build_tts_input_and_scene_spans(script.scenes)
         elevenlabs = ElevenLabsClient(
             api_key=settings.elevenlabs_api_key,
@@ -91,13 +139,23 @@ async def run_pipeline(
             text=INTRO_TYPING_SOUND_PROMPT,
             duration_seconds=INTRO_DURATION_SECONDS,
         )
-        (audio_bytes, alignment), intro_sound_bytes = await asyncio.gather(tts_task, sound_task)
+        (audio_bytes, alignment), intro_sound_bytes = await asyncio.gather(
+            tts_task, sound_task
+        )
 
         characters = [str(ch) for ch in alignment.get("characters", [])]
-        char_start_times = [float(v) for v in alignment.get("character_start_times_seconds", [])]
-        char_end_times = [float(v) for v in alignment.get("character_end_times_seconds", [])]
-        raw_sentence_timings = compute_sentence_timings(characters, char_start_times, char_end_times)
-        sentence_timings = map_sentence_timings_to_scenes(raw_sentence_timings, scene_spans)
+        char_start_times = [
+            float(v) for v in alignment.get("character_start_times_seconds", [])
+        ]
+        char_end_times = [
+            float(v) for v in alignment.get("character_end_times_seconds", [])
+        ]
+        raw_sentence_timings = compute_sentence_timings(
+            characters, char_start_times, char_end_times
+        )
+        sentence_timings = map_sentence_timings_to_scenes(
+            raw_sentence_timings, scene_spans
+        )
 
         # Slide chunks per scene — transcript-derived, scene-relative timings
         # that drive the bracketed beats in each Hera prompt.
@@ -112,8 +170,6 @@ async def run_pipeline(
             )
             slide_chunks_by_scene.append(chunks)
 
-        out_dir = Path("/tmp") / job_id
-        out_dir.mkdir(parents=True, exist_ok=True)
         audio_path = out_dir / "voice.mp3"
         audio_path.write_bytes(audio_bytes)
         intro_sound_path = out_dir / "intro_sound.mp3"
@@ -132,7 +188,11 @@ async def run_pipeline(
         )
 
         job_store.update_step(job_id, step=JobStep.HERA_PLAN, progress=65)
-        logger.info("%s [%s] running hera agents x4 (slide-chunk-driven)", stage_tag("hera"), job_id)
+        logger.info(
+            "%s [%s] running hera agents x4 (slide-chunk-driven)",
+            stage_tag("hera"),
+            job_id,
+        )
         scene_specs = await asyncio.gather(
             *[
                 run_hera_agent(
@@ -141,7 +201,9 @@ async def run_pipeline(
                     pipeline_context=pipeline_context,
                     gemini_client=gemini_client,
                 )
-                for scene, chunks in zip(script.scenes, slide_chunks_by_scene, strict=True)
+                for scene, chunks in zip(
+                    script.scenes, slide_chunks_by_scene, strict=True
+                )
             ]
         )
         branding = pipeline_context.branding or BrandingPalette(
@@ -159,11 +221,18 @@ async def run_pipeline(
             duration_seconds=INTRO_DURATION_SECONDS,
         )
         job.scene_specs = scene_specs
-        logger.info("%s [%s] hera plan done, %d scene specs + 1 intro", stage_tag("hera"), job_id, len(scene_specs))
+        logger.info(
+            "%s [%s] hera plan done, %d scene specs + 1 intro",
+            stage_tag("hera"),
+            job_id,
+            len(scene_specs),
+        )
 
         job_store.update_step(job_id, step=JobStep.HERA_RENDER, progress=75)
         all_specs = [intro_spec, *scene_specs]
-        hera_client = HeraClient(api_key=settings.hera_api_key, base_url=settings.hera_base_url)
+        hera_client = HeraClient(
+            api_key=settings.hera_api_key, base_url=settings.hera_base_url
+        )
         clip_bytes_list = await render_hera_assets(
             job_store=job_store,
             job_id=job_id,
@@ -181,7 +250,12 @@ async def run_pipeline(
             clip_path.write_bytes(clip_bytes)
             scene_clip_paths.append(str(clip_path))
         job.clip_paths = scene_clip_paths
-        logger.info("%s [%s] all clips downloaded (intro + %d scenes)", stage_tag("hera"), job_id, len(scene_clip_paths))
+        logger.info(
+            "%s [%s] all clips downloaded (intro + %d scenes)",
+            stage_tag("hera"),
+            job_id,
+            len(scene_clip_paths),
+        )
 
         job_store.update_step(job_id, step=JobStep.COMPOSE, progress=92)
         logger.info("%s [%s] composing final video", stage_tag("compose"), job_id)
@@ -198,6 +272,70 @@ async def run_pipeline(
     except Exception as exc:
         logger.exception("%s [%s] pipeline failed: %s", stage_tag("job"), job_id, exc)
         job_store.set_error(job_id, str(exc))
+
+
+async def _extract_video_structured_data(
+    *,
+    source_text: str,
+    pipeline_context: PipelineContext,
+    gemini_client: GeminiClient,
+) -> list[StructuredFile]:
+    if pipeline_context.source_kind is not SourceKind.PDF:
+        return []
+
+    router = LLMRouter(gemini_client=gemini_client)
+    documents = _build_video_extraction_documents(source_text, pipeline_context)
+    extracted = await asyncio.gather(
+        *[extract_unstructured(document, router) for document in documents]
+    )
+    return normalize_financial_metrics(extracted)
+
+
+def _build_video_extraction_documents(
+    source_text: str, pipeline_context: PipelineContext
+) -> list[ParsedDocument]:
+    if not pipeline_context.pdf_documents:
+        return [
+            ParsedDocument(
+                doc_id="video_source_1",
+                filename="source.pdf",
+                doc_type=DocumentType.PDF,
+                content_chunks=[
+                    ContentChunk(
+                        text=source_text, source_ref="source.pdf:page:1", chunk_index=0
+                    )
+                ],
+            )
+        ]
+
+    documents: list[ParsedDocument] = []
+    for index, metadata in enumerate(pipeline_context.pdf_documents, start=1):
+        marker = f"=== DOCUMENT {index} ==="
+        start = source_text.find(marker)
+        next_marker = source_text.find(
+            f"=== DOCUMENT {index + 1} ===", start + len(marker)
+        )
+        block = (
+            source_text[start : next_marker if next_marker != -1 else None]
+            if start != -1
+            else source_text
+        )
+        _, _, content = block.partition("\n\n")
+        documents.append(
+            ParsedDocument(
+                doc_id=f"video_source_{index}",
+                filename=metadata.filename,
+                doc_type=DocumentType.PDF,
+                content_chunks=[
+                    ContentChunk(
+                        text=content or block,
+                        source_ref=f"{metadata.filename}:page:1",
+                        chunk_index=0,
+                    )
+                ],
+            )
+        )
+    return documents
 
 
 async def render_hera_assets(
@@ -221,7 +359,9 @@ async def render_hera_assets(
             for spec in all_specs
         ]
     )
-    logger.info("%s [%s] hera videos submitted: %s", stage_tag("hera"), job_id, hera_video_ids)
+    logger.info(
+        "%s [%s] hera videos submitted: %s", stage_tag("hera"), job_id, hera_video_ids
+    )
 
     completed: dict[int, str] = {}
     total_renders = len(hera_video_ids)
@@ -230,7 +370,9 @@ async def render_hera_assets(
     for attempt in range(1, retry_attempts + 1):
         try:
             completed_scene_clips = sum(1 for clip_idx in completed if clip_idx > 0)
-            progress = 75 + int((len(completed) / total_renders) * 15) if total_renders else 75
+            progress = (
+                75 + int((len(completed) / total_renders) * 15) if total_renders else 75
+            )
             job_store.update_hera_progress(
                 job_id,
                 completed_clips=completed_scene_clips,
@@ -263,8 +405,14 @@ async def render_hera_assets(
             break
         except (TimeoutError, HeraRenderFailedError) as exc:
             last_error = exc
-            missing_indices = [idx for idx in range(total_renders) if idx not in completed]
-            reason = "timed out" if isinstance(exc, TimeoutError) else f"reported failures ({exc})"
+            missing_indices = [
+                idx for idx in range(total_renders) if idx not in completed
+            ]
+            reason = (
+                "timed out"
+                if isinstance(exc, TimeoutError)
+                else f"reported failures ({exc})"
+            )
             logger.warning(
                 "%s [%s] hera poll window %d/%d %s; %d render(s) need resubmit (indices=%s)",
                 stage_tag("hera"),
@@ -421,7 +569,14 @@ async def with_retries(
             last_error = exc
             if attempt == attempts:
                 break
-            logger.warning("%s %s failed on try %d/%d: %s", stage_tag("hera"), operation_name, attempt, attempts, exc)
+            logger.warning(
+                "%s %s failed on try %d/%d: %s",
+                stage_tag("hera"),
+                operation_name,
+                attempt,
+                attempts,
+                exc,
+            )
             await asyncio.sleep(1)
     assert last_error is not None
     raise last_error

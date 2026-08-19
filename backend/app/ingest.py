@@ -16,26 +16,54 @@ DEFAULT_BRANDING = BrandingPalette(
 )
 
 KNOWN_COMPANY_PALETTES: dict[str, BrandingPalette] = {
-    "apple": BrandingPalette(background="#F5F5F7", text="#1D1D1F", secondary="#6E6E73", accent="#0071E3"),
-    "tesla": BrandingPalette(background="#F4F4F4", text="#171A20", secondary="#5C5E62", accent="#E82127"),
-    "microsoft": BrandingPalette(background="#F3F7FB", text="#1F1F1F", secondary="#5E5E5E", accent="#0078D4"),
-    "google": BrandingPalette(background="#F8F9FA", text="#202124", secondary="#5F6368", accent="#1A73E8"),
-    "alphabet": BrandingPalette(background="#F8F9FA", text="#202124", secondary="#5F6368", accent="#1A73E8"),
-    "amazon": BrandingPalette(background="#F7F8FA", text="#111111", secondary="#4B5563", accent="#FF9900"),
-    "meta": BrandingPalette(background="#F6F8FC", text="#1C2B33", secondary="#526471", accent="#0866FF"),
-    "netflix": BrandingPalette(background="#141414", text="#FFFFFF", secondary="#D1D5DB", accent="#E50914"),
-    "nvidia": BrandingPalette(background="#F3F8E8", text="#1F2937", secondary="#4B5563", accent="#76B900"),
+    "apple": BrandingPalette(
+        background="#F5F5F7", text="#1D1D1F", secondary="#6E6E73", accent="#0071E3"
+    ),
+    "tesla": BrandingPalette(
+        background="#F4F4F4", text="#171A20", secondary="#5C5E62", accent="#E82127"
+    ),
+    "microsoft": BrandingPalette(
+        background="#F3F7FB", text="#1F1F1F", secondary="#5E5E5E", accent="#0078D4"
+    ),
+    "google": BrandingPalette(
+        background="#F8F9FA", text="#202124", secondary="#5F6368", accent="#1A73E8"
+    ),
+    "alphabet": BrandingPalette(
+        background="#F8F9FA", text="#202124", secondary="#5F6368", accent="#1A73E8"
+    ),
+    "amazon": BrandingPalette(
+        background="#F7F8FA", text="#111111", secondary="#4B5563", accent="#FF9900"
+    ),
+    "meta": BrandingPalette(
+        background="#F6F8FC", text="#1C2B33", secondary="#526471", accent="#0866FF"
+    ),
+    "netflix": BrandingPalette(
+        background="#141414", text="#FFFFFF", secondary="#D1D5DB", accent="#E50914"
+    ),
+    "nvidia": BrandingPalette(
+        background="#F3F8E8", text="#1F2937", secondary="#4B5563", accent="#76B900"
+    ),
 }
 
 PERIOD_PATTERNS = [
     re.compile(r"\b(q[1-4])\s*(?:fy)?\s*(20\d{2})\b", re.IGNORECASE),
-    re.compile(r"\b(quarter\s+[1-4])\s+(?:of\s+)?(?:fiscal\s+year\s+)?(20\d{2})\b", re.IGNORECASE),
-    re.compile(r"\b(first|second|third|fourth)\s+quarter\s+(?:of\s+)?(?:fiscal\s+year\s+)?(20\d{2})\b", re.IGNORECASE),
+    re.compile(
+        r"\b(quarter\s+[1-4])\s+(?:of\s+)?(?:fiscal\s+year\s+)?(20\d{2})\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(first|second|third|fourth)\s+quarter\s+(?:of\s+)?(?:fiscal\s+year\s+)?(20\d{2})\b",
+        re.IGNORECASE,
+    ),
 ]
 
 COMPANY_PATTERNS = [
-    re.compile(r"\b([A-Z][A-Za-z&.\-]+(?:\s+[A-Z][A-Za-z&.\-]+){0,3})\s+(?:Inc\.|Corp\.|Corporation|Ltd\.|plc)\b"),
-    re.compile(r"\b([A-Z][A-Za-z&.\-]+(?:\s+[A-Z][A-Za-z&.\-]+){0,3})\s+(?:Earnings|Results|Report|Shareholder)\b"),
+    re.compile(
+        r"\b([A-Z][A-Za-z&.\-]+(?:\s+[A-Z][A-Za-z&.\-]+){0,3})\s+(?:Inc\.|Corp\.|Corporation|Ltd\.|plc)\b"
+    ),
+    re.compile(
+        r"\b([A-Z][A-Za-z&.\-]+(?:\s+[A-Z][A-Za-z&.\-]+){0,3})\s+(?:Earnings|Results|Report|Shareholder)\b"
+    ),
 ]
 
 
@@ -77,9 +105,13 @@ def extract_pdf_documents(
     return documents, combined_text, branding, company_name, period_label
 
 
-def build_comparison_source_text(documents: list[PdfDocumentMetadata], texts: list[str]) -> str:
+def build_comparison_source_text(
+    documents: list[PdfDocumentMetadata], texts: list[str]
+) -> str:
     blocks: list[str] = []
-    for index, (document, text) in enumerate(zip(documents, texts, strict=True), start=1):
+    for index, (document, text) in enumerate(
+        zip(documents, texts, strict=True), start=1
+    ):
         blocks.append(
             "\n".join(
                 [
@@ -169,13 +201,21 @@ def ensure_accessible_palette(palette: BrandingPalette) -> BrandingPalette:
     bg_is_dark = relative_luminance(palette.background) < 0.35
     text_default = "#FFFFFF" if bg_is_dark else "#111827"
     secondary_default = "#D1D5DB" if bg_is_dark else "#374151"
-    text = palette.text if contrast_ratio(palette.background, palette.text) >= 4.5 else text_default
+    text = (
+        palette.text
+        if contrast_ratio(palette.background, palette.text) >= 4.5
+        else text_default
+    )
     secondary = (
         palette.secondary
         if contrast_ratio(palette.background, palette.secondary) >= 3.5
         else secondary_default
     )
-    accent = palette.accent if contrast_ratio(palette.background, palette.accent) >= 2.5 else "#06B6D4"
+    accent = (
+        palette.accent
+        if contrast_ratio(palette.background, palette.accent) >= 2.5
+        else "#06B6D4"
+    )
     return BrandingPalette(
         background=palette.background,
         text=text,
@@ -185,7 +225,9 @@ def ensure_accessible_palette(palette: BrandingPalette) -> BrandingPalette:
 
 
 def build_period_label(documents: list[PdfDocumentMetadata]) -> str:
-    unique_periods = list(dict.fromkeys(document.period_label for document in documents))
+    unique_periods = list(
+        dict.fromkeys(document.period_label for document in documents)
+    )
     if not unique_periods:
         return "Current Period"
     if len(unique_periods) == 1:
@@ -196,7 +238,9 @@ def build_period_label(documents: list[PdfDocumentMetadata]) -> str:
 def validate_same_company(documents: list[PdfDocumentMetadata]) -> None:
     company_names = {document.company_name.lower() for document in documents}
     if len(company_names) > 1:
-        raise ValueError("PDF comparison mode currently supports reports from a single company only.")
+        raise ValueError(
+            "PDF comparison mode currently supports reports from a single company only."
+        )
 
 
 def hex_to_rgb(value: str) -> tuple[float, float, float]:

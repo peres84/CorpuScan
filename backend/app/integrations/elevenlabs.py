@@ -17,8 +17,12 @@ class ElevenLabsClient:
         self._voice_id = voice_id
         self._base_url = "https://api.elevenlabs.io"
 
-    async def text_to_speech_with_timestamps(self, text: str) -> tuple[bytes, dict[str, object]]:
-        logger.info("%s elevenlabs tts started (chars=%d)", stage_tag("elevenlabs"), len(text))
+    async def text_to_speech_with_timestamps(
+        self, text: str
+    ) -> tuple[bytes, dict[str, object]]:
+        logger.info(
+            "%s elevenlabs tts started (chars=%d)", stage_tag("elevenlabs"), len(text)
+        )
         payload = {
             "text": text,
             "model_id": "eleven_multilingual_v2",
@@ -62,11 +66,17 @@ class ElevenLabsClient:
         async with httpx.AsyncClient(timeout=120) as client:
             response = await client.post(url, json=payload, headers=headers)
             response.raise_for_status()
-        logger.info("%s elevenlabs sound effect finished (audio_bytes=%d)", stage_tag("elevenlabs"), len(response.content))
+        logger.info(
+            "%s elevenlabs sound effect finished (audio_bytes=%d)",
+            stage_tag("elevenlabs"),
+            len(response.content),
+        )
         return response.content
 
 
-def build_tts_input_and_scene_spans(scenes: list[Scene]) -> tuple[str, list[tuple[int, int, int]]]:
+def build_tts_input_and_scene_spans(
+    scenes: list[Scene],
+) -> tuple[str, list[tuple[int, int, int]]]:
     full_text_parts: list[str] = []
     spans: list[tuple[int, int, int]] = []
     cursor = 0

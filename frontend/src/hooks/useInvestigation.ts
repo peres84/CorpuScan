@@ -4,7 +4,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export interface InvestigationStatus {
   status: "pending" | "running" | "done" | "error";
-  step: "parse" | "build_graph" | "investigate" | "report" | "done";
+  step: "parse" | "structured_extract" | "cognee_ingest" | "build_graph" | "investigate" | "report" | "done";
   progress: number;
   error: string | null;
 }

@@ -160,6 +160,17 @@ Documents (CSV, TXT, XLSX, PDF, DOCX, XML, MD)
   [REPORT]  Aggregate findings → structured report with evidence
 ```
 
+### Structured Data Extraction
+
+After parsing and before Cognee ingestion, each investigation document receives a parallel structured representation. The raw chunks remain unchanged and are still available to the investigation agent.
+
+- **CSV, XLSX, and delimited TXT:** deterministic rows with original and normalized accounting columns.
+- **PDF and DOCX:** LLM-assisted key-value extraction; DOCX tables are extracted deterministically when available.
+- **Normalization:** common German and English accounting labels are mapped to fields such as `amount`, `date`, `vendor_id`, and `invoice_number`.
+- **Storage:** all extractions are held in the in-memory job record and serialized to `/tmp/{job_id}/structured_data.json` for the lifetime of the job.
+
+The API exposes the data through `GET /investigations/{id}/files`, `/files/{file_id}/structured`, and `/files/{file_id}/raw`. Tabular responses support `offset` and `limit` pagination.
+
 ### The Investigation Buffer
 
 The buffer is the agent's memory — a sequential log of every document analyzed. Each row contains:

@@ -15,7 +15,12 @@ from app.ingest import (
     ensure_accessible_palette,
 )
 from app.main import _validate_generate_request
-from app.schemas import BrandingPalette, OutputAspectRatio, PdfDocumentMetadata, PdfTemplateId
+from app.schemas import (
+    BrandingPalette,
+    OutputAspectRatio,
+    PdfDocumentMetadata,
+    PdfTemplateId,
+)
 
 
 def test_validate_generate_request_rejects_mixed_sources() -> None:
@@ -68,7 +73,9 @@ def test_build_comparison_source_text_keeps_document_boundaries() -> None:
         page_count=12,
         palette=DEFAULT_BRANDING,
     )
-    combined = build_comparison_source_text([document], ["Revenue rose year over year."])
+    combined = build_comparison_source_text(
+        [document], ["Revenue rose year over year."]
+    )
     assert "=== DOCUMENT 1 ===" in combined
     assert "Company: Apple" in combined
     assert "Reporting period: Q2 2025" in combined

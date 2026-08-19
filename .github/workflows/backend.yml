@@ -1,0 +1,56 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - "backend/**"
+  pull_request:
+    paths:
+      - "backend/**"
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: backend/.python-version
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Lint (ruff check)
+        run: uv run ruff check
+
+      - name: Format check (ruff format)
+        run: uv run ruff format --check
+
+      - name: Run tests
+        run: uv run pytest
+
+      - name: Dependency audit (pip-audit)
+        run: uvx pip-audit --strict --desc
+
+      - name: Build Docker image
+        run: docker build -t corpuscan-backend:ci -f Dockerfile .
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: corpuscan-backend:ci
+          scanners: vuln
+          vuln-type: library
+          severity: CRITICAL
+          exit-code: "1"
+          skip-dirs: /usr

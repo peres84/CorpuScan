@@ -21,7 +21,9 @@ class Finding(BaseModel):
 
 class Entity(BaseModel):
     name: str = Field(min_length=1)
-    entity_type: str = Field(min_length=1)  # vendor, account, amount, date, invoice_number, person
+    entity_type: str = Field(
+        min_length=1
+    )  # vendor, account, amount, date, invoice_number, person
     source_doc_id: str = Field(min_length=1)
     aliases: list[str] = Field(default_factory=list)
 

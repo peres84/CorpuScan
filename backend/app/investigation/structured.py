@@ -122,7 +122,9 @@ async def suggest_normalized_columns(
     return {
         raw_name: suggestion.strip()
         for raw_name, suggestion in payload.items()
-        if raw_name in unknown_names and isinstance(suggestion, str) and suggestion.strip()
+        if raw_name in unknown_names
+        and isinstance(suggestion, str)
+        and suggestion.strip()
     }
 
 
@@ -171,7 +173,9 @@ def format_financial_key_figures(files: list[StructuredFile]) -> str:
 
 def extract_tabular(doc: ParsedDocument) -> StructuredFile:
     if doc.doc_type not in (DocumentType.CSV, DocumentType.XLSX, DocumentType.TXT):
-        raise ValueError(f"Deterministic extraction is not supported for {doc.doc_type.value} files")
+        raise ValueError(
+            f"Deterministic extraction is not supported for {doc.doc_type.value} files"
+        )
 
     delimiter = doc.metadata.get("delimiter", ";")
     rows_by_sheet: dict[str, list[list[str]]] = defaultdict(list)
@@ -189,13 +193,19 @@ def extract_tabular(doc: ParsedDocument) -> StructuredFile:
             continue
 
         sheet_columns = [value.strip() for value in sheet_rows[header_index]]
-        sheet_normalized_columns = [normalize_column_name(value) for value in sheet_columns]
-        original_columns.extend(column for column in sheet_columns if column not in original_columns)
+        sheet_normalized_columns = [
+            normalize_column_name(value) for value in sheet_columns
+        ]
+        original_columns.extend(
+            column for column in sheet_columns if column not in original_columns
+        )
         normalized_columns.extend(
-            column for column in sheet_normalized_columns if column not in normalized_columns
+            column
+            for column in sheet_normalized_columns
+            if column not in normalized_columns
         )
 
-        for values in sheet_rows[header_index + 1:]:
+        for values in sheet_rows[header_index + 1 :]:
             if not any(value.strip() for value in values):
                 continue
             row: dict[str, str] = {}
@@ -230,11 +240,17 @@ def _find_header_row(rows: list[list[str]]) -> int | None:
     return None
 
 
-async def extract_unstructured(doc: ParsedDocument, llm_router: LLMRouter) -> StructuredFile:
+async def extract_unstructured(
+    doc: ParsedDocument, llm_router: LLMRouter
+) -> StructuredFile:
     if doc.doc_type is DocumentType.DOCX:
         table_extraction = _extract_docx_tables(doc)
         if table_extraction is not None:
-            prose_chunks = [chunk for chunk in doc.content_chunks if ":table:" not in chunk.source_ref]
+            prose_chunks = [
+                chunk
+                for chunk in doc.content_chunks
+                if ":table:" not in chunk.source_ref
+            ]
             key_values = await _extract_key_values(doc, prose_chunks, llm_router)
             table_extraction.key_values = key_values
             if key_values:
@@ -250,7 +266,9 @@ async def extract_unstructured(doc: ParsedDocument, llm_router: LLMRouter) -> St
 
 
 def _extract_docx_tables(doc: ParsedDocument) -> StructuredFile | None:
-    table_chunks = [chunk for chunk in doc.content_chunks if ":table:" in chunk.source_ref]
+    table_chunks = [
+        chunk for chunk in doc.content_chunks if ":table:" in chunk.source_ref
+    ]
     if not table_chunks:
         return None
 
@@ -314,7 +332,9 @@ def _parse_key_value_response(response: str) -> list[KeyValueEntry]:
     except json.JSONDecodeError:
         return []
 
-    raw_entries = payload.get("key_values", []) if isinstance(payload, dict) else payload
+    raw_entries = (
+        payload.get("key_values", []) if isinstance(payload, dict) else payload
+    )
     if not isinstance(raw_entries, list):
         return []
 
@@ -371,8 +391,15 @@ class StructuredDataStore:
     def save_to_json(self, job_id: str) -> Path:
         output_path = STRUCTURED_DATA_ROOT / job_id / "structured_data.json"
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        payload = {"files": [structured_file.model_dump(mode="json") for structured_file in self.list_files()]}
-        output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        payload = {
+            "files": [
+                structured_file.model_dump(mode="json")
+                for structured_file in self.list_files()
+            ]
+        }
+        output_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
         return output_path
 
     @classmethod

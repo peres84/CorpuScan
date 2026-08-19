@@ -13,7 +13,11 @@ from app.investigation.agent import InvestigationAgent
 from app.investigation.evidence_store import EvidenceStore
 from app.investigation.graph import DocumentGraph
 from app.investigation.models import ContentChunk, DocumentType, ParsedDocument
-from app.investigation.pipeline import InvestigationJobState, InvestigationJobStore, run_investigation_pipeline
+from app.investigation.pipeline import (
+    InvestigationJobState,
+    InvestigationJobStore,
+    run_investigation_pipeline,
+)
 from app.investigation import structured
 from app.investigation.structured import StructuredDataStore, StructuredFile
 
@@ -51,8 +55,12 @@ def _csv_document() -> ParsedDocument:
         filename="ledger.csv",
         doc_type=DocumentType.CSV,
         content_chunks=[
-            ContentChunk(text="KREDITOR;BETRAG_EUR", source_ref="ledger.csv:row:1", chunk_index=0),
-            ContentChunk(text="209101;50000,00", source_ref="ledger.csv:row:2", chunk_index=1),
+            ContentChunk(
+                text="KREDITOR;BETRAG_EUR", source_ref="ledger.csv:row:1", chunk_index=0
+            ),
+            ContentChunk(
+                text="209101;50000,00", source_ref="ledger.csv:row:2", chunk_index=1
+            ),
         ],
         metadata={"delimiter": ";"},
     )
@@ -60,13 +68,21 @@ def _csv_document() -> ParsedDocument:
 
 class TestStructuredPipelineIntegration:
     @pytest.mark.asyncio
-    async def test_pipeline_writes_structured_data_json(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def test_pipeline_writes_structured_data_json(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setattr(structured, "STRUCTURED_DATA_ROOT", tmp_path)
         job_store = InvestigationJobStore()
         job_id = job_store.create()
 
-        with patch("app.investigation.pipeline._build_llm_router", return_value=PipelineRouter()):
-            with patch("app.investigation.pipeline._try_cognee_ingest", new=AsyncMock(return_value=None)):
+        with patch(
+            "app.investigation.pipeline._build_llm_router",
+            return_value=PipelineRouter(),
+        ):
+            with patch(
+                "app.investigation.pipeline._try_cognee_ingest",
+                new=AsyncMock(return_value=None),
+            ):
                 await run_investigation_pipeline(job_store, job_id, [_csv_document()])
 
         job = job_store.get(job_id)
@@ -104,7 +120,9 @@ class TestStructuredPipelineIntegration:
 
         await agent.investigate_document(document)
 
-        assert any("## Structured Data Summary" in prompt for prompt in router.user_prompts)
+        assert any(
+            "## Structured Data Summary" in prompt for prompt in router.user_prompts
+        )
         assert any("50000,00" in prompt for prompt in router.user_prompts)
         assert any('"row_number": "1"' in prompt for prompt in router.user_prompts)
         assert any("row:<number>" in prompt for prompt in router.user_prompts)

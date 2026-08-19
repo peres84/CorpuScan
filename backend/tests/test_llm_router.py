@@ -28,13 +28,15 @@ class FakeOpenAIClient:
         temperature: float = 0.2,
         response_mime_type: str | None = None,
     ) -> str:
-        self.calls.append({
-            "system": system,
-            "user": user,
-            "model": model,
-            "temperature": temperature,
-            "response_mime_type": response_mime_type,
-        })
+        self.calls.append(
+            {
+                "system": system,
+                "user": user,
+                "model": model,
+                "temperature": temperature,
+                "response_mime_type": response_mime_type,
+            }
+        )
         idx = min(self._call_count, len(self._responses) - 1)
         self._call_count += 1
         result = self._responses[idx]
@@ -60,13 +62,15 @@ class FakeGeminiClient:
         temperature: float = 0.2,
         response_mime_type: str | None = None,
     ) -> str:
-        self.calls.append({
-            "system": system,
-            "user": user,
-            "model": model,
-            "temperature": temperature,
-            "response_mime_type": response_mime_type,
-        })
+        self.calls.append(
+            {
+                "system": system,
+                "user": user,
+                "model": model,
+                "temperature": temperature,
+                "response_mime_type": response_mime_type,
+            }
+        )
         idx = min(self._call_count, len(self._responses) - 1)
         self._call_count += 1
         result = self._responses[idx]
@@ -90,10 +94,12 @@ class TestLLMRouterCallsOpenAIFirst:
 
     @pytest.mark.asyncio
     async def test_openai_fails_falls_back_to_gemini(self) -> None:
-        openai = FakeOpenAIClient(responses=[
-            RuntimeError("connection error"),
-            RuntimeError("still broken"),
-        ])
+        openai = FakeOpenAIClient(
+            responses=[
+                RuntimeError("connection error"),
+                RuntimeError("still broken"),
+            ]
+        )
         gemini = FakeGeminiClient(responses=["gemini fallback"])
         router = LLMRouter(openai_client=openai, gemini_client=gemini)  # type: ignore[arg-type]
 
@@ -105,10 +111,12 @@ class TestLLMRouterCallsOpenAIFirst:
 
     @pytest.mark.asyncio
     async def test_openai_rate_limit_triggers_fallback(self) -> None:
-        openai = FakeOpenAIClient(responses=[
-            OpenAIRateLimitError("rate limited"),
-            OpenAIRateLimitError("still rate limited"),
-        ])
+        openai = FakeOpenAIClient(
+            responses=[
+                OpenAIRateLimitError("rate limited"),
+                OpenAIRateLimitError("still rate limited"),
+            ]
+        )
         gemini = FakeGeminiClient(responses=["gemini after rate limit"])
         router = LLMRouter(openai_client=openai, gemini_client=gemini)  # type: ignore[arg-type]
 
@@ -151,10 +159,12 @@ class TestOpenAIClientRetries:
     @pytest.mark.asyncio
     async def test_router_retries_before_fallback(self) -> None:
         """Verify the router retries OpenAI before falling back."""
-        openai = FakeOpenAIClient(responses=[
-            RuntimeError("transient"),
-            "recovered",
-        ])
+        openai = FakeOpenAIClient(
+            responses=[
+                RuntimeError("transient"),
+                "recovered",
+            ]
+        )
         gemini = FakeGeminiClient(responses=["should not be called"])
         router = LLMRouter(openai_client=openai, gemini_client=gemini)  # type: ignore[arg-type]
 

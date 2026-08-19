@@ -28,7 +28,9 @@ def _make_doc(
         doc_id=doc_id,
         filename=filename,
         doc_type=doc_type,
-        content_chunks=[ContentChunk(text=content, source_ref=f"{filename}:row:1", chunk_index=0)],
+        content_chunks=[
+            ContentChunk(text=content, source_ref=f"{filename}:row:1", chunk_index=0)
+        ],
     )
 
 
@@ -38,11 +40,15 @@ class TestNodeSetAssignment:
         assert get_node_set(doc) == "vendor_records"
 
     def test_receipt_file_gets_receipts_node_set(self) -> None:
-        doc = _make_doc(filename="Wareneingangsliste_2025.csv", doc_type=DocumentType.CSV)
+        doc = _make_doc(
+            filename="Wareneingangsliste_2025.csv", doc_type=DocumentType.CSV
+        )
         assert get_node_set(doc) == "receipts"
 
     def test_permission_file_gets_permissions_node_set(self) -> None:
-        doc = _make_doc(filename="Berechtigungsauswertung_2025.xlsx", doc_type=DocumentType.XLSX)
+        doc = _make_doc(
+            filename="Berechtigungsauswertung_2025.xlsx", doc_type=DocumentType.XLSX
+        )
         assert get_node_set(doc) == "permissions"
 
     def test_accounting_file_gets_ledgers_node_set(self) -> None:
@@ -50,7 +56,9 @@ class TestNodeSetAssignment:
         assert get_node_set(doc) == "accounting_ledgers"
 
     def test_stammdaten_gets_master_data(self) -> None:
-        doc = _make_doc(filename="Stammdatenaenderungen_2025.csv", doc_type=DocumentType.CSV)
+        doc = _make_doc(
+            filename="Stammdatenaenderungen_2025.csv", doc_type=DocumentType.CSV
+        )
         assert get_node_set(doc) == "master_data"
 
     def test_pdf_defaults_to_reports(self) -> None:
@@ -113,8 +121,12 @@ class TestIngestDocuments:
         client._available = True
 
         docs = [
-            _make_doc("d1", "Lieferantenbuchungen.txt", DocumentType.TXT, "vendor data"),
-            _make_doc("d2", "Wareneingangsliste_2025.csv", DocumentType.CSV, "receipt data"),
+            _make_doc(
+                "d1", "Lieferantenbuchungen.txt", DocumentType.TXT, "vendor data"
+            ),
+            _make_doc(
+                "d2", "Wareneingangsliste_2025.csv", DocumentType.CSV, "receipt data"
+            ),
             _make_doc("d3", "report.pdf", DocumentType.PDF, "report content"),
         ]
 
@@ -129,7 +141,9 @@ class TestIngestDocuments:
         assert mock_remember.call_count == 3
         # Verify node sets were passed correctly
         calls = mock_remember.call_args_list
-        node_sets_used = [c.kwargs.get("node_set") or c[1].get("node_set") for c in calls]
+        node_sets_used = [
+            c.kwargs.get("node_set") or c[1].get("node_set") for c in calls
+        ]
         assert ["vendor_records"] in node_sets_used
         assert ["receipts"] in node_sets_used
         assert ["reports"] in node_sets_used
@@ -155,7 +169,12 @@ class TestIngestDocuments:
         mock_cognee = MagicMock()
         mock_cognee.remember = mock_remember
 
-        with patch("builtins.__import__", side_effect=lambda name, *a, **kw: mock_cognee if name == "cognee" else __import__(name, *a, **kw)):
+        with patch(
+            "builtins.__import__",
+            side_effect=lambda name, *a, **kw: (
+                mock_cognee if name == "cognee" else __import__(name, *a, **kw)
+            ),
+        ):
             count = await ingest_documents(client, docs)
 
         # One succeeded, one failed

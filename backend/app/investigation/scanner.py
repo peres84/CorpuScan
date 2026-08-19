@@ -13,7 +13,9 @@ SUPPORTED_EXTENSIONS = {".txt", ".pdf", ".xlsx", ".csv", ".docx", ".xml", ".md"}
 SKIP_FILES = {"gdpdu-01-08-2002.dtd"}
 
 
-def scan_directory(root: Path, chunk_size: int = 1500, overlap: int = 200) -> list[ParsedDocument]:
+def scan_directory(
+    root: Path, chunk_size: int = 1500, overlap: int = 200
+) -> list[ParsedDocument]:
     """Recursively walk a directory and parse all supported files.
 
     Returns a list of ParsedDocument instances with content chunking applied.

@@ -102,7 +102,9 @@ def _detect_round_amounts(text: str) -> tuple[float, list[str]]:
 
     signals: list[str] = []
     if len(round_amounts) >= 3:
-        signals.append(f"Multiple round amounts detected ({len(round_amounts)} amounts divisible by €1,000)")
+        signals.append(
+            f"Multiple round amounts detected ({len(round_amounts)} amounts divisible by €1,000)"
+        )
         return 1.0, signals
     elif len(round_amounts) >= 1:
         signals.append(f"Round amounts detected ({len(round_amounts)})")
@@ -149,7 +151,9 @@ def _detect_duplicate_patterns(text: str) -> tuple[float, list[str]]:
             # Heuristic: field that looks like a company name (contains GmbH, AG, etc.)
             for part in parts:
                 cleaned = part.strip().strip('"')
-                if any(suffix in cleaned for suffix in ("GmbH", "AG", "KG", "SE", "e.K.")):
+                if any(
+                    suffix in cleaned for suffix in ("GmbH", "AG", "KG", "SE", "e.K.")
+                ):
                     vendor_counts[cleaned] += 1
 
     signals: list[str] = []

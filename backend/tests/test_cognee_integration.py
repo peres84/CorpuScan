@@ -3,6 +3,7 @@
 These tests validate that Cognee integration improves investigation quality.
 LLM-dependent tests are skipped when no API key is available.
 """
+
 from __future__ import annotations
 
 import os
@@ -14,18 +15,31 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 import pytest
 
 from app.cognee.schemas import CogneeEntity, CogneeGraphResponse, CogneeRelationship
-from app.investigation.report import build_knowledge_graph_summary, build_relationship_chains
+from app.investigation.report import (
+    build_knowledge_graph_summary,
+    build_relationship_chains,
+)
 from app.investigation.scanner import scan_directory
 
 DATASET_ROOT = Path(__file__).resolve().parent.parent.parent / "fraud_train_dataset"
 
 _has_llm_key = bool(
-    (os.environ.get("OPENAI_KEY", "").strip() and os.environ.get("OPENAI_KEY", "").strip().lower() not in ("key_here", "your_api_key"))
-    or (os.environ.get("GEMINI_API_KEY", "").strip() and os.environ.get("GEMINI_API_KEY", "").strip().lower() not in ("key_here", "your_api_key"))
+    (
+        os.environ.get("OPENAI_KEY", "").strip()
+        and os.environ.get("OPENAI_KEY", "").strip().lower()
+        not in ("key_here", "your_api_key")
+    )
+    or (
+        os.environ.get("GEMINI_API_KEY", "").strip()
+        and os.environ.get("GEMINI_API_KEY", "").strip().lower()
+        not in ("key_here", "your_api_key")
+    )
 )
 
 skip_no_llm = pytest.mark.skipif(not _has_llm_key, reason="No LLM API key available")
-skip_no_dataset = pytest.mark.skipif(not DATASET_ROOT.exists(), reason="Dataset not found")
+skip_no_dataset = pytest.mark.skipif(
+    not DATASET_ROOT.exists(), reason="Dataset not found"
+)
 
 
 def _build_f1_cognee_graph() -> CogneeGraphResponse:
@@ -39,11 +53,31 @@ def _build_f1_cognee_graph() -> CogneeGraphResponse:
             CogneeEntity(name="Wareneingangsliste_2025.csv", entity_type="document"),
         ],
         relationships=[
-            CogneeRelationship(source_entity="MV-U05", target_entity="Ratio Consulting GmbH", relationship_type="created"),
-            CogneeRelationship(source_entity="MV-U05", target_entity="Ratio Consulting GmbH", relationship_type="approved"),
-            CogneeRelationship(source_entity="Ratio Consulting GmbH", target_entity="209101", relationship_type="has_account"),
-            CogneeRelationship(source_entity="Ratio Consulting GmbH", target_entity="€248,000", relationship_type="invoiced"),
-            CogneeRelationship(source_entity="209101", target_entity="Wareneingangsliste_2025.csv", relationship_type="no_receipt"),
+            CogneeRelationship(
+                source_entity="MV-U05",
+                target_entity="Ratio Consulting GmbH",
+                relationship_type="created",
+            ),
+            CogneeRelationship(
+                source_entity="MV-U05",
+                target_entity="Ratio Consulting GmbH",
+                relationship_type="approved",
+            ),
+            CogneeRelationship(
+                source_entity="Ratio Consulting GmbH",
+                target_entity="209101",
+                relationship_type="has_account",
+            ),
+            CogneeRelationship(
+                source_entity="Ratio Consulting GmbH",
+                target_entity="€248,000",
+                relationship_type="invoiced",
+            ),
+            CogneeRelationship(
+                source_entity="209101",
+                target_entity="Wareneingangsliste_2025.csv",
+                relationship_type="no_receipt",
+            ),
         ],
     )
 
@@ -71,13 +105,23 @@ class TestCogneeGraphConnectsF2:
     def test_f2_relationships(self) -> None:
         graph = CogneeGraphResponse(
             entities=[
-                CogneeEntity(name="Reparatur Konfektioniermaschine", entity_type="asset"),
+                CogneeEntity(
+                    name="Reparatur Konfektioniermaschine", entity_type="asset"
+                ),
                 CogneeEntity(name="040000", entity_type="account"),
                 CogneeEntity(name="670000", entity_type="account"),
             ],
             relationships=[
-                CogneeRelationship(source_entity="Reparatur Konfektioniermaschine", target_entity="040000", relationship_type="booked_to"),
-                CogneeRelationship(source_entity="Reparatur Konfektioniermaschine", target_entity="670000", relationship_type="should_be"),
+                CogneeRelationship(
+                    source_entity="Reparatur Konfektioniermaschine",
+                    target_entity="040000",
+                    relationship_type="booked_to",
+                ),
+                CogneeRelationship(
+                    source_entity="Reparatur Konfektioniermaschine",
+                    target_entity="670000",
+                    relationship_type="should_be",
+                ),
             ],
         )
         chains = build_relationship_chains(graph)
@@ -95,8 +139,16 @@ class TestCogneeGraphConnectsF3:
                 CogneeEntity(name="no accrual", entity_type="finding"),
             ],
             relationships=[
-                CogneeRelationship(source_entity="Dec 2025 delivery", target_entity="Jan 2026 booking", relationship_type="delayed_booking"),
-                CogneeRelationship(source_entity="Jan 2026 booking", target_entity="no accrual", relationship_type="missing"),
+                CogneeRelationship(
+                    source_entity="Dec 2025 delivery",
+                    target_entity="Jan 2026 booking",
+                    relationship_type="delayed_booking",
+                ),
+                CogneeRelationship(
+                    source_entity="Jan 2026 booking",
+                    target_entity="no accrual",
+                    relationship_type="missing",
+                ),
             ],
         )
         chains = build_relationship_chains(graph)
@@ -117,11 +169,31 @@ class TestCogneeGraphConnectsF4:
                 CogneeEntity(name="€9,690", entity_type="amount"),
             ],
             relationships=[
-                CogneeRelationship(source_entity="Castor Papier GmbH", target_entity="14.10.2025", relationship_type="payment_date"),
-                CogneeRelationship(source_entity="Castor Papier GmbH", target_entity="€9,780", relationship_type="paid"),
-                CogneeRelationship(source_entity="Castor Papier GmbH", target_entity="€9,820", relationship_type="paid"),
-                CogneeRelationship(source_entity="Castor Papier GmbH", target_entity="€9,750", relationship_type="paid"),
-                CogneeRelationship(source_entity="Castor Papier GmbH", target_entity="€9,690", relationship_type="paid"),
+                CogneeRelationship(
+                    source_entity="Castor Papier GmbH",
+                    target_entity="14.10.2025",
+                    relationship_type="payment_date",
+                ),
+                CogneeRelationship(
+                    source_entity="Castor Papier GmbH",
+                    target_entity="€9,780",
+                    relationship_type="paid",
+                ),
+                CogneeRelationship(
+                    source_entity="Castor Papier GmbH",
+                    target_entity="€9,820",
+                    relationship_type="paid",
+                ),
+                CogneeRelationship(
+                    source_entity="Castor Papier GmbH",
+                    target_entity="€9,750",
+                    relationship_type="paid",
+                ),
+                CogneeRelationship(
+                    source_entity="Castor Papier GmbH",
+                    target_entity="€9,690",
+                    relationship_type="paid",
+                ),
             ],
         )
         chains = build_relationship_chains(graph)
@@ -140,8 +212,16 @@ class TestCogneeDecoysShouldNotFlag:
                 CogneeEntity(name="MV-U02", entity_type="person"),
             ],
             relationships=[
-                CogneeRelationship(source_entity="MV-U03", target_entity="Vega Werkstoffe GmbH", relationship_type="created"),
-                CogneeRelationship(source_entity="MV-U02", target_entity="Vega Werkstoffe GmbH", relationship_type="approved"),
+                CogneeRelationship(
+                    source_entity="MV-U03",
+                    target_entity="Vega Werkstoffe GmbH",
+                    relationship_type="created",
+                ),
+                CogneeRelationship(
+                    source_entity="MV-U02",
+                    target_entity="Vega Werkstoffe GmbH",
+                    relationship_type="approved",
+                ),
             ],
         )
         chains = build_relationship_chains(graph)
@@ -181,7 +261,9 @@ class TestPerformance:
         for i, doc in enumerate(documents[:10]):
             graph.add_entity_to_document(
                 doc.doc_id,
-                Entity(name=f"Entity_{i}", entity_type="vendor", source_doc_id=doc.doc_id),
+                Entity(
+                    name=f"Entity_{i}", entity_type="vendor", source_doc_id=doc.doc_id
+                ),
             )
 
         elapsed = time.perf_counter() - start

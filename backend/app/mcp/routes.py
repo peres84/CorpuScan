@@ -3,6 +3,7 @@ MCP router — exposes tool listing and invocation endpoints.
 
 The Investigation Agent uses these tools for external research.
 """
+
 from __future__ import annotations
 
 import logging
@@ -46,4 +47,6 @@ async def call_mcp_tool(request: ToolCallRequest) -> ToolCallResponse:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
         logger.exception("MCP tool call failed: %s", request.name)
-        raise HTTPException(status_code=500, detail=f"Tool execution failed: {exc}") from exc
+        raise HTTPException(
+            status_code=500, detail=f"Tool execution failed: {exc}"
+        ) from exc

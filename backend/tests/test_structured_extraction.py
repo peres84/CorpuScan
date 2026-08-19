@@ -73,7 +73,14 @@ class TestTabularExtraction:
         extracted = extract_tabular(document)
 
         assert extracted.original_columns == ["KONTO", "BETRAG"]
-        assert extracted.rows == [{"KONTO": "1200", "account_id": "1200", "BETRAG": "300,00", "amount": "300,00"}]
+        assert extracted.rows == [
+            {
+                "KONTO": "1200",
+                "account_id": "1200",
+                "BETRAG": "300,00",
+                "amount": "300,00",
+            }
+        ]
 
     def test_column_normalization_maps_known_synonyms(self) -> None:
         assert normalize_column_name("BETRAG_EUR") == "amount"
@@ -92,10 +99,14 @@ class TestTabularExtraction:
                 return '{"Kostenstelle": "cost_center", "Steuerschluessel": "tax_code"}'
 
         suggestions = await suggest_normalized_columns(
-            ["BETRAG_EUR", "Kostenstelle", "Steuerschluessel"], MockRouter()  # type: ignore[arg-type]
+            ["BETRAG_EUR", "Kostenstelle", "Steuerschluessel"],
+            MockRouter(),  # type: ignore[arg-type]
         )
 
-        assert suggestions == {"Kostenstelle": "cost_center", "Steuerschluessel": "tax_code"}
+        assert suggestions == {
+            "Kostenstelle": "cost_center",
+            "Steuerschluessel": "tax_code",
+        }
 
     def test_gdpdu_semicolon_txt_extracts_correctly(self) -> None:
         document = _document(

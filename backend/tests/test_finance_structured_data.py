@@ -50,7 +50,9 @@ def test_multi_pdf_figures_normalize_to_shared_metric_names() -> None:
             extraction_method="llm_assisted",
             key_values=[
                 KeyValueEntry(field="Revenue", value="€10 million", context="Q1 2025"),
-                KeyValueEntry(field="Earnings per share", value="€1.20", context="Q1 2025"),
+                KeyValueEntry(
+                    field="Earnings per share", value="€1.20", context="Q1 2025"
+                ),
             ],
         ),
         StructuredFile(
@@ -58,7 +60,9 @@ def test_multi_pdf_figures_normalize_to_shared_metric_names() -> None:
             filename="q2.pdf",
             extraction_method="llm_assisted",
             key_values=[
-                KeyValueEntry(field="Net Sales", value="€12 million", context="Q2 2025"),
+                KeyValueEntry(
+                    field="Net Sales", value="€12 million", context="Q2 2025"
+                ),
                 KeyValueEntry(field="Operating Margin", value="18%", context="Q2 2025"),
             ],
         ),
@@ -67,6 +71,12 @@ def test_multi_pdf_figures_normalize_to_shared_metric_names() -> None:
     normalized = normalize_financial_metrics(files)
     summary = format_financial_key_figures(normalized)
 
-    assert [entry.field for entry in normalized[0].key_values or []] == ["revenue", "eps"]
-    assert [entry.field for entry in normalized[1].key_values or []] == ["revenue", "operating_margin"]
+    assert [entry.field for entry in normalized[0].key_values or []] == [
+        "revenue",
+        "eps",
+    ]
+    assert [entry.field for entry in normalized[1].key_values or []] == [
+        "revenue",
+        "operating_margin",
+    ]
     assert summary.count("revenue:") == 2

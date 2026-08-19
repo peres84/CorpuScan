@@ -5,7 +5,13 @@ import math
 
 from app.agents._prompts import load_prompt
 from app.integrations.gemini import GeminiClient
-from app.schemas import BrandingPalette, OutputAspectRatio, PipelineContext, Scene, SlideChunk
+from app.schemas import (
+    BrandingPalette,
+    OutputAspectRatio,
+    PipelineContext,
+    Scene,
+    SlideChunk,
+)
 
 ALLOWED_FORMATS = {"mp4", "prores", "webm", "gif"}
 ALLOWED_ASPECT_RATIOS = {"16:9", "9:16", "1:1", "4:5"}
@@ -54,7 +60,9 @@ async def run_hera_agent(
         accent_hex=branding.accent,
         background_alt_hex=background_alt_hex(branding),
         background_strong_hex=background_strong_hex(branding),
-        overlay_position=overlay_position_for_aspect_ratio(pipeline_context.output_aspect_ratio),
+        overlay_position=overlay_position_for_aspect_ratio(
+            pipeline_context.output_aspect_ratio
+        ),
     )
     response_text = await gemini_client.generate(
         system=prompt.system,
@@ -212,4 +220,4 @@ def _hex_to_rgb_ints(value: str) -> tuple[int, int, int]:
     hex_value = value.lstrip("#")
     if len(hex_value) != 6:
         raise ValueError(f"Invalid hex color: {value}")
-    return tuple(int(hex_value[index:index + 2], 16) for index in range(0, 6, 2))
+    return tuple(int(hex_value[index : index + 2], 16) for index in range(0, 6, 2))

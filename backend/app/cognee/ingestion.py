@@ -4,7 +4,10 @@ import logging
 
 from app.cognee.client import CogneeClient
 from app.investigation.models import DocumentType, ParsedDocument
-from app.investigation.structured import StructuredDataStore, format_structured_file_summary
+from app.investigation.structured import (
+    StructuredDataStore,
+    format_structured_file_summary,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -45,13 +48,17 @@ def get_node_set(doc: ParsedDocument) -> str:
     return _NODE_SET_MAPPING.get(doc.doc_type, "other")
 
 
-def _build_ingestion_text(doc: ParsedDocument, structured_data_store: StructuredDataStore | None = None) -> str:
+def _build_ingestion_text(
+    doc: ParsedDocument, structured_data_store: StructuredDataStore | None = None
+) -> str:
     """Convert ParsedDocument chunks into a single text block for Cognee ingestion."""
     parts: list[str] = []
     total_chars = 0
 
     # Prepend metadata header
-    header = f"Document: {doc.filename}\nType: {doc.doc_type.value}\nID: {doc.doc_id}\n---\n"
+    header = (
+        f"Document: {doc.filename}\nType: {doc.doc_type.value}\nID: {doc.doc_id}\n---\n"
+    )
     parts.append(header)
     total_chars += len(header)
 
@@ -105,7 +112,7 @@ async def ingest_documents(
     for node_set, docs in by_node_set.items():
         # Process in batches
         for batch_start in range(0, len(docs), _BATCH_SIZE):
-            batch = docs[batch_start:batch_start + _BATCH_SIZE]
+            batch = docs[batch_start : batch_start + _BATCH_SIZE]
 
             for doc in batch:
                 text = _build_ingestion_text(doc, structured_data_store)
@@ -120,8 +127,14 @@ async def ingest_documents(
                     )
                     ingested_count += 1
                 except Exception:
-                    logger.warning("Cognee ingestion failed for %s — skipping", doc.filename)
+                    logger.warning(
+                        "Cognee ingestion failed for %s — skipping", doc.filename
+                    )
                     continue
 
-    logger.info("Cognee ingestion complete: %d/%d documents ingested", ingested_count, len(documents))
+    logger.info(
+        "Cognee ingestion complete: %d/%d documents ingested",
+        ingested_count,
+        len(documents),
+    )
     return ingested_count

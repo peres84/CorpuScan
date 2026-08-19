@@ -56,8 +56,10 @@ class GeminiClient:
                 config=config,
             )
         except ClientError as exc:
-            if exc.code == 400 and exc.status == "INVALID_ARGUMENT" and (
-                "API key not valid" in (exc.message or "")
+            if (
+                exc.code == 400
+                and exc.status == "INVALID_ARGUMENT"
+                and ("API key not valid" in (exc.message or ""))
             ):
                 raise RuntimeError(
                     "Gemini API key was rejected by Google. Replace GEMINI_API_KEY in "
@@ -65,5 +67,7 @@ class GeminiClient:
                 ) from exc
             raise
         output = (response.text or "").strip()
-        logger.info("%s gemini generate finished (%d chars)", stage_tag("gemini"), len(output))
+        logger.info(
+            "%s gemini generate finished (%d chars)", stage_tag("gemini"), len(output)
+        )
         return output

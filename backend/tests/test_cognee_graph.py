@@ -24,7 +24,11 @@ class TestParseGraphResult:
                 {"name": "MV-U05", "type": "person"},
             ],
             "edges": [
-                {"source": "MV-U05", "target": "Ratio Consulting GmbH", "type": "created"},
+                {
+                    "source": "MV-U05",
+                    "target": "Ratio Consulting GmbH",
+                    "type": "created",
+                },
             ],
         }
         response = _parse_cognee_graph_result(result)
@@ -39,7 +43,11 @@ class TestParseGraphResult:
                 {"name": "209101", "type": "account"},
             ],
             "relationships": [
-                {"source": "209101", "target": "Ratio Consulting GmbH", "type": "belongs_to"},
+                {
+                    "source": "209101",
+                    "target": "Ratio Consulting GmbH",
+                    "type": "belongs_to",
+                },
             ],
         }
         response = _parse_cognee_graph_result(result)
@@ -92,7 +100,9 @@ class TestMergeIntoEvidenceStore:
     def test_deduplicates_existing_entities(self) -> None:
         store = EvidenceStore()
         # Pre-existing entity
-        store.add_entity(Entity(name="Vendor A", entity_type="vendor", source_doc_id="doc1"))
+        store.add_entity(
+            Entity(name="Vendor A", entity_type="vendor", source_doc_id="doc1")
+        )
 
         response = CogneeGraphResponse(
             entities=[

@@ -58,12 +58,14 @@ class DocumentGraph:
         existing_docs = self._entity_index[entity_key]
         for other_doc_id in existing_docs:
             if other_doc_id != doc_id:
-                self._edges.append(GraphEdge(
-                    source_doc_id=doc_id,
-                    target_doc_id=other_doc_id,
-                    shared_entity=entity.name,
-                    entity_type=entity.entity_type,
-                ))
+                self._edges.append(
+                    GraphEdge(
+                        source_doc_id=doc_id,
+                        target_doc_id=other_doc_id,
+                        shared_entity=entity.name,
+                        entity_type=entity.entity_type,
+                    )
+                )
 
         self._entity_index[entity_key].add(doc_id)
 
@@ -76,12 +78,14 @@ class DocumentGraph:
                 self._entity_index[alias_key] = set()
             for other_doc_id in self._entity_index[alias_key]:
                 if other_doc_id != doc_id:
-                    self._edges.append(GraphEdge(
-                        source_doc_id=doc_id,
-                        target_doc_id=other_doc_id,
-                        shared_entity=alias,
-                        entity_type=entity.entity_type,
-                    ))
+                    self._edges.append(
+                        GraphEdge(
+                            source_doc_id=doc_id,
+                            target_doc_id=other_doc_id,
+                            shared_entity=alias,
+                            entity_type=entity.entity_type,
+                        )
+                    )
             self._entity_index[alias_key].add(doc_id)
 
     def get_related_documents(self, doc_id: str) -> list[str]:
@@ -102,7 +106,8 @@ class DocumentGraph:
     def get_edges_between(self, doc_id_a: str, doc_id_b: str) -> list[GraphEdge]:
         """Get all edges connecting two specific documents."""
         return [
-            e for e in self._edges
+            e
+            for e in self._edges
             if (e.source_doc_id == doc_id_a and e.target_doc_id == doc_id_b)
             or (e.source_doc_id == doc_id_b and e.target_doc_id == doc_id_a)
         ]

@@ -83,38 +83,54 @@ def _extract_from_dict(
     if "nodes" in data:
         for node in data.get("nodes", []):
             if isinstance(node, dict) and node.get("name"):
-                entities.append(CogneeEntity(
-                    name=str(node["name"]),
-                    entity_type=_normalize_entity_type(str(node.get("type", "unknown"))),
-                    properties={k: str(v) for k, v in node.items() if k not in ("name", "type")},
-                ))
+                entities.append(
+                    CogneeEntity(
+                        name=str(node["name"]),
+                        entity_type=_normalize_entity_type(
+                            str(node.get("type", "unknown"))
+                        ),
+                        properties={
+                            k: str(v)
+                            for k, v in node.items()
+                            if k not in ("name", "type")
+                        },
+                    )
+                )
 
     if "edges" in data:
         for edge in data.get("edges", []):
             if isinstance(edge, dict) and edge.get("source") and edge.get("target"):
-                relationships.append(CogneeRelationship(
-                    source_entity=str(edge["source"]),
-                    target_entity=str(edge["target"]),
-                    relationship_type=str(edge.get("type", "related_to")),
-                ))
+                relationships.append(
+                    CogneeRelationship(
+                        source_entity=str(edge["source"]),
+                        target_entity=str(edge["target"]),
+                        relationship_type=str(edge.get("type", "related_to")),
+                    )
+                )
 
     # Handle entities/relationships format
     if "entities" in data:
         for entity in data.get("entities", []):
             if isinstance(entity, dict) and entity.get("name"):
-                entities.append(CogneeEntity(
-                    name=str(entity["name"]),
-                    entity_type=_normalize_entity_type(str(entity.get("type", "unknown"))),
-                ))
+                entities.append(
+                    CogneeEntity(
+                        name=str(entity["name"]),
+                        entity_type=_normalize_entity_type(
+                            str(entity.get("type", "unknown"))
+                        ),
+                    )
+                )
 
     if "relationships" in data:
         for rel in data.get("relationships", []):
             if isinstance(rel, dict) and rel.get("source") and rel.get("target"):
-                relationships.append(CogneeRelationship(
-                    source_entity=str(rel["source"]),
-                    target_entity=str(rel["target"]),
-                    relationship_type=str(rel.get("type", "related_to")),
-                ))
+                relationships.append(
+                    CogneeRelationship(
+                        source_entity=str(rel["source"]),
+                        target_entity=str(rel["target"]),
+                        relationship_type=str(rel.get("type", "related_to")),
+                    )
+                )
 
 
 def _normalize_entity_type(raw_type: str) -> str:
@@ -141,15 +157,21 @@ def merge_cognee_into_evidence_store(
             if source_doc_id not in existing.aliases:
                 existing.aliases.append(f"cognee:{cognee_entity.entity_type}")
         else:
-            evidence_store.add_entity(Entity(
-                name=cognee_entity.name,
-                entity_type=cognee_entity.entity_type,
-                source_doc_id=source_doc_id,
-                aliases=[],
-            ))
+            evidence_store.add_entity(
+                Entity(
+                    name=cognee_entity.name,
+                    entity_type=cognee_entity.entity_type,
+                    source_doc_id=source_doc_id,
+                    aliases=[],
+                )
+            )
             added += 1
 
-    logger.info("Merged Cognee entities: %d new, %d existing", added, len(graph_response.entities) - added)
+    logger.info(
+        "Merged Cognee entities: %d new, %d existing",
+        added,
+        len(graph_response.entities) - added,
+    )
     return added
 
 

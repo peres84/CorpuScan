@@ -10,7 +10,9 @@ _DEFAULT_DEV_CORS_ORIGINS = ("http://localhost:5173", "http://localhost:8080")
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=str(_ENV_FILE), env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=str(_ENV_FILE), env_file_encoding="utf-8", extra="ignore"
+    )
 
     gemini_api_key: str = Field(default="")
     gemini_model: str = Field(default="gemini-2.5-pro")
@@ -33,7 +35,9 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> list[str]:
-        configured = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        configured = [
+            origin.strip() for origin in self.cors_origins.split(",") if origin.strip()
+        ]
         if "*" in configured:
             return ["*"]
         merged = list(dict.fromkeys([*configured, *_DEFAULT_DEV_CORS_ORIGINS]))

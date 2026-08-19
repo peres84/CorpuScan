@@ -38,7 +38,9 @@ class HeraClient:
         logger.info(
             "%s hera submit started (outputs=%d, prompt_chars=%d)",
             stage_tag("hera"),
-            len(spec.get("outputs", [])) if isinstance(spec.get("outputs"), list) else 0,
+            len(spec.get("outputs", []))
+            if isinstance(spec.get("outputs"), list)
+            else 0,
             len(str(spec.get("prompt", ""))),
         )
         async with httpx.AsyncClient(timeout=60) as client:
@@ -50,7 +52,9 @@ class HeraClient:
         video_id = data.get("video_id")
         if not isinstance(video_id, str) or not video_id:
             raise ValueError("Hera submit response missing video_id.")
-        logger.info("%s hera submit finished (video_id=%s)", stage_tag("hera"), video_id)
+        logger.info(
+            "%s hera submit finished (video_id=%s)", stage_tag("hera"), video_id
+        )
         return video_id
 
     async def poll(self, video_id: str) -> dict[str, object]:
@@ -97,7 +101,10 @@ class HeraClient:
                     status = "success"
                 elif output_status == "failed":
                     status = "failed"
-                elif top_level_status not in {"success", "failed"} and output_status == "in-progress":
+                elif (
+                    top_level_status not in {"success", "failed"}
+                    and output_status == "in-progress"
+                ):
                     status = "in-progress"
         return {
             "status": status,
@@ -115,5 +122,9 @@ class HeraClient:
         async with httpx.AsyncClient(timeout=120, follow_redirects=False) as client:
             response = await client.get(url)
             response.raise_for_status()
-        logger.info("%s hera download finished (bytes=%d)", stage_tag("hera"), len(response.content))
+        logger.info(
+            "%s hera download finished (bytes=%d)",
+            stage_tag("hera"),
+            len(response.content),
+        )
         return response.content

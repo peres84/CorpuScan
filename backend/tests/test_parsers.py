@@ -47,7 +47,9 @@ class TestDetectDocumentType:
 
 
 class TestParseTxt:
-    @pytest.mark.skipif(not (DATASET_ROOT / "AV" / "Anlagen.txt").exists(), reason="Dataset missing")
+    @pytest.mark.skipif(
+        not (DATASET_ROOT / "AV" / "Anlagen.txt").exists(), reason="Dataset missing"
+    )
     def test_parse_anlagen(self) -> None:
         path = DATASET_ROOT / "AV" / "Anlagen.txt"
         doc = parse_txt(path)
@@ -60,7 +62,9 @@ class TestParseTxt:
 
 
 class TestParseGdpduIndex:
-    @pytest.mark.skipif(not (DATASET_ROOT / "AV" / "index.xml").exists(), reason="Dataset missing")
+    @pytest.mark.skipif(
+        not (DATASET_ROOT / "AV" / "index.xml").exists(), reason="Dataset missing"
+    )
     def test_parse_av_index(self) -> None:
         path = DATASET_ROOT / "AV" / "index.xml"
         doc = parse_gdpdu_index(path)
@@ -72,7 +76,9 @@ class TestParseGdpduIndex:
 
 class TestParsePdf:
     @pytest.mark.skipif(
-        not (DATASET_ROOT / "Begleitdokumente" / "Exportprotokoll_GDPdU_2025.pdf").exists(),
+        not (
+            DATASET_ROOT / "Begleitdokumente" / "Exportprotokoll_GDPdU_2025.pdf"
+        ).exists(),
         reason="Dataset missing",
     )
     def test_parse_pdf(self) -> None:
@@ -97,7 +103,9 @@ class TestParseXlsx:
 
 class TestParseCsv:
     @pytest.mark.skipif(
-        not (DATASET_ROOT / "Begleitdokumente" / "Stammdatenaenderungen_2025.csv").exists(),
+        not (
+            DATASET_ROOT / "Begleitdokumente" / "Stammdatenaenderungen_2025.csv"
+        ).exists(),
         reason="Dataset missing",
     )
     def test_parse_csv(self) -> None:
@@ -110,7 +118,9 @@ class TestParseCsv:
 
 class TestParseDocx:
     @pytest.mark.skipif(
-        not (DATASET_ROOT / "Begleitdokumente" / "Pruefungsplanung_JET_2025.docx").exists(),
+        not (
+            DATASET_ROOT / "Begleitdokumente" / "Pruefungsplanung_JET_2025.docx"
+        ).exists(),
         reason="Dataset missing",
     )
     def test_parse_docx(self) -> None:
@@ -127,7 +137,9 @@ class TestChunker:
             filename="test.txt",
             doc_type=DocumentType.TXT,
             content_chunks=[
-                ContentChunk(text="short text", source_ref="test.txt:row:1", chunk_index=0),
+                ContentChunk(
+                    text="short text", source_ref="test.txt:row:1", chunk_index=0
+                ),
             ],
         )
         result = chunk_document(doc, chunk_size=1500, overlap=200)
@@ -140,7 +152,9 @@ class TestChunker:
             filename="big.txt",
             doc_type=DocumentType.TXT,
             content_chunks=[
-                ContentChunk(text=long_text.strip(), source_ref="big.txt:row:1", chunk_index=0),
+                ContentChunk(
+                    text=long_text.strip(), source_ref="big.txt:row:1", chunk_index=0
+                ),
             ],
         )
         result = chunk_document(doc, chunk_size=500, overlap=100)

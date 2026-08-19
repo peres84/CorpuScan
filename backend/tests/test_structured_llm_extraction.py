@@ -45,7 +45,9 @@ class FailingRouter:
 class TestUnstructuredExtraction:
     @pytest.mark.asyncio
     async def test_mocked_llm_response_produces_key_values(self) -> None:
-        extracted = await extract_unstructured(_document(DocumentType.PDF), MockRouter())  # type: ignore[arg-type]
+        extracted = await extract_unstructured(
+            _document(DocumentType.PDF), MockRouter()
+        )  # type: ignore[arg-type]
 
         assert extracted.extraction_method == "llm_assisted"
         assert extracted.key_values is not None
@@ -54,7 +56,9 @@ class TestUnstructuredExtraction:
 
     @pytest.mark.asyncio
     async def test_llm_failure_returns_empty_key_values(self) -> None:
-        extracted = await extract_unstructured(_document(DocumentType.PDF), FailingRouter())  # type: ignore[arg-type]
+        extracted = await extract_unstructured(
+            _document(DocumentType.PDF), FailingRouter()
+        )  # type: ignore[arg-type]
 
         assert extracted.key_values == []
 
@@ -65,9 +69,21 @@ class TestUnstructuredExtraction:
             filename="policy.docx",
             doc_type=DocumentType.DOCX,
             content_chunks=[
-                ContentChunk(text="Policy applies in 2025.", source_ref="policy.docx:paragraph:1", chunk_index=0),
-                ContentChunk(text="KONTO | BETRAG", source_ref="policy.docx:table:1:row:1", chunk_index=1),
-                ContentChunk(text="1200 | 50000,00", source_ref="policy.docx:table:1:row:2", chunk_index=2),
+                ContentChunk(
+                    text="Policy applies in 2025.",
+                    source_ref="policy.docx:paragraph:1",
+                    chunk_index=0,
+                ),
+                ContentChunk(
+                    text="KONTO | BETRAG",
+                    source_ref="policy.docx:table:1:row:1",
+                    chunk_index=1,
+                ),
+                ContentChunk(
+                    text="1200 | 50000,00",
+                    source_ref="policy.docx:table:1:row:2",
+                    chunk_index=2,
+                ),
             ],
         )
 

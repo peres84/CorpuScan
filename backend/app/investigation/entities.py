@@ -94,12 +94,14 @@ def _parse_entity_response(response: str, doc_id: str) -> list[Entity]:
                 continue
             if not isinstance(aliases, list):
                 aliases = []
-            entities.append(Entity(
-                name=name,
-                entity_type=entity_type,
-                source_doc_id=doc_id,
-                aliases=[str(a) for a in aliases if a],
-            ))
+            entities.append(
+                Entity(
+                    name=name,
+                    entity_type=entity_type,
+                    source_doc_id=doc_id,
+                    aliases=[str(a) for a in aliases if a],
+                )
+            )
         return entities
     except (json.JSONDecodeError, ValueError):
         logger.warning("Failed to parse entity extraction response")

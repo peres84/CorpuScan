@@ -156,7 +156,9 @@ async def create_investigation(
             continue
 
     if not documents:
-        raise HTTPException(status_code=400, detail="No files could be parsed successfully.")
+        raise HTTPException(
+            status_code=400, detail="No files could be parsed successfully."
+        )
 
     # Parse priority doc IDs
     priority_ids: list[str] | None = None
@@ -192,7 +194,9 @@ async def get_investigation_status(job_id: str) -> InvestigationStatusResponse:
     )
 
 
-@router.get("/investigations/{job_id}/files", response_model=list[InvestigationFileResponse])
+@router.get(
+    "/investigations/{job_id}/files", response_model=list[InvestigationFileResponse]
+)
 async def list_investigation_files(job_id: str) -> list[InvestigationFileResponse]:
     safe_id = _validate_job_id(job_id)
     job = investigation_store.get(safe_id)
@@ -206,15 +210,22 @@ async def list_investigation_files(job_id: str) -> list[InvestigationFileRespons
             InvestigationFileResponse(
                 file_id=document.doc_id,
                 filename=document.filename,
-                extraction_status="complete" if structured_file is not None else "pending",
-                extraction_method=structured_file.extraction_method if structured_file else None,
+                extraction_status="complete"
+                if structured_file is not None
+                else "pending",
+                extraction_method=structured_file.extraction_method
+                if structured_file
+                else None,
                 row_count=structured_file.row_count if structured_file else None,
             )
         )
     return files
 
 
-@router.get("/investigations/{job_id}/files/{file_id}/structured", response_model=StructuredFileResponse)
+@router.get(
+    "/investigations/{job_id}/files/{file_id}/structured",
+    response_model=StructuredFileResponse,
+)
 async def get_structured_file(
     job_id: str,
     file_id: str,
@@ -232,7 +243,7 @@ async def get_structured_file(
 
     rows = structured_file.rows
     if rows is not None:
-        rows = rows[offset:offset + limit]
+        rows = rows[offset : offset + limit]
 
     payload = structured_file.model_dump()
     payload["rows"] = rows
@@ -241,7 +252,9 @@ async def get_structured_file(
     return StructuredFileResponse.model_validate(payload)
 
 
-@router.get("/investigations/{job_id}/files/{file_id}/raw", response_model=RawFileResponse)
+@router.get(
+    "/investigations/{job_id}/files/{file_id}/raw", response_model=RawFileResponse
+)
 async def get_raw_file(job_id: str, file_id: str) -> RawFileResponse:
     safe_id = _validate_job_id(job_id)
     job = investigation_store.get(safe_id)
@@ -334,7 +347,9 @@ async def get_investigation_report(job_id: str) -> ReportResponse:
         raise HTTPException(status_code=404, detail="Investigation not found.")
 
     if job.status != InvestigationJobState.DONE:
-        raise HTTPException(status_code=400, detail="Investigation is not yet complete.")
+        raise HTTPException(
+            status_code=400, detail="Investigation is not yet complete."
+        )
 
     state = job.investigation_state
     findings_resp = [
@@ -444,18 +459,22 @@ async def get_investigation_graph(job_id: str) -> GraphResponse:
                 key = (edge.source_doc_id, edge.target_doc_id, edge.shared_entity)
                 if key not in seen_edges:
                     seen_edges.add(key)
-                    relationships.append(GraphRelationshipResponse(
-                        source_entity=edge.source_doc_id,
-                        target_entity=edge.target_doc_id,
-                        shared_entity=edge.shared_entity,
-                        entity_type=edge.entity_type,
-                    ))
+                    relationships.append(
+                        GraphRelationshipResponse(
+                            source_entity=edge.source_doc_id,
+                            target_entity=edge.target_doc_id,
+                            shared_entity=edge.shared_entity,
+                            entity_type=edge.entity_type,
+                        )
+                    )
 
     return GraphResponse(entities=entities, relationships=relationships[:200])
 
 
 @router.get("/investigations/{job_id}/related")
-async def get_related_entities(job_id: str, entity: str = "") -> list[RelatedEntityResponse]:
+async def get_related_entities(
+    job_id: str, entity: str = ""
+) -> list[RelatedEntityResponse]:
     """Return documents/entities related to a given entity name."""
     safe_id = _validate_job_id(job_id)
     job = investigation_store.get(safe_id)
@@ -463,7 +482,9 @@ async def get_related_entities(job_id: str, entity: str = "") -> list[RelatedEnt
         raise HTTPException(status_code=404, detail="Investigation not found.")
 
     if not entity.strip():
-        raise HTTPException(status_code=400, detail="Query parameter 'entity' is required.")
+        raise HTTPException(
+            status_code=400, detail="Query parameter 'entity' is required."
+        )
 
     # Find documents containing this entity
     doc_ids = job.graph.get_documents_by_entity(entity)
@@ -478,11 +499,13 @@ async def get_related_entities(job_id: str, entity: str = "") -> list[RelatedEnt
             if e.name.lower() != entity.lower() and e.name not in seen_names:
                 seen_names.add(e.name)
                 entity_docs = job.graph.get_documents_by_entity(e.name)
-                related.append(RelatedEntityResponse(
-                    name=e.name,
-                    entity_type=e.entity_type,
-                    documents=entity_docs,
-                ))
+                related.append(
+                    RelatedEntityResponse(
+                        name=e.name,
+                        entity_type=e.entity_type,
+                        documents=entity_docs,
+                    )
+                )
 
     return related
 
@@ -496,6 +519,7 @@ async def build_investigation_memory(job_id: str) -> dict[str, str]:
         raise HTTPException(status_code=404, detail="Investigation not found.")
 
     from app.config import get_settings
+
     settings = get_settings()
     if not settings.cognee_enabled:
         raise HTTPException(status_code=503, detail="Cognee is not enabled.")

@@ -18,7 +18,9 @@ def _make_doc(content: str) -> ParsedDocument:
         doc_id="test",
         filename="test.csv",
         doc_type=DocumentType.CSV,
-        content_chunks=[ContentChunk(text=content, source_ref="test.csv:row:1", chunk_index=0)],
+        content_chunks=[
+            ContentChunk(text=content, source_ref="test.csv:row:1", chunk_index=0)
+        ],
     )
 
 

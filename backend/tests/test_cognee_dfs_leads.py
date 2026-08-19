@@ -20,7 +20,9 @@ def _make_doc(doc_id: str, filename: str, content: str = "data") -> ParsedDocume
         doc_id=doc_id,
         filename=filename,
         doc_type=DocumentType.CSV,
-        content_chunks=[ContentChunk(text=content, source_ref=f"{filename}:row:1", chunk_index=0)],
+        content_chunks=[
+            ContentChunk(text=content, source_ref=f"{filename}:row:1", chunk_index=0)
+        ],
     )
 
 
@@ -57,11 +59,17 @@ class TestCogneeLeadsInfluenceDFS:
         entity2 = Entity(name="Account209", entity_type="account", source_doc_id="a")
         graph.add_entity_to_document("a", entity1)
         graph.add_entity_to_document("a", entity2)
-        graph.add_entity_to_document("b", Entity(name="VendorX", entity_type="vendor", source_doc_id="b"))
-        graph.add_entity_to_document("b", Entity(name="Account209", entity_type="account", source_doc_id="b"))
+        graph.add_entity_to_document(
+            "b", Entity(name="VendorX", entity_type="vendor", source_doc_id="b")
+        )
+        graph.add_entity_to_document(
+            "b", Entity(name="Account209", entity_type="account", source_doc_id="b")
+        )
 
         # doc_c has no shared entities with doc_a
-        graph.add_entity_to_document("c", Entity(name="Unrelated", entity_type="vendor", source_doc_id="c"))
+        graph.add_entity_to_document(
+            "c", Entity(name="Unrelated", entity_type="vendor", source_doc_id="c")
+        )
 
         responses = [
             {
@@ -118,8 +126,12 @@ class TestCogneeLeadsInfluenceDFS:
         graph.add_document("b", "doc_b.csv")
 
         # No shared entities — b is related via graph edge but no entity overlap
-        graph.add_entity_to_document("a", Entity(name="EntityA", entity_type="vendor", source_doc_id="a"))
-        graph.add_entity_to_document("b", Entity(name="EntityB", entity_type="vendor", source_doc_id="b"))
+        graph.add_entity_to_document(
+            "a", Entity(name="EntityA", entity_type="vendor", source_doc_id="a")
+        )
+        graph.add_entity_to_document(
+            "b", Entity(name="EntityB", entity_type="vendor", source_doc_id="b")
+        )
 
         responses = [
             {
@@ -165,13 +177,23 @@ class TestGetInvestigationLeads:
         graph.add_document("c", "c.csv")
 
         # Strong overlap: a and b share 2 entities
-        graph.add_entity_to_document("a", Entity(name="E1", entity_type="vendor", source_doc_id="a"))
-        graph.add_entity_to_document("a", Entity(name="E2", entity_type="account", source_doc_id="a"))
-        graph.add_entity_to_document("b", Entity(name="E1", entity_type="vendor", source_doc_id="b"))
-        graph.add_entity_to_document("b", Entity(name="E2", entity_type="account", source_doc_id="b"))
+        graph.add_entity_to_document(
+            "a", Entity(name="E1", entity_type="vendor", source_doc_id="a")
+        )
+        graph.add_entity_to_document(
+            "a", Entity(name="E2", entity_type="account", source_doc_id="a")
+        )
+        graph.add_entity_to_document(
+            "b", Entity(name="E1", entity_type="vendor", source_doc_id="b")
+        )
+        graph.add_entity_to_document(
+            "b", Entity(name="E2", entity_type="account", source_doc_id="b")
+        )
 
         # No overlap: c has unrelated entity but is connected via some edge
-        graph.add_entity_to_document("c", Entity(name="E3", entity_type="vendor", source_doc_id="c"))
+        graph.add_entity_to_document(
+            "c", Entity(name="E3", entity_type="vendor", source_doc_id="c")
+        )
 
         agent = InvestigationAgent(
             llm_router=FakeLLMRouter([]),  # type: ignore[arg-type]

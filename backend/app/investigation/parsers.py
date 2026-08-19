@@ -54,11 +54,13 @@ def parse_txt(path: Path) -> ParsedDocument:
         stripped = line.strip()
         if not stripped:
             continue
-        chunks.append(ContentChunk(
-            text=stripped,
-            source_ref=f"{path.name}:row:{row_num}",
-            chunk_index=row_num - 1,
-        ))
+        chunks.append(
+            ContentChunk(
+                text=stripped,
+                source_ref=f"{path.name}:row:{row_num}",
+                chunk_index=row_num - 1,
+            )
+        )
 
     return ParsedDocument(
         doc_id=generate_doc_id(path),
@@ -101,9 +103,17 @@ def parse_gdpdu_index(path: Path) -> ParsedDocument:
             table_name = table.find("Name")
             table_desc = table.find("Description")
 
-            url_text = table_url.text if table_url is not None and table_url.text else ""
-            name_text = table_name.text if table_name is not None and table_name.text else url_text
-            desc_text = table_desc.text if table_desc is not None and table_desc.text else ""
+            url_text = (
+                table_url.text if table_url is not None and table_url.text else ""
+            )
+            name_text = (
+                table_name.text
+                if table_name is not None and table_name.text
+                else url_text
+            )
+            desc_text = (
+                table_desc.text if table_desc is not None and table_desc.text else ""
+            )
 
             columns: list[str] = []
             var_length = table.find("VariableLength")
@@ -119,11 +129,13 @@ def parse_gdpdu_index(path: Path) -> ParsedDocument:
                 f"Description: {desc_text}\n"
                 f"Columns: {', '.join(columns)}"
             )
-            chunks.append(ContentChunk(
-                text=schema_text,
-                source_ref=f"{path.name}:table:{name_text}",
-                chunk_index=chunk_idx,
-            ))
+            chunks.append(
+                ContentChunk(
+                    text=schema_text,
+                    source_ref=f"{path.name}:table:{name_text}",
+                    chunk_index=chunk_idx,
+                )
+            )
             chunk_idx += 1
             tables.append(name_text)
 
@@ -148,11 +160,13 @@ def parse_pdf(path: Path) -> ParsedDocument:
     for page_num, page in enumerate(reader.pages, start=1):
         text = (page.extract_text() or "").strip()
         if text:
-            chunks.append(ContentChunk(
-                text=text,
-                source_ref=f"{path.name}:page:{page_num}",
-                chunk_index=page_num - 1,
-            ))
+            chunks.append(
+                ContentChunk(
+                    text=text,
+                    source_ref=f"{path.name}:page:{page_num}",
+                    chunk_index=page_num - 1,
+                )
+            )
 
     return ParsedDocument(
         doc_id=generate_doc_id(path),
@@ -178,11 +192,13 @@ def parse_xlsx(path: Path) -> ParsedDocument:
             cell_values = [str(cell) if cell is not None else "" for cell in row]
             row_text = ";".join(cell_values).strip(";").strip()
             if row_text and row_text != ";" * len(cell_values):
-                chunks.append(ContentChunk(
-                    text=row_text,
-                    source_ref=f"{path.name}:{sheet_name}:row:{row_num}",
-                    chunk_index=chunk_idx,
-                ))
+                chunks.append(
+                    ContentChunk(
+                        text=row_text,
+                        source_ref=f"{path.name}:{sheet_name}:row:{row_num}",
+                        chunk_index=chunk_idx,
+                    )
+                )
                 chunk_idx += 1
 
     wb.close()
@@ -224,11 +240,13 @@ def parse_csv(path: Path) -> ParsedDocument:
     for row_num, row in enumerate(reader, start=1):
         row_text = delimiter.join(row).strip()
         if row_text:
-            chunks.append(ContentChunk(
-                text=row_text,
-                source_ref=f"{path.name}:row:{row_num}",
-                chunk_index=row_num - 1,
-            ))
+            chunks.append(
+                ContentChunk(
+                    text=row_text,
+                    source_ref=f"{path.name}:row:{row_num}",
+                    chunk_index=row_num - 1,
+                )
+            )
 
     return ParsedDocument(
         doc_id=generate_doc_id(path),
@@ -251,11 +269,13 @@ def parse_docx(path: Path) -> ParsedDocument:
     for para_num, para in enumerate(doc.paragraphs, start=1):
         text = para.text.strip()
         if text:
-            chunks.append(ContentChunk(
-                text=text,
-                source_ref=f"{path.name}:paragraph:{para_num}",
-                chunk_index=chunk_idx,
-            ))
+            chunks.append(
+                ContentChunk(
+                    text=text,
+                    source_ref=f"{path.name}:paragraph:{para_num}",
+                    chunk_index=chunk_idx,
+                )
+            )
             chunk_idx += 1
 
     # Also extract tables
@@ -264,11 +284,13 @@ def parse_docx(path: Path) -> ParsedDocument:
             cells = [cell.text.strip() for cell in row.cells]
             row_text = " | ".join(cells)
             if row_text.strip(" |"):
-                chunks.append(ContentChunk(
-                    text=row_text,
-                    source_ref=f"{path.name}:table:{table_num}:row:{row_num}",
-                    chunk_index=chunk_idx,
-                ))
+                chunks.append(
+                    ContentChunk(
+                        text=row_text,
+                        source_ref=f"{path.name}:table:{table_num}:row:{row_num}",
+                        chunk_index=chunk_idx,
+                    )
+                )
                 chunk_idx += 1
 
     return ParsedDocument(
@@ -301,11 +323,13 @@ def parse_md(path: Path) -> ParsedDocument:
         stripped = line.strip()
         if not stripped:
             continue
-        chunks.append(ContentChunk(
-            text=stripped,
-            source_ref=f"{path.name}:line:{line_num}",
-            chunk_index=line_num - 1,
-        ))
+        chunks.append(
+            ContentChunk(
+                text=stripped,
+                source_ref=f"{path.name}:line:{line_num}",
+                chunk_index=line_num - 1,
+            )
+        )
 
     return ParsedDocument(
         doc_id=generate_doc_id(path),

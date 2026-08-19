@@ -39,7 +39,9 @@ def _create_done_job() -> str:
         doc_id="test_doc_1",
         filename="test.csv",
         doc_type=DocumentType.CSV,
-        content_chunks=[ContentChunk(text="data", source_ref="test.csv:row:1", chunk_index=0)],
+        content_chunks=[
+            ContentChunk(text="data", source_ref="test.csv:row:1", chunk_index=0)
+        ],
     )
     job.evidence_store.add_document(doc)
     job.structured_data_store.add_file(
@@ -167,7 +169,9 @@ class TestInvestigationFiles:
     def test_returns_paginated_structured_file(self) -> None:
         job_id = _create_done_job()
 
-        response = client.get(f"/investigations/{job_id}/files/test_doc_1/structured?offset=1&limit=1")
+        response = client.get(
+            f"/investigations/{job_id}/files/test_doc_1/structured?offset=1&limit=1"
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -187,7 +191,9 @@ class TestInvestigationFiles:
     def test_unknown_file_returns_404(self) -> None:
         job_id = _create_done_job()
 
-        structured_response = client.get(f"/investigations/{job_id}/files/missing/structured")
+        structured_response = client.get(
+            f"/investigations/{job_id}/files/missing/structured"
+        )
         raw_response = client.get(f"/investigations/{job_id}/files/missing/raw")
 
         assert structured_response.status_code == 404
@@ -209,7 +215,9 @@ class TestGetFindings:
         assert len(data[0]["evidence"]) == 1
 
     def test_missing_job_returns_404(self) -> None:
-        response = client.get("/investigations/00000000-0000-0000-0000-000000000000/findings")
+        response = client.get(
+            "/investigations/00000000-0000-0000-0000-000000000000/findings"
+        )
         assert response.status_code == 404
 
 

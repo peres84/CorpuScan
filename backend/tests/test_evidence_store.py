@@ -7,8 +7,16 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import pytest
 
-from app.investigation.evidence_store import Entity, EvidenceReference, EvidenceStore, Finding
-from app.investigation.entities import _parse_entity_response, extract_entities_from_document
+from app.investigation.evidence_store import (
+    Entity,
+    EvidenceReference,
+    EvidenceStore,
+    Finding,
+)
+from app.investigation.entities import (
+    _parse_entity_response,
+    extract_entities_from_document,
+)
 from app.investigation.graph import DocumentGraph
 from app.investigation.models import ContentChunk, DocumentType, ParsedDocument
 
@@ -20,7 +28,11 @@ class TestEvidenceStoreCRUD:
             doc_id="doc1",
             filename="test.csv",
             doc_type=DocumentType.CSV,
-            content_chunks=[ContentChunk(text="row data", source_ref="test.csv:row:1", chunk_index=0)],
+            content_chunks=[
+                ContentChunk(
+                    text="row data", source_ref="test.csv:row:1", chunk_index=0
+                )
+            ],
         )
         store.add_document(doc)
         assert store.document_count == 1
@@ -48,7 +60,9 @@ class TestEvidenceStoreCRUD:
 
     def test_add_and_get_entity(self) -> None:
         store = EvidenceStore()
-        entity = Entity(name="Ratio Consulting GmbH", entity_type="vendor", source_doc_id="doc1")
+        entity = Entity(
+            name="Ratio Consulting GmbH", entity_type="vendor", source_doc_id="doc1"
+        )
         store.add_entity(entity)
         assert store.entity_count == 1
         assert store.get_entity("Ratio Consulting GmbH") is entity
@@ -67,9 +81,15 @@ class TestEvidenceStoreCRUD:
 
     def test_get_entities_by_type(self) -> None:
         store = EvidenceStore()
-        store.add_entity(Entity(name="Vendor A", entity_type="vendor", source_doc_id="doc1"))
-        store.add_entity(Entity(name="€48000", entity_type="amount", source_doc_id="doc1"))
-        store.add_entity(Entity(name="Vendor B", entity_type="vendor", source_doc_id="doc2"))
+        store.add_entity(
+            Entity(name="Vendor A", entity_type="vendor", source_doc_id="doc1")
+        )
+        store.add_entity(
+            Entity(name="€48000", entity_type="amount", source_doc_id="doc1")
+        )
+        store.add_entity(
+            Entity(name="Vendor B", entity_type="vendor", source_doc_id="doc2")
+        )
         vendors = store.get_entities_by_type("vendor")
         assert len(vendors) == 2
 
@@ -112,8 +132,12 @@ class TestDocumentGraph:
         graph.add_document("doc1", "invoice.pdf")
         graph.add_document("doc2", "ledger.xlsx")
 
-        entity1 = Entity(name="Ratio Consulting GmbH", entity_type="vendor", source_doc_id="doc1")
-        entity2 = Entity(name="Ratio Consulting GmbH", entity_type="vendor", source_doc_id="doc2")
+        entity1 = Entity(
+            name="Ratio Consulting GmbH", entity_type="vendor", source_doc_id="doc1"
+        )
+        entity2 = Entity(
+            name="Ratio Consulting GmbH", entity_type="vendor", source_doc_id="doc2"
+        )
 
         graph.add_entity_to_document("doc1", entity1)
         graph.add_entity_to_document("doc2", entity2)
@@ -151,10 +175,18 @@ class TestDocumentGraph:
         graph.add_document("doc1", "a.txt")
         graph.add_document("doc2", "b.txt")
 
-        graph.add_entity_to_document("doc1", Entity(name="vendor_x", entity_type="vendor", source_doc_id="doc1"))
-        graph.add_entity_to_document("doc1", Entity(name="unique_a", entity_type="amount", source_doc_id="doc1"))
-        graph.add_entity_to_document("doc2", Entity(name="vendor_x", entity_type="vendor", source_doc_id="doc2"))
-        graph.add_entity_to_document("doc2", Entity(name="unique_b", entity_type="amount", source_doc_id="doc2"))
+        graph.add_entity_to_document(
+            "doc1", Entity(name="vendor_x", entity_type="vendor", source_doc_id="doc1")
+        )
+        graph.add_entity_to_document(
+            "doc1", Entity(name="unique_a", entity_type="amount", source_doc_id="doc1")
+        )
+        graph.add_entity_to_document(
+            "doc2", Entity(name="vendor_x", entity_type="vendor", source_doc_id="doc2")
+        )
+        graph.add_entity_to_document(
+            "doc2", Entity(name="unique_b", entity_type="amount", source_doc_id="doc2")
+        )
 
         shared = graph.get_shared_entities("doc1", "doc2")
         assert "vendor_x" in shared
@@ -205,7 +237,11 @@ class TestEntityExtraction:
             filename="payments.csv",
             doc_type=DocumentType.CSV,
             content_chunks=[
-                ContentChunk(text="200007;Castor Papier GmbH;9780,00", source_ref="payments.csv:row:1", chunk_index=0),
+                ContentChunk(
+                    text="200007;Castor Papier GmbH;9780,00",
+                    source_ref="payments.csv:row:1",
+                    chunk_index=0,
+                ),
             ],
         )
 

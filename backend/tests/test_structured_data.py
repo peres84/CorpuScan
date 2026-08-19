@@ -9,7 +9,11 @@ from pytest import MonkeyPatch
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from app.investigation import structured
-from app.investigation.structured import KeyValueEntry, StructuredDataStore, StructuredFile
+from app.investigation.structured import (
+    KeyValueEntry,
+    StructuredDataStore,
+    StructuredFile,
+)
 
 
 class TestStructuredDataStore:
@@ -49,7 +53,9 @@ class TestStructuredDataStore:
         assert output_path == tmp_path / "job-123" / "structured_data.json"
         assert loaded.list_files() == store.list_files()
 
-    def test_empty_store_produces_valid_json(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_empty_store_produces_valid_json(
+        self, tmp_path: Path, monkeypatch: MonkeyPatch
+    ) -> None:
         monkeypatch.setattr(structured, "STRUCTURED_DATA_ROOT", tmp_path)
 
         output_path = StructuredDataStore().save_to_json("empty-job")

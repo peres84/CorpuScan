@@ -4,6 +4,7 @@ MCP-style wrappers for Tavily web tools.
 Exposes web.search, web.extract as MCP tools that the Investigation Agent
 can invoke to perform external research during an investigation.
 """
+
 from __future__ import annotations
 
 import logging
@@ -23,7 +24,12 @@ _MAX_EXTRACT_CHARS = 12000
 
 def _get_api_key() -> str:
     key = os.environ.get("TAVILY_API_KEY", "").strip()
-    if not key or key.lower() in ("key_here", "your_api_key", "api_key_here", "replace_me"):
+    if not key or key.lower() in (
+        "key_here",
+        "your_api_key",
+        "api_key_here",
+        "replace_me",
+    ):
         raise RuntimeError("TAVILY_API_KEY is not configured")
     return key
 
@@ -31,7 +37,7 @@ def _get_api_key() -> str:
 def _truncate(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
-    return f"{text[:max_chars - 3]}..."
+    return f"{text[: max_chars - 3]}..."
 
 
 def web_search(query: str, max_results: int = 5) -> dict:
@@ -107,7 +113,10 @@ def register_tavily_tools() -> None:
         name="web.search",
         description="Search the web using Tavily. Returns titles, URLs, and snippets.",
         handler=web_search,
-        parameters={"query": "Search query string", "max_results": "Max results (default 5)"},
+        parameters={
+            "query": "Search query string",
+            "max_results": "Max results (default 5)",
+        },
     )
     register_tool(
         name="web.extract",

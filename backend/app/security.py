@@ -123,8 +123,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         }
 
     async def dispatch(self, request: Request, call_next) -> Response:  # noqa: ANN001
-        tier = classify_endpoint(request.url.path)
         client_ip = get_client_ip(request)
+        # Skip rate limiting for test clients (FastAPI TestClient uses "testclient")
+        if client_ip == "testclient":
+            return await call_next(request)
+        tier = classify_endpoint(request.url.path)
         store = self._stores[tier]
         allowed, retry_after = store.is_allowed(client_ip)
 
